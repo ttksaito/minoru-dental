@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。沢口町にあり地域の皆様の健康をサポート。">
+    <meta name="keywords" content="歯医者,歯科,東松山市,沢口町,みのる歯科,虫歯治療,歯周病,予防歯科,小児歯科,矯正歯科,口腔外科,審美歯科,ホワイトニング,埼玉県">
+    <title>みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療</title>
+    <style>
+        :root {
+            --primary-color: #4caf50;
+            --secondary-color: #e8f5e9;
+            --accent-color: #388e3c;
+            --text-color: #333;
+            --light-gray: #f5f5f5;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+        }
+        
+        body {
+            color: var(--text-color);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        /* モバイルファースト設計 */
+        
+        header {
+            background-color: var(--white);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px 0;
+        }
+        
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 5px 15px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .logo h1 {
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-left: 10px;
+        }
+        
+        .logo img {
+            height: 40px;
+        }
+        
+        /* ハンバーガーメニュー */
+        .menu-toggle {
+            display: block;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1001;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        
+        .menu-toggle span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-color);
+            margin: 6px 0;
+            transition: 0.4s;
+        }
+        
+        nav {
+            width: 100%;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        
+        nav.active {
+            max-height: 300px;
+        }
+        
+        nav ul {
+            display: flex;
+            flex-direction: column;
+            list-style: none;
+            width: 100%;
+        }
+        
+        nav ul li {
+            margin: 8px 0;
+            text-align: center;
+        }
+        
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: bold;
+            transition: color 0.3s;
+            display: block;
+            padding: 8px 0;
+        }
+        
+        nav ul li a:hover {
+            color: var(--primary-color);
+        }
+        
+        .hero {
+            background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('/api/placeholder/1200/400');
+            background-size: cover;
+            background-position: center;
+            height: auto;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 100px 20px 50px;
+        }
+        
+        .hero h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .hero p {
+            font-size: 16px;
+            max-width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            font-size: 16px;
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .cta-button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        section {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section-title h2 {
+            font-size: 26px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .section-title p {
+            color: #777;
+            font-size: 14px;
+        }
+        
+        .about-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .about-text {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .about-text h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .about-text p {
+            margin-bottom: 15px;
+        }
+        
+        .doctor-profile {
+            margin-top: 20px;
+        }
+        
+        .doctor-profile h4 {
+            margin-bottom: 10px;
+        }
+        
+        .doctor-profile ul {
+            list-style: none;
+        }
+        
+        .doctor-profile ul li {
+            margin-bottom: 5px;
+        }
+        
+        .about-image {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .about-image img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-box {
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .info-item {
+            margin-bottom: 25px;
+        }
+        
+        .info-item h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        /* モバイル用の診療時間テーブル */
+        .time-table {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            min-width: 500px; /* スクロールするための最小幅 */
+            border-collapse: collapse;
+        }
+        
+        table th, table td {
+            padding: 10px 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        table th {
+            background-color: var(--secondary-color);
+        }
+        
+        .map-container {
+            height: 250px;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .map-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .services {
+            background-color: var(--light-gray);
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .service-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .service-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        
+        .service-content {
+            padding: 15px;
+        }
+        
+        .service-content h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .service-content p {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .treatment-flow {
+            margin-top: 40px;
+        }
+        
+        .treatment-flow h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            counter-reset: step-counter;
+        }
+        
+        .flow-step {
+            padding: 15px;
+            position: relative;
+            counter-increment: step-counter;
+            margin-bottom: 15px;
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .flow-step::before {
+            content: counter(step-counter);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+        
+        .flow-step h4 {
+            display: inline-block;
+            vertical-align: middle;
+            margin-bottom: 5px;
+        }
+        
+        .flow-step p {
+            padding-left: 40px;
+            font-size: 14px;
+        }
+        
+        .equipment {
+            margin-top: 40px;
+        }
+        
+        .equipment h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .equipment-item {
+            background-color: var(--white);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .equipment-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .equipment-item h4 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .equipment-item p {
+            font-size: 14px;
+        }
+        
+        .contact-content {
+            text-align: center;
+        }
+        
+        .contact-intro {
+            margin-bottom: 25px;
+        }
+        
+        .contact-phone {
+            margin-bottom: 30px;
+        }
+        
+        .contact-phone h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .phone-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .contact-online h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .contact-online p {
+            margin-bottom: 15px;
+        }
+        
+        footer {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 40px 20px 20px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .footer-section {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+        
+        .footer-section ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .footer-section ul li a:hover {
+            text-decoration: underline;
+        }
+        
+        .copyright {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            font-size: 12px;
+        }
+        
+        /* タブレット向けスタイル */
+        @media (min-width: 600px) {
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .equipment-grid {
+                grid-template-columns: repeat(2, 1fr); 
+            }
+            
+            .hero h2 {
+                font-size: 32px;
+            }
+            
+            .footer-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                text-align: left;
+            }
+            
+            .footer-section {
+                flex: 1;
+                min-width: 200px;
+                text-align: left;
+                padding-right: 15px;
+            }
+        }
+        
+        /* デスクトップ向けスタイル */
+        @media (min-width: 992px) {
+            .header-container {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 15px;
+            }
+            
+            .logo {
+                margin-bottom: 0;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+            
+            .logo img {
+                height: 50px;
+            }
+            
+            .menu-toggle {
+                display: none;
+            }
+            
+            nav {
+                max-height: none;
+                width: auto;
+            }
+            
+            nav ul {
+                flex-direction: row;
+            }
+            
+            nav ul li {
+                margin: 0 0 0 20px;
+                text-align: left;
+            }
+            
+            nav ul li a {
+                padding: 0;
+            }
+            
+            .hero {
+                height: 500px;
+                padding-top: 120px;
+            }
+            
+            .about-content {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            
+            .about-text {
+                width: 60%;
+                padding-right: 40px;
+                margin-bottom: 0;
+            }
+            
+            .about-image {
+                width: 40%;
+            }
+            
+            .services-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
+            }
+            
+            .equipment-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .flow-steps {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            .flow-step {
+                flex: 1;
+                margin: 0 10px;
+                text-align: center;
+            }
+            
+            .flow-step::before {
+                display: block;
+                margin: 0 auto 15px;
+            }
+            
+            .flow-step p {
+                padding-left: 0;
+            }
+            
+            .flow-step:not(:last-child)::after {
+                content: "";
+                position: absolute;
+                top: 15px;
+                right: -20px;
+                width: 30px;
+                height: 2px;
+                background-color: var(--primary-color);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Analyticsコード（取得後に置き換え） -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <img src="/api/placeholder/50/50" alt="みのる歯科ロゴ">
+                <h1>みのる歯科</h1>
+            </div>
+            <div class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <nav id="navigation">
+                <ul>
+                    <li><a href="#about">医院紹介</a></li>
+                    <li><a href="#info">診療案内</a></li>
+                    <li><a href="#services">診療内容</a></li>
+                    <li><a href="#contact">アクセス</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h2>あなたの笑顔を守る<br>地域密着の歯科医院</h2>
+        <p>みのる歯科では、痛みの少ない治療と予防歯科に力を入れています。<br>東松山市の皆様のお口の健康をサポートします。</p>
+        <a href="#contact" class="cta-button">ご予約・お問い合わせ</a>
+    </section>
+
+    <section id="about" class="about">
+        <div class="section-title">
+            <h2>医院紹介</h2>
+            <p>みのる歯科クリニックについて</p>
+        </div>
+        <div class="about-content">
+            <div class="about-text">
+                <h3>院長挨拶</h3>
+                <p>当院では「痛みを抑えた優しい治療」をモットーに、みのる歯科院は平成元年に開業して以来、地域の皆さまに愛され続けています。小さなお子様からご高齢の方まで安心して通っていただける歯科医院を目指しています。</p>
+                <p>お口の健康は全身の健康にもつながります。日々の丁寧なケアと定期的な検診で、いつまでも健康な歯を保ちましょう。何でもお気軽にご相談ください。</p>
+                
+                <div class="doctor-profile">
+                    <h4>院長プロフィール</h4>
+                    <ul>
+                        <li>氏名：斉藤 稔</li>
+                        <li>経歴：昭和医科大学</li>
+                        <li>専門：一般歯科、審美歯科、口腔外科</li>
+                        <li>所属学会：日本歯科医師会、日本口腔外科学会</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="about-image">
+                <img src="/image/外観.png" alt="院長写真">
+            </div>
+        </div>
+    </section>
+
+    <section id="info" class="info">
+        <div class="section-title">
+            <h2>基本情報</h2>
+            <p>診療時間・アクセス</p>
+        </div>
+        
+        <div class="info-box">
+            <div class="info-item">
+                <h3>診療時間</h3>
+                <div class="time-table">
+                    <table>
+                        <tr>
+                            <th>診療時間</th>
+                            <th>月</th>
+                            <th>火</th>
+                            <th>水</th>
+                            <th>木</th>
+                            <th>金</th>
+                            <th>土</th>
+                            <th>日・祝</th>
+                        </tr>
+                        <tr>
+                            <td>9:30〜13:00</td>
+                            <td>○</td>
+                            <td>○</td>
+                            <td>○</td>
+                            <td>×</td>
+                            <td>○</td>
+                            <td>○</td>
+                            <td>×</td>
+                        </tr>
+                        <tr>
+                            <td>14:30〜18:30</td>
+                            <td>○</td>
+                            <td>○</td>
+                            <td>○</td>
+                            <td>×</td>
+                            <td>○</td>
+                            <td>△<br>(〜17:00)</td>
+                            <td>×</td>
+                        </tr>
+                    </table>
+                </div>
+                <p>※木曜日・日曜日・祝日は休診となります</p>
+                <p>※予約制となっておりますので、お電話またはWEBよりご予約ください</p>
+            </div>
+            
+            <div class="info-item">
+                <h3>所在地・連絡先</h3>
+                <p>〒355-0042 埼玉県東松山市沢口町</p>
+                <p>TEL: <a href="tel:0493-24-9480">0493-24-9480</a></p>
+                <p>Email: <a href="mailto:info@minoru-dental.example.com">info@minoru-dental.example.com</a></p>
+                
+                <div class="map-container">
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3225.399980259967!2d139.4132689!3d36.059346999999995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x601f2b2c33fb1c4d%3A0x7bc11fe8a07748bd!2z44CSMzU1LTAwMDQg5Z-8546J55yM5p2x5p2-5bGx5biC5rKi5Y-j55S677yT77yR4oiS77yR!5e0!3m2!1sja!2sjp!4v1745921233481!5m2!1sja!2sjp"
+                        width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+                
+            </div>
+            
+            <div class="info-item">
+                <h3>アクセス</h3>
+                <p>・東武東上線「東松山駅」より車で約10分</p>
+                <p>・関越自動車道「東松山IC」より車で約10分</p>
+                <p>・駐車場：4台完備</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="services">
+        <div class="section-title">
+            <h2>診療内容</h2>
+            <p>みのる歯科クリニックの提供するサービス</p>
+        </div>
+        
+        <div class="services-grid">
+            <div class="service-card">
+                <img src="/image/jon-tyson-kpLEaeScdHY-unsplash.jpg" alt="一般歯科">
+                <div class="service-content">
+                    <h3>一般歯科</h3>
+                    <p>虫歯治療から詰め物・被せ物まで、一般的な歯科治療を行っています。痛みを抑えた治療を心がけ、できるだけ歯を削らない最小限の治療を提供します。</p>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <img src="/image/30157008_s.jpg" alt="小児歯科">
+                <div class="service-content">
+                    <h3>小児歯科</h3>
+                    <p>お子様が歯医者を怖がらないよう、楽しく通える環境づくりを心がけています。虫歯予防のためのシーラントやフッ素塗布も行っています。</p>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <img src="/image/diana-polekhina-Q_o_ob-3Ny4-unsplash.jpg" alt="矯正歯科">
+                <div class="service-content">
+                    <h3>矯正歯科</h3>
+                    <p>目立ちにくいマウスピース型矯正や、従来の矯正装置など、患者様に合わせた矯正治療をご提案します。無料相談も実施中です。</p>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <img src="/image/the-humble-co-cADflhZzgyo-unsplash.jpg" alt="口腔外科">
+                <div class="service-content">
+                    <h3>口腔外科</h3>
+                    <p>親知らずの抜歯や顎関節症、口内炎などの治療を行います。難症例にも対応できる設備と技術を備えています。</p>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <img src="/image/24488684_s.jpg" alt="予防歯科">
+                <div class="service-content">
+                    <h3>予防歯科</h3>
+                    <p>定期検診やクリーニングで虫歯や歯周病を予防します。一人ひとりに合わせたホームケア指導も行っています。</p>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <img src="/image/31619211_s.jpg" alt="審美歯科">
+                <div class="service-content">
+                    <h3>審美歯科</h3>
+                    <p>ホワイトニングやセラミック治療で美しい歯並びと白い歯を実現します。自然な見た目にこだわった審美治療を提供します。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="treatment-flow">
+            <h3>治療の流れ</h3>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <h4>初診受付</h4>
+                    <p>受付にて問診票にご記入いただきます</p>
+                </div>
+                <div class="flow-step">
+                    <h4>カウンセリング</h4>
+                    <p>お悩みやご希望をお聞きします</p>
+                </div>
+                <div class="flow-step">
+                    <h4>診査・検査</h4>
+                    <p>口腔内の状態を確認します</p>
+                </div>
+                <div class="flow-step">
+                    <h4>治療計画</h4>
+                    <p>最適な治療計画をご提案します</p>
+                </div>
+                <div class="flow-step">
+                    <h4>治療開始</h4>
+                    <p>同意をいただいた上で治療を開始します</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="equipment">
+            <h3>設備・機器紹介</h3>
+            <div class="equipment-grid">
+                <div class="equipment-item">
+                    <img src="/image/3986831_s.jpg" alt="デジタルレントゲン">
+                    <h4>デジタルレントゲン</h4>
+                    <p>従来の約1/10の被曝量で、より鮮明な画像が得られます</p>
+                </div>
+                <div class="equipment-item">
+                    <img src="/api/placeholder/300/200" alt="口腔内スキャナー">
+                    <h4>口腔内スキャナー</h4>
+                    <p>型取りの不快感なく、精密な3Dデータを取得できます</p>
+                </div>
+                <div class="equipment-item">
+                    <img src="/api/placeholder/300/200" alt="レーザー治療器">
+                    <h4>レーザー治療器</h4>
+                    <p>痛みを抑えた治療や、歯茎の治療に活用しています</p>
+                </div>
+                <div class="equipment-item">
+                    <img src="/api/placeholder/300/200" alt="滅菌器">
+                    <h4>高圧蒸気滅菌器</h4>
+                    <p>全ての器具は厳格な滅菌処理を行っています</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="section-title">
+            <h2>ご予約・お問い合わせ</h2>
+            <p>お気軽にお問い合わせください</p>
+        </div>
+        
+        <div class="contact-content">
+            <p class="contact-intro">ご予約やお問い合わせは、お電話またはメールフォームより受け付けております。初診の方もお気軽にご連絡ください。</p>
+            
+            <div class="contact-phone">
+                <h3>お電話でのご予約</h3>
+                <p class="phone-number"><a href="tel:0493-24-9480">0493-24-9480</a></p>
+                <p>受付時間: 平日9:30〜18:30、土曜9:30〜17:00</p>
+            </div>
+            
+            <!-- <div class="contact-online">
+                <h3>オンライン予約</h3>
+                <p>24時間いつでもご予約いただけます</p>
+                <a href="#" class="cta-button">Web予約はこちら</a>
+            </div> -->
+            
+            <!-- ここにお問い合わせフォームを追加することも可能 -->
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>みのる歯科</h3>
+                <p>〒355-0042</p>
+                <p>埼玉県東松山市沢口町</p>
+                <p>TEL: <a href="tel:0493-24-9480">0493-24-9480</a></p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>診療時間</h3>
+                <p>平日: 9:30〜13:00, 14:30〜18:30</p>
+                <p>土曜: 9:30〜13:00, 14:30〜17:00</p>
+                <p>休診日: 木曜・日曜・祝日</p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>リンク</h3>
+                <ul>
+                    <li><a href="#about">医院紹介</a></li>
+                    <li><a href="#info">診療案内</a></li>
+                    <li><a href="#services">診療内容</a></li>
+                    <li><a href="#contact">アクセス</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="copyright">
+            <p>&copy; 2025 みのる歯科 All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ハンバーガーメニュー用JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const navigation = document.getElementById('navigation');
+            
+            menuToggle.addEventListener('click', function() {
+                navigation.classList.toggle('active');
+                
+                // アクセシビリティのための属性追加
+                const expanded = navigation.classList.contains('active');
+                menuToggle.setAttribute('aria-expanded', expanded);
+            });
+            
+            // ナビゲーションリンクをクリックしたらメニューを閉じる
+            const navLinks = document.querySelectorAll('nav ul li a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    navigation.classList.remove('active');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                });
+            });
+            
+            // 初期状態の設定
+            menuToggle.setAttribute('aria-expanded', 'false');
+            menuToggle.setAttribute('aria-label', 'メニューを開く');
+            
+            // スクロール時のヘッダー表示制御
+            let lastScrollTop = 0;
+            const header = document.querySelector('header');
+            
+            window.addEventListener('scroll', function() {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop > lastScrollTop && scrollTop > 100) {
+                    // 下にスクロール時
+                    header.style.transform = 'translateY(-100%)';
+                } else {
+                    // 上にスクロール時
+                    header.style.transform = 'translateY(0)';
+                }
+                
+                lastScrollTop = scrollTop;
+            });
+        });
+    </script>
+</body>
+</html>
