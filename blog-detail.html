@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": "定期検診の重要性について",
+          "image": "https://ttksaito.github.io/minoru-dental/image/blog-post1.jpg",
+          "datePublished": "2025-03-15T09:00:00+09:00",
+          "dateModified": "2025-03-15T09:00:00+09:00",
+          "author": {
+            "@type": "Person",
+            "name": "斉藤 稔"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "みのる歯科",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://ttksaito.github.io/minoru-dental/image/logo.png"
+            }
+          },
+          "description": "歯の健康を維持するには定期的な検診が欠かせません。むし歯や歯周病は初期段階では自覚症状がほとんどないため、痛みを感じた時にはすでに進行していることがほとんどです。定期検診では、専門家が早期発見・早期治療を行うことができます。"
+        }
+    </script>
+        
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="定期検診の重要性について - みのる歯科ブログ。歯の健康を維持するには定期的な検診が欠かせません。むし歯や歯周病の早期発見・早期治療のためにも定期検診をおすすめします。">
+    <meta name="keywords" content="歯医者,歯科,東松山市,沢口町,みのる歯科,予防歯科,定期検診,歯科検診,埼玉県">
+    <title>定期検診の重要性について | みのる歯科ブログ</title>
+    <style>
+        :root {
+            --primary-color: #4caf50;
+            --secondary-color: #e8f5e9;
+            --accent-color: #388e3c;
+            --text-color: #333;
+            --light-gray: #f5f5f5;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+        }
+        
+        body {
+            color: var(--text-color);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        /* モバイルファースト設計 */
+        
+        header {
+            background-color: var(--white);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px 0;
+        }
+        
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 5px 15px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .logo h1 {
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-left: 10px;
+        }
+        
+        .logo img {
+            height: 40px;
+        }
+        
+        /* ハンバーガーメニュー */
+        .menu-toggle {
+            display: block;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1001;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        
+        .menu-toggle span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-color);
+            margin: 6px 0;
+            transition: 0.4s;
+        }
+        
+        nav {
+            width: 100%;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        
+        nav.active {
+            max-height: 300px;
+        }
+        
+        nav ul {
+            display: flex;
+            flex-direction: column;
+            list-style: none;
+            width: 100%;
+        }
+        
+        nav ul li {
+            margin: 8px 0;
+            text-align: center;
+        }
+        
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: bold;
+            transition: color 0.3s;
+            display: block;
+            padding: 8px 0;
+        }
+        
+        nav ul li a:hover {
+            color: var(--primary-color);
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            font-size: 16px;
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .cta-button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        section {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .blog-detail {
+            padding-top: 100px;
+            background-color: var(--light-gray);
+        }
+        
+        .blog-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        
+        .blog-main {
+            order: 2;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        .blog-sidebar {
+            order: 1;
+        }
+        
+        .blog-detail-header {
+            margin-bottom: 30px;
+        }
+        
+        .blog-detail-header h2 {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .blog-detail-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .blog-post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .blog-post-tag {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .blog-detail-image {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .blog-detail-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .blog-detail-content {
+            line-height: 1.8;
+            margin-bottom: 40px;
+        }
+        
+        .blog-detail-content p {
+            margin-bottom: 20px;
+        }
+        
+        .blog-detail-content h3 {
+            font-size: 22px;
+            color: var(--primary-color);
+            margin: 30px 0 15px;
+        }
+        
+        .blog-detail-content h4 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin: 25px 0 10px;
+        }
+        
+        .blog-detail-content ul, .blog-detail-content ol {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        
+        .blog-detail-content li {
+            margin-bottom: 8px;
+        }
+        
+        .blog-detail-content img {
+            max-width: 100%;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .blog-detail-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 20px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #555;
+        }
+        
+        .blog-share {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+        
+        .blog-share a {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ddd;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        
+        .blog-share .twitter {
+            background-color: #1DA1F2;
+        }
+        
+        .blog-share .facebook {
+            background-color: #3b5998;
+        }
+        
+        .blog-share .line {
+            background-color: #00B900;
+        }
+        
+        .blog-author {
+            display: flex;
+            background-color: var(--secondary-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .blog-author-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 20px;
+        }
+        
+        .blog-author-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .blog-author-info h4 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .blog-author-info p {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .blog-related-posts {
+            margin-bottom: 40px;
+        }
+        
+        .blog-related-posts h3 {
+            font-size: 22px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .blog-related-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .blog-related-item {
+            display: flex;
+            background-color: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .blog-related-image {
+            width: 100px;
+            min-width: 100px;
+            height: 100px;
+        }
+        
+        .blog-related-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .blog-related-content {
+            padding: 10px;
+        }
+        
+        .blog-related-content h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .blog-related-content .post-date {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .blog-sidebar-section {
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .blog-sidebar-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary-color);
+            font-size: 18px;
+        }
+        
+        .blog-sidebar-section ul {
+            list-style: none;
+        }
+        
+        .blog-sidebar-section ul li {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .blog-sidebar-section ul li:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .blog-sidebar-section ul li a {
+            text-decoration: none;
+            color: var(--text-color);
+            transition: color 0.3s;
+            display: block;
+        }
+        
+        .blog-sidebar-section ul li a:hover {
+            color: var(--primary-color);
+        }
+        
+        .blog-sidebar-section ul li .post-date {
+            font-size: 12px;
+            color: #777;
+            display: block;
+        }
+        
+        .category-count, .tag-count {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .blog-search {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .blog-search input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .blog-search button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .blog-search button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        /* ページネーション */
+        .blog-pagination {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        
+        .pagination-link {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--white);
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 30px;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .pagination-link:hover {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+        
+        footer {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 40px 20px 20px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .footer-section {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+        
+        .footer-section ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .footer-section ul li a:hover {
+            text-decoration: underline;
+        }
+        
+        .copyright {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            font-size: 12px;
+        }
+        
+        /* タブレット向けスタイル */
+        @media (min-width: 600px) {
+            .blog-container {
+                grid-template-columns: 2fr 1fr;
+                gap: 30px;
+            }
+            
+            .blog-main {
+                order: 1;
+            }
+            
+            .blog-sidebar {
+                order: 2;
+            }
+            
+            .blog-related-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .footer-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                text-align: left;
+            }
+            
+            .footer-section {
+                flex: 1;
+                min-width: 200px;
+                text-align: left;
+                padding-right: 15px;
+            }
+        }
+        
+        /* デスクトップ向けスタイル */
+        @media (min-width: 992px) {
+            .header-container {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 15px;
+            }
+            
+            .logo {
+                margin-bottom: 0;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+            
+            .logo img {
+                height: 50px;
+            }
+            
+            .menu-toggle {
+                display: none;
+            }
+            
+            nav {
+                max-height: none;
+                width: auto;
+            }
+            
+            nav ul {
+                flex-direction: row;
+            }
+            
+            nav ul li {
+                margin: 0 0 0 20px;
+                text-align: left;
+            }
+            
+            nav ul li a {
+                padding: 0;
+            }
+            
+            .blog-related-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Analyticsコード（取得後に置き換え） -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <img src="/api/placeholder/50/50" alt="みのる歯科ロゴ">
+                <h1>みのる歯科</h1>
+            </div>
+            <div class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <nav id="navigation">
+                <ul>
+                    <li><a href="index.html#about">医院紹介</a></li>
+                    <li><a href="index.html#info">診療案内</a></li>
+                    <li><a href="index.html#services">診療内容</a></li>
+                    <li><a href="blog.html">ブログ</a></li>
+                    <li><a href="index.html#contact">アクセス</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="blog-detail">
+        <div class="blog-container">
+            <div class="blog-main">
+                <div class="blog-detail-header">
+                    <h2>定期検診の重要性について</h2>
+                    <div class="blog-detail-meta">
+                        <span>2025年3月15日</span>
+                        <span>投稿者: 斉藤 稔</span>
+                    </div>
+                    <div class="blog-post-tags">
+                        <span class="blog-post-tag">予防歯科</span>
+                        <span class="blog-post-tag">定期検診</span>
+                    </div>
+                </div>
+                
+                <div class="blog-detail-image">
+                    <img src="/api/placeholder/800/400" alt="定期検診の重要性">
+                </div>
+                
+                <div class="blog-detail-content">
+                    <p>歯の健康を維持するには定期的な検診が欠かせません。むし歯や歯周病は初期段階では自覚症状がほとんどないため、痛みを感じた時にはすでに進行していることがほとんどです。定期検診では、専門家が早期発見・早期治療を行うことができます。</p>
+                    
+                    <h3>定期検診のメリット</h3>
+                    <p>定期的に歯科検診を受けることで、以下のようなメリットがあります。</p>
+                    <ul>
+                        <li>むし歯・歯周病の早期発見・早期治療が可能になる</li>
+                        <li>重症化を防ぎ、治療費や治療期間を抑えることができる</li>
+                        <li>専門的なクリーニングで歯の着色や歯石を除去できる</li>
+                        <li>正しい歯磨き方法など、予防のアドバイスを受けられる</li>
+                        <li>全身疾患（糖尿病、心疾患など）のリスク低減にもつながる</li>
+                    </ul>
+                    
+                    <h3>検診の頻度はどのくらいがよいか</h3>
+                    <p>一般的には、3〜6ヶ月に1回の検診をおすすめしています。ただし、むし歯や歯周病のリスク、過去の治療状況、年齢などによって個人差があります。当院では初回の検診時に、患者様一人ひとりに最適な検診間隔をご提案しています。</p>
+                    
+                    <h4>リスクに応じた検診間隔の目安</h4>
+                    <ul>
+                        <li><strong>高リスク（過去に多数の虫歯、重度の歯周病がある方）</strong>：2〜3ヶ月に1回</li>
+                        <li><strong>中リスク（一般的な方）</strong>：3〜4ヶ月に1回</li>
+                        <li><strong>低リスク（長期間虫歯がなく、歯周病もない方）</strong>：6ヶ月に1回</li>
+                    </ul>
+                    
+                    <h3>定期検診で行うこと</h3>
+                    <p>当院での定期検診では、以下のような検査・処置を行っています。</p>
+                    <ol>
+                        <li><strong>口腔内診査</strong>：むし歯、歯周病、口腔がんなどのチェック</li>
+                        <li><strong>歯周ポケット測定</strong>：歯周病の進行度を確認</li>
+                        <li><strong>プラークチェック</strong>：歯垢の付着状況を確認</li>
+                        <li><strong>PMTC（専門的機械的歯面清掃）</strong>：プロによる徹底的な歯のクリーニング</li>
+                        <li><strong>フッ素塗布</strong>：歯質の強化と再石灰化の促進</li>
+                        <li><strong>ブラッシング指導</strong>：正しい歯磨き方法のアドバイス</li>
+                        <li><strong>食事指導</strong>：歯に優しい食習慣のアドバイス</li>
+                    </ol>
+                    
+                    <h3>定期検診を受けにくい理由とその解決法</h3>
+                    <p>「忙しくて時間がない」「症状がないから大丈夫」「歯医者が怖い」といった理由で、定期検診をためらう方も多いでしょう。しかし、小さな問題を早期に発見することで、結果的に治療にかかる時間や費用、痛みを大幅に減らすことができます。</p>
+                    
+                    <p>当院では、平日夜間の診療や土曜診療を行っているほか、痛みの少ない治療を心がけています。また、予約システムでスムーズな受診が可能です。どうぞお気軽にご相談ください。</p>
+                    
+                    <blockquote>
+                        予防は最良の治療です。定期的なメンテナンスで、一生涯、自分の歯で食事を楽しめる健康な口腔環境を維持しましょう。
+                    </blockquote>
+                    
+                    <p>次回のブログでは、「効果的な歯磨きのコツと注意点」についてご紹介する予定です。どうぞお楽しみに。</p>
+                </div>
+                
+                <div class="blog-share">
+                    <a href="#" class="twitter">T</a>
+                    <a href="#" class="facebook">F</a>
+                    <a href="#" class="line">L</a>
+                </div>
+                
+                <div class="blog-author">
+                    <div class="blog-author-avatar">
+                        <img src="/api/placeholder/100/100" alt="斉藤 稔">
+                    </div>
+                    <div class="blog-author-info">
+                        <h4>斉藤 稔（院長）</h4>
+                        <p>昭和医科大学卒業。一般歯科・審美歯科・口腔外科を専門とし、痛みの少ない治療と予防歯科に力を入れています。日本歯科医師会、全身咬合学会、オーリング学会所属。</p>
+                    </div>
+                </div>
+                
+                <div class="blog-related-posts">
+                    <h3>関連記事</h3>
+                    <div class="blog-related-grid">
+                        <a href="#" class="blog-related-item">
+                            <div class="blog-related-image">
+                                <img src="/api/placeholder/100/100" alt="正しい歯磨きの方法">
+                            </div>
+                            <div class="blog-related-content">
+                                <h4>正しい歯磨きの方法と注意点</h4>
+                                <span class="post-date">2025年2月20日</span>
+                            </div>
+                        </a>
+                        <a href="#" class="blog-related-item">
+                            <div class="blog-related-image">
+                                <img src="/api/placeholder/100/100" alt="歯周病と全身疾患の関係">
+                            </div>
+                            <div class="blog-related-content">
+                                <h4>歯周病と全身疾患の関係</h4>
+                                <span class="post-date">2024年12月5日</span>
+                            </div>
+                        </a>
+                        <a href="#" class="blog-related-item">
+                            <div class="blog-related-image">
+                                <img src="/api/placeholder/100/100" alt="フッ素の効果と正しい使い方">
+                            </div>
+                            <div class="blog-related-content">
+                                <h4>フッ素の効果と正しい使い方</h4>
+                                <span class="post-date">2024年9月8日</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="blog-pagination">
+                    <a href="#" class="pagination-link">← 前の記事</a>
+                    <a href="blog.html" class="pagination-link">記事一覧へ戻る</a>
+                    <a href="#" class="pagination-link">次の記事 →</a>
+                </div>
+            </div>
+            
+            <div class="blog-sidebar">
+                <!-- 検索ボックス -->
+                <div class="blog-sidebar-section">
+                    <h3>検索</h3>
+                    <div class="blog-search">
+                        <input type="text" placeholder="キーワードを入力">
+                        <button type="submit">検索</button>
+                    </div>
+                </div>
+                
+                <!-- 最新記事 -->
+                <div class="blog-sidebar-section">
+                    <h3>最新記事</h3>
+                    <ul>
+                        <li>
+                            <a href="#">定期検診の重要性について</a>
+                            <span class="post-date">2025年3月15日</span>
+                        </li>
+                        <li>
+                            <a href="#">正しい歯磨きの方法と注意点</a>
+                            <span class="post-date">2025年2月20日</span>
+                        </li>
+                        <li>
+                            <a href="#">お子様の歯を守るために知っておきたいこと</a>
+                            <span class="post-date">2025年1月10日</span>
+                        </li>
+                        <li>
+                            <a href="#">歯周病と全身疾患の関係</a>
+                            <span class="post-date">2024年12月5日</span>
+                        </li>
+                        <li>
+                            <a href="#">歯の着色を防ぐ食べ物と習慣</a>
+                            <span class="post-date">2024年11月22日</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- カテゴリー -->
+                <div class="blog-sidebar-section">
+                    <h3>カテゴリー</h3>
+                    <ul>
+                        <li><a href="#">予防歯科 <span class="category-count">8</span></a></li>
+                        <li><a href="#">小児歯科 <span class="category-count">5</span></a></li>
+                        <li><a href="#">審美歯科 <span class="category-count">4</span></a></li>
+                        <li><a href="#">口腔外科 <span class="category-count">3</span></a></li>
+                        <li><a href="#">歯周病 <span class="category-count">6</span></a></li>
+                        <li><a href="#">ホワイトニング <span class="category-count">2</span></a></li>
+                        <li><a href="#">院長ブログ <span class="category-count">7</span></a></li>
+                    </ul>
+                </div>
+                
+                <!-- クリニック情報 -->
+                <div class="blog-sidebar-section">
+                    <h3>クリニック情報</h3>
+                    <p>みのる歯科</p>
+                    <p>〒355-0004 埼玉県 東松山市 沢口町 31-1</p>
+                    <p>TEL: <a href="tel:0493-24-9484">0493-24-9484</a></p>
+                    <a href="index.html#contact" class="cta-button" style="margin-top: 15px; width: 100%;">ご予約・お問い合わせ</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>みのる歯科</h3>
+                <p>〒355-0004</p>
+                <p>埼玉県 東松山市 沢口町 31-1</p>
+                <p>TEL: <a href="tel:0493-24-9484">0493-24-9484</a></p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>診療時間</h3>
+                <p>平日: 9:00〜12:00, 15:00〜18:30</p>
+                <p>土曜: 9:00〜12:00, 15:00〜18:30</p>
+                <p>休診日: 木曜・日曜・祝日</p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>リンク</h3>
+                <ul>
+                    <li><a href="index.html#about">医院紹介</a></li>
+                    <li><a href="index.html#info">診療案内</a></li>
+                    <li><a href="index.html#services">診療内容</a></li>
+                    <li><a href="blog.html">ブログ</a></li>
+                    <li><a href="index.html#contact">アクセス</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="copyright">
+            <p>&copy; 2025 みのる歯科 All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ハンバーガーメニュー用JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const navigation = document.getElementById('navigation');
+            
+            menuToggle.addEventListener('click', function() {
+                navigation.classList.toggle('active');
+                
+                // アクセシビリティのための属性追加
+                const expanded = navigation.classList.contains('active');
+                menuToggle.setAttribute('aria-expanded', expanded);
+            });
+            
+            // ナビゲーションリンクをクリックしたらメニューを閉じる
+            const navLinks = document.querySelectorAll('nav ul li a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    navigation.classList.remove('active');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                });
+            });
+            
+            // 初期状態の設定
+            menuToggle.setAttribute('aria-expanded', 'false');
+            menuToggle.setAttribute('aria-label', 'メニューを開く');
+            
+            // スクロール時のヘッダー表示制御
+            let lastScrollTop = 0;
+            const header = document.querySelector('header');
+            
+            window.addEventListener('scroll', function() {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop > lastScrollTop && scrollTop > 100) {
+                    // 下にスクロール時
+                    header.style.transform = 'translateY(-100%)';
+                } else {
+                    // 上にスクロール時
+                    header.style.transform = 'translateY(0)';
+                }
+                
+                lastScrollTop = scrollTop;
+            });
+        });
+    </script>

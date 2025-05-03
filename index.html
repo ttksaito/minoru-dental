@@ -29,7 +29,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。沢口町にあり地域の皆様の健康をサポート。">
-    <meta name="keywords" content="歯医者,歯科,東松山市,沢口町,みのる歯科,虫歯治療,歯周病,予防歯科,小児歯科,矯正歯科,口腔外科,審美歯科,ホワイトニング,埼玉県">
+    <meta name="keywords" content="歯医者,歯科,東松山市,沢口町,みのる歯科,虫歯治療,歯周病,予防歯科,小児歯科,矯正歯科,口腔外科,審美歯科,ホワイトニング,埼玉県,ブログ">
     <title>みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療</title>
     <style>
         :root {
@@ -484,6 +484,184 @@
             margin-bottom: 15px;
         }
         
+        /* ブログプレビュー部分のスタイル */
+        .blog-preview {
+            padding: 50px 20px;
+            background-color: var(--light-gray);
+        }
+        
+        .blog-preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .blog-preview-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .blog-preview-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .blog-preview-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .blog-preview-image {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+        }
+        
+        .blog-preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        
+        .blog-preview-card:hover .blog-preview-image img {
+            transform: scale(1.05);
+        }
+        
+        .blog-preview-content {
+            padding: 15px;
+        }
+        
+        .blog-preview-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 8px;
+        }
+        
+        .blog-preview-content h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+        
+        .blog-preview-content p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .blog-more {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        /* ブログページのためのスタイルも追加 */
+        .blog {
+            background-color: var(--light-gray);
+        }
+        
+        .blog-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        
+        .blog-main {
+            order: 2;
+        }
+        
+        .blog-sidebar {
+            order: 1;
+        }
+        
+        .blog-post {
+            background-color: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            transition: transform 0.3s;
+        }
+        
+        .blog-post:hover {
+            transform: translateY(-5px);
+        }
+        
+        .blog-post-image {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        .blog-post-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        
+        .blog-post:hover .blog-post-image img {
+            transform: scale(1.05);
+        }
+        
+        .blog-post-content {
+            padding: 20px;
+        }
+        
+        .blog-post-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+        
+        .blog-post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .blog-post-tag {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .blog-post h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .blog-post p {
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .read-more {
+            display: inline-block;
+            color: var(--primary-color);
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        
+        .read-more:hover {
+            color: var(--accent-color);
+        }
+        
         footer {
             background-color: var(--accent-color);
             color: white;
@@ -560,6 +738,10 @@
                 min-width: 200px;
                 text-align: left;
                 padding-right: 15px;
+            }
+            
+            .blog-preview-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
         
@@ -663,6 +845,10 @@
                 height: 2px;
                 background-color: var(--primary-color);
             }
+            
+            .blog-preview-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
@@ -691,6 +877,7 @@
                     <li><a href="#about">医院紹介</a></li>
                     <li><a href="#info">診療案内</a></li>
                     <li><a href="#services">診療内容</a></li>
+                    <li><a href="blog.html">ブログ</a></li>
                     <li><a href="#contact">アクセス</a></li>
                 </ul>
             </nav>
@@ -910,6 +1097,64 @@
         </div>
     </section>
 
+    <!-- ブログプレビュー部分を追加 -->
+    <section class="blog-preview">
+        <div class="blog-preview-container">
+            <div class="section-title">
+                <h2>歯科ブログ</h2>
+                <p>お口の健康に関する情報や当院からのお知らせ</p>
+            </div>
+            
+            <div class="blog-preview-grid">
+                <div class="blog-preview-card">
+                    <div class="blog-preview-image">
+                        <img src="/api/placeholder/400/200" alt="定期検診の重要性">
+                    </div>
+                    <div class="blog-preview-content">
+                        <div class="blog-preview-meta">
+                            <span>2025年3月15日</span>
+                        </div>
+                        <h3>定期検診の重要性について</h3>
+                        <p>歯の健康を維持するには定期的な検診が欠かせません。むし歯や歯周病は初期段階では自覚症状がほとんどないため...</p>
+                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
+                    </div>
+                </div>
+                
+                <div class="blog-preview-card">
+                    <div class="blog-preview-image">
+                        <img src="/api/placeholder/400/200" alt="正しい歯磨きの方法">
+                    </div>
+                    <div class="blog-preview-content">
+                        <div class="blog-preview-meta">
+                            <span>2025年2月20日</span>
+                        </div>
+                        <h3>正しい歯磨きの方法と注意点</h3>
+                        <p>正しい歯磨きは、むし歯や歯周病を予防するための基本です。しかし、多くの方が適切な方法で磨けていないのが現状です...</p>
+                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
+                    </div>
+                </div>
+                
+                <div class="blog-preview-card">
+                    <div class="blog-preview-image">
+                        <img src="/api/placeholder/400/200" alt="お子様の歯の健康">
+                    </div>
+                    <div class="blog-preview-content">
+                        <div class="blog-preview-meta">
+                            <span>2025年1月10日</span>
+                        </div>
+                        <h3>お子様の歯を守るために</h3>
+                        <p>子どもの歯の健康は将来の健康な歯を育むための土台となります。乳歯は「いずれ生え変わるから」と軽視されがちですが...</p>
+                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="blog-more">
+                <a href="blog.html" class="cta-button">ブログ一覧を見る</a>
+            </div>
+        </div>
+    </section>
+
     <section id="contact" class="contact">
         <div class="section-title">
             <h2>ご予約・お問い合わせ</h2>
@@ -957,6 +1202,7 @@
                     <li><a href="#about">医院紹介</a></li>
                     <li><a href="#info">診療案内</a></li>
                     <li><a href="#services">診療内容</a></li>
+                    <li><a href="blog.html">ブログ</a></li>
                     <li><a href="#contact">アクセス</a></li>
                 </ul>
             </div>
