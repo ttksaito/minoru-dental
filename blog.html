@@ -563,6 +563,281 @@
       gtag('js', new Date());
       gtag('config', 'G-XXXXXXXXXX');
     </script>
+    
+    <!-- ブログ記事データを取得・表示するためのスクリプト -->
+    <script>
+      // ブログ記事のメタデータをJSONファイルから読み込む
+      let blogPosts = [];
+      
+      // 現在のカテゴリーフィルター状態
+      let currentCategory = '';
+      
+      // ページ読み込み時に記事一覧を表示
+      document.addEventListener('DOMContentLoaded', function() {
+        // 記事データを読み込む
+        loadBlogPosts();
+      });
+      
+      // 記事データを読み込み、初期化処理を行う
+      function loadBlogPosts() {
+        fetch('blog-posts.json')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('JSONファイルの読み込みに失敗しました');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // 記事データを保存
+            blogPosts = data.posts;
+            
+            // 記事一覧を表示
+            displayBlogPosts();
+            
+            // 最新記事リストを生成
+            displayLatestPosts();
+            
+            // カテゴリーリストを生成
+            displayCategories();
+            
+            // タグクラウドを生成
+            displayTagsCloud();
+            
+            // カテゴリーフィルターのイベントリスナーを設定
+            setupCategoryFilters();
+          })
+          .catch(error => {
+            console.error('記事データの読み込みエラー:', error);
+            document.querySelector('.blog-main').innerHTML = `
+              <div style="text-align: center; padding: 50px;">
+                <h3>記事データの読み込みに失敗しました</h3>
+                <p>ページを再読み込みしてください。</p>
+              </div>
+            `;
+          });
+      }
+      
+      // ブログ記事一覧を表示
+      function displayBlogPosts(category = '') {
+        const blogMain = document.querySelector('.blog-main');
+        const paginationContainer = document.querySelector('.blog-pagination');
+        
+        // ページネーションの前の要素を全て削除（記事コンテナ）
+        while (blogMain.firstChild && blogMain.firstChild !== paginationContainer) {
+          blogMain.removeChild(blogMain.firstChild);
+        }
+        
+        // フィルター用の記事一覧
+        const filteredPosts = category ? 
+          blogPosts.filter(post => post.tags.includes(category)) : 
+          blogPosts;
+        
+        // カテゴリータイトルの表示/非表示
+        let categoryTitle = document.getElementById('category-title');
+        if (category) {
+          if (!categoryTitle) {
+            categoryTitle = document.createElement('h3');
+            categoryTitle.id = 'category-title';
+            categoryTitle.style.textAlign = 'center';
+            categoryTitle.style.margin = '20px 0';
+            categoryTitle.style.color = 'var(--primary-color)';
+            blogMain.insertBefore(categoryTitle, blogMain.firstChild);
+          }
+          categoryTitle.textContent = category + 'の記事';
+          categoryTitle.style.display = 'block';
+        } else if (categoryTitle) {
+          categoryTitle.style.display = 'none';
+        }
+        
+        // 「すべて表示」ボタンの表示/非表示
+        let resetButton = document.getElementById('reset-filter');
+        if (category) {
+          if (!resetButton) {
+            resetButton = document.createElement('button');
+            resetButton.id = 'reset-filter';
+            resetButton.textContent = 'すべての記事を表示';
+            resetButton.style.display = 'block';
+            resetButton.style.margin = '20px auto';
+            resetButton.style.padding = '8px 15px';
+            resetButton.style.backgroundColor = 'var(--secondary-color)';
+            resetButton.style.color = 'var(--primary-color)';
+            resetButton.style.border = 'none';
+            resetButton.style.borderRadius = '5px';
+            resetButton.style.cursor = 'pointer';
+            resetButton.addEventListener('click', function() {
+              currentCategory = '';
+              displayBlogPosts();
+            });
+            
+            // ページネーションの前に挿入
+            blogMain.insertBefore(resetButton, paginationContainer);
+          } else {
+            resetButton.style.display = 'block';
+          }
+        } else if (resetButton) {
+          resetButton.style.display = 'none';
+        }
+        
+        // 記事一覧を生成
+        filteredPosts.forEach(post => {
+          const postElement = createBlogPostElement(post);
+          // ページネーションの前に挿入
+          blogMain.insertBefore(postElement, paginationContainer);
+        });
+      }
+      
+      // 個別の記事要素を作成
+      function createBlogPostElement(post) {
+        const postDiv = document.createElement('div');
+        postDiv.className = 'blog-post';
+        
+        const tagsHtml = post.tags.map(tag => 
+          `<span class="blog-post-tag">${tag}</span>`
+        ).join('');
+        
+        postDiv.innerHTML = `
+          <div class="blog-post-image">
+            <img src="${post.image}" alt="${post.title}">
+          </div>
+          <div class="blog-post-content">
+            <div class="blog-post-meta">
+              <span>${post.date}</span>
+              <span>投稿者: ${post.author}</span>
+            </div>
+            <div class="blog-post-tags">
+              ${tagsHtml}
+            </div>
+            <h3>${post.title}</h3>
+            <p>${post.summary}</p>
+            <a href="blog/${post.id}/" class="read-more">続きを読む →</a>
+          </div>
+        `;
+        
+        return postDiv;
+      }
+      
+      // カテゴリーフィルターのイベントリスナーを設定
+      function setupCategoryFilters() {
+        document.querySelectorAll('.blog-sidebar-section a[href^="#category-"]').forEach(link => {
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const categoryId = this.getAttribute('href').replace('#category-', '');
+            currentCategory = categoryId;
+            displayBlogPosts(categoryId);
+            
+            // ページトップへスクロール
+            window.scrollTo({
+              top: document.querySelector('.blog').offsetTop - 100,
+              behavior: 'smooth'
+            });
+          });
+        });
+      }
+      
+      // サイドバーの最新記事を生成
+      function displayLatestPosts() {
+        const latestPostsList = document.getElementById('latest-posts-list');
+        if (!latestPostsList) return;
+        
+        // 一旦中身をクリア
+        latestPostsList.innerHTML = '';
+        
+        // 日付順に並び替えた記事一覧から最新5件を取得
+        const sortedPosts = [...blogPosts].sort((a, b) => {
+          // 日付文字列を比較（新しい順）
+          return b.date.localeCompare(a.date);
+        });
+        
+        // 最新5件を表示
+        sortedPosts.slice(0, 5).forEach(post => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <a href="blog/${post.id}/">${post.title}</a>
+            <span class="post-date">${post.date}</span>
+          `;
+          latestPostsList.appendChild(li);
+        });
+      }
+      
+      // カテゴリーリストを生成
+      function displayCategories() {
+        const categoriesList = document.getElementById('categories-list');
+        if (!categoriesList) return;
+        
+        // 一旦中身をクリア
+        categoriesList.innerHTML = '';
+        
+        // 全記事からカテゴリー（タグ）を収集し、カウント
+        const categoryCount = {};
+        blogPosts.forEach(post => {
+          post.tags.forEach(tag => {
+            if (categoryCount[tag]) {
+              categoryCount[tag]++;
+            } else {
+              categoryCount[tag] = 1;
+            }
+          });
+        });
+        
+        // カテゴリーをアルファベット順にソート
+        const sortedCategories = Object.keys(categoryCount).sort();
+        
+        // カテゴリーリストを生成
+        sortedCategories.forEach(category => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <a href="#category-${category}" onclick="filterByCategory('${category}'); return false;">
+              ${category} <span class="category-count">${categoryCount[category]}</span>
+            </a>
+          `;
+          categoriesList.appendChild(li);
+        });
+      }
+      
+      // タグクラウドを生成
+      function displayTagsCloud() {
+        const tagsCloud = document.getElementById('tags-cloud');
+        if (!tagsCloud) return;
+        
+        // 一旦中身をクリア
+        tagsCloud.innerHTML = '';
+        
+        // 全記事からタグを収集（重複なし）
+        const allTags = new Set();
+        blogPosts.forEach(post => {
+          post.tags.forEach(tag => {
+            allTags.add(tag);
+          });
+        });
+        
+        // タグをアルファベット順にソート
+        const sortedTags = Array.from(allTags).sort();
+        
+        // タグクラウドを生成
+        sortedTags.forEach(tag => {
+          const tagSpan = document.createElement('span');
+          tagSpan.className = 'blog-post-tag';
+          tagSpan.textContent = tag;
+          tagSpan.style.cursor = 'pointer';
+          tagSpan.addEventListener('click', function() {
+            filterByCategory(tag);
+          });
+          tagsCloud.appendChild(tagSpan);
+        });
+      }
+      
+      // 既存のfilterByCategory関数をJavaScriptバージョンに修正
+      window.filterByCategory = function(category) {
+        currentCategory = category;
+        displayBlogPosts(category);
+        
+        // ページトップへスクロール
+        window.scrollTo({
+          top: document.querySelector('.blog').offsetTop - 100,
+          behavior: 'smooth'
+        });
+      };
+    </script>
     <header>
         <div class="header-container">
             <div class="logo">
@@ -594,101 +869,7 @@
     <section class="blog">
         <div class="blog-container">
             <div class="blog-main">
-                <!-- ブログ記事一覧 -->
-                <div class="blog-post">
-                    <div class="blog-post-image">
-                        <img src="/api/placeholder/800/400" alt="定期検診の重要性">
-                    </div>
-                    <div class="blog-post-content">
-                        <div class="blog-post-meta">
-                            <span>2025年3月15日</span>
-                            <span>投稿者: 斉藤 稔</span>
-                        </div>
-                        <div class="blog-post-tags">
-                            <span class="blog-post-tag">予防歯科</span>
-                            <span class="blog-post-tag">定期検診</span>
-                        </div>
-                        <h3>定期検診の重要性について</h3>
-                        <p>歯の健康を維持するには定期的な検診が欠かせません。むし歯や歯周病は初期段階では自覚症状がほとんどないため、痛みを感じた時にはすでに進行していることがほとんどです。定期検診では、専門家が早期発見・早期治療を行うことができます。</p>
-                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
-                    </div>
-                </div>
-                
-                <div class="blog-post">
-                    <div class="blog-post-image">
-                        <img src="/api/placeholder/800/400" alt="正しい歯磨きの方法">
-                    </div>
-                    <div class="blog-post-content">
-                        <div class="blog-post-meta">
-                            <span>2025年2月20日</span>
-                            <span>投稿者: 斉藤 稔</span>
-                        </div>
-                        <div class="blog-post-tags">
-                            <span class="blog-post-tag">予防歯科</span>
-                            <span class="blog-post-tag">歯磨き</span>
-                        </div>
-                        <h3>正しい歯磨きの方法と注意点</h3>
-                        <p>正しい歯磨きは、むし歯や歯周病を予防するための基本です。しかし、多くの方が適切な方法で磨けていないのが現状です。今回は、効果的な歯磨きのコツと、よくある間違いについて解説します。</p>
-                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
-                    </div>
-                </div>
-                
-                <div class="blog-post">
-                    <div class="blog-post-image">
-                        <img src="/api/placeholder/800/400" alt="お子様の歯の健康">
-                    </div>
-                    <div class="blog-post-content">
-                        <div class="blog-post-meta">
-                            <span>2025年1月10日</span>
-                            <span>投稿者: 斉藤 稔</span>
-                        </div>
-                        <div class="blog-post-tags">
-                            <span class="blog-post-tag">小児歯科</span>
-                            <span class="blog-post-tag">虫歯予防</span>
-                        </div>
-                        <h3>お子様の歯を守るために知っておきたいこと</h3>
-                        <p>子どもの歯の健康は将来の健康な歯を育むための土台となります。乳歯は「いずれ生え変わるから」と軽視されがちですが、実は大変重要な役割を持っています。今回は、お子様の歯の発達と、家庭でできる効果的なケア方法についてご紹介します。</p>
-                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
-                    </div>
-                </div>
-                
-                <div class="blog-post">
-                    <div class="blog-post-image">
-                        <img src="/api/placeholder/800/400" alt="歯周病と全身疾患">
-                    </div>
-                    <div class="blog-post-content">
-                        <div class="blog-post-meta">
-                            <span>2024年12月5日</span>
-                            <span>投稿者: 斉藤 稔</span>
-                        </div>
-                        <div class="blog-post-tags">
-                            <span class="blog-post-tag">歯周病</span>
-                            <span class="blog-post-tag">全身疾患</span>
-                        </div>
-                        <h3>歯周病と全身疾患の関係</h3>
-                        <p>歯周病は単なる口の中の病気ではありません。近年の研究で、歯周病が糖尿病、心疾患、脳卒中などの様々な全身疾患と関連していることがわかってきました。今回は、歯周病が全身に及ぼす影響とその予防法について解説します。</p>
-                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
-                    </div>
-                </div>
-                
-                <div class="blog-post">
-                    <div class="blog-post-image">
-                        <img src="/api/placeholder/800/400" alt="歯の着色を防ぐ">
-                    </div>
-                    <div class="blog-post-content">
-                        <div class="blog-post-meta">
-                            <span>2024年11月22日</span>
-                            <span>投稿者: 斉藤 稔</span>
-                        </div>
-                        <div class="blog-post-tags">
-                            <span class="blog-post-tag">審美歯科</span>
-                            <span class="blog-post-tag">ホワイトニング</span>
-                        </div>
-                        <h3>歯の着色を防ぐ食べ物と習慣</h3>
-                        <p>白い歯は清潔感と健康的な印象を与えます。しかし、日常的に摂取する食べ物や飲み物、また生活習慣によって歯は少しずつ着色していきます。今回は、歯の着色の原因と、日常生活で実践できる予防法についてご紹介します。</p>
-                        <a href="blog-detail.html" class="read-more">続きを読む →</a>
-                    </div>
-                </div>
+                <!-- ブログ記事一覧はJavaScriptで自動生成されます -->
                 
                 <!-- ページネーション -->
                 <div class="blog-pagination">
@@ -709,58 +890,24 @@
                 <!-- 最新記事 -->
                 <div class="blog-sidebar-section">
                     <h3>最新記事</h3>
-                    <ul>
-                        <li>
-                            <a href="blog-detail.html">定期検診の重要性について</a>
-                            <span class="post-date">2025年3月15日</span>
-                        </li>
-                        <li>
-                            <a href="blog-detail.html">正しい歯磨きの方法と注意点</a>
-                            <span class="post-date">2025年2月20日</span>
-                        </li>
-                        <li>
-                            <a href="blog-detail.html">お子様の歯を守るために知っておきたいこと</a>
-                            <span class="post-date">2025年1月10日</span>
-                        </li>
-                        <li>
-                            <a href="blog-detail.html">歯周病と全身疾患の関係</a>
-                            <span class="post-date">2024年12月5日</span>
-                        </li>
-                        <li>
-                            <a href="blog-detail.html">歯の着色を防ぐ食べ物と習慣</a>
-                            <span class="post-date">2024年11月22日</span>
-                        </li>
+                    <ul id="latest-posts-list">
+                        <!-- JavaScriptで自動生成されます -->
                     </ul>
                 </div>
                 
                 <!-- カテゴリー -->
                 <div class="blog-sidebar-section">
                     <h3>カテゴリー</h3>
-                    <ul>
-                        <li><a href="#category-予防歯科" onclick="filterByCategory('予防歯科'); return false;">予防歯科 <span class="category-count">2</span></a></li>
-                        <li><a href="#category-小児歯科" onclick="filterByCategory('小児歯科'); return false;">小児歯科 <span class="category-count">1</span></a></li>
-                        <li><a href="#category-審美歯科" onclick="filterByCategory('審美歯科'); return false;">審美歯科 <span class="category-count">1</span></a></li>
-                        <li><a href="#category-歯周病" onclick="filterByCategory('歯周病'); return false;">歯周病 <span class="category-count">1</span></a></li>
-                        <li><a href="#category-ホワイトニング" onclick="filterByCategory('ホワイトニング'); return false;">ホワイトニング <span class="category-count">1</span></a></li>
+                    <ul id="categories-list">
+                        <!-- JavaScriptで自動生成されます -->
                     </ul>
                 </div>
                 
                 <!-- タグクラウド -->
                 <div class="blog-sidebar-section">
                     <h3>タグ</h3>
-                    <div class="blog-post-tags">
-                        <span class="blog-post-tag">予防歯科</span>
-                        <span class="blog-post-tag">定期検診</span>
-                        <span class="blog-post-tag">歯磨き</span>
-                        <span class="blog-post-tag">小児歯科</span>
-                        <span class="blog-post-tag">虫歯予防</span>
-                        <span class="blog-post-tag">歯周病</span>
-                        <span class="blog-post-tag">ホワイトニング</span>
-                        <span class="blog-post-tag">インプラント</span>
-                        <span class="blog-post-tag">矯正歯科</span>
-                        <span class="blog-post-tag">審美歯科</span>
-                        <span class="blog-post-tag">口腔ケア</span>
-                        <span class="blog-post-tag">歯科検診</span>
+                    <div class="blog-post-tags" id="tags-cloud">
+                        <!-- JavaScriptで自動生成されます -->
                     </div>
                 </div>
                 
