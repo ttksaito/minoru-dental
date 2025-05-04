@@ -693,9 +693,6 @@
                 <!-- ページネーション -->
                 <div class="blog-pagination">
                     <a href="#" class="active">1</a>
-                    <a href="#">2</a>
-                    <a href="#">3</a>
-                    <a href="#">→</a>
                 </div>
             </div>
             
@@ -740,13 +737,11 @@
                 <div class="blog-sidebar-section">
                     <h3>カテゴリー</h3>
                     <ul>
-                        <li><a href="#">予防歯科 <span class="category-count">8</span></a></li>
-                        <li><a href="#">小児歯科 <span class="category-count">5</span></a></li>
-                        <li><a href="#">審美歯科 <span class="category-count">4</span></a></li>
-                        <li><a href="#">口腔外科 <span class="category-count">3</span></a></li>
-                        <li><a href="#">歯周病 <span class="category-count">6</span></a></li>
-                        <li><a href="#">ホワイトニング <span class="category-count">2</span></a></li>
-                        <li><a href="#">院長ブログ <span class="category-count">7</span></a></li>
+                        <li><a href="#category-予防歯科" onclick="filterByCategory('予防歯科'); return false;">予防歯科 <span class="category-count">2</span></a></li>
+                        <li><a href="#category-小児歯科" onclick="filterByCategory('小児歯科'); return false;">小児歯科 <span class="category-count">1</span></a></li>
+                        <li><a href="#category-審美歯科" onclick="filterByCategory('審美歯科'); return false;">審美歯科 <span class="category-count">1</span></a></li>
+                        <li><a href="#category-歯周病" onclick="filterByCategory('歯周病'); return false;">歯周病 <span class="category-count">1</span></a></li>
+                        <li><a href="#category-ホワイトニング" onclick="filterByCategory('ホワイトニング'); return false;">ホワイトニング <span class="category-count">1</span></a></li>
                     </ul>
                 </div>
                 
@@ -858,6 +853,88 @@
                 
                 lastScrollTop = scrollTop;
             });
+            
+            // カテゴリーフィルター機能
+            window.filterByCategory = function(category) {
+                const blogPosts = document.querySelectorAll('.blog-post');
+                let hasVisiblePosts = false;
+                
+                blogPosts.forEach(post => {
+                    const tags = post.querySelectorAll('.blog-post-tag');
+                    let hasCategory = false;
+                    
+                    tags.forEach(tag => {
+                        if (tag.textContent.trim() === category) {
+                            hasCategory = true;
+                        }
+                    });
+                    
+                    if (hasCategory) {
+                        post.style.display = 'block';
+                        hasVisiblePosts = true;
+                    } else {
+                        post.style.display = 'none';
+                    }
+                });
+                
+                // カテゴリータイトルを表示
+                const blogSection = document.querySelector('.blog');
+                const categoryTitle = document.getElementById('category-title');
+                
+                if (!categoryTitle) {
+                    const title = document.createElement('h3');
+                    title.id = 'category-title';
+                    title.style.textAlign = 'center';
+                    title.style.margin = '20px 0';
+                    title.style.color = 'var(--primary-color)';
+                    blogSection.insertBefore(title, blogSection.firstChild);
+                }
+                
+                document.getElementById('category-title').textContent = category + 'の記事';
+                
+                // 「すべて表示」ボタンを追加
+                let resetButton = document.getElementById('reset-filter');
+                
+                if (!resetButton) {
+                    resetButton = document.createElement('button');
+                    resetButton.id = 'reset-filter';
+                    resetButton.textContent = 'すべての記事を表示';
+                    resetButton.style.display = 'block';
+                    resetButton.style.margin = '20px auto';
+                    resetButton.style.padding = '8px 15px';
+                    resetButton.style.backgroundColor = 'var(--secondary-color)';
+                    resetButton.style.color = 'var(--primary-color)';
+                    resetButton.style.border = 'none';
+                    resetButton.style.borderRadius = '5px';
+                    resetButton.style.cursor = 'pointer';
+                    
+                    resetButton.addEventListener('click', function() {
+                        // すべての記事を表示
+                        blogPosts.forEach(post => {
+                            post.style.display = 'block';
+                        });
+                        
+                        // カテゴリータイトルを削除
+                        const title = document.getElementById('category-title');
+                        if (title) {
+                            title.remove();
+                        }
+                        
+                        // リセットボタンを非表示
+                        this.style.display = 'none';
+                    });
+                    
+                    document.querySelector('.blog-main').insertBefore(resetButton, document.querySelector('.blog-pagination'));
+                } else {
+                    resetButton.style.display = 'block';
+                }
+                
+                // ページトップへスクロール
+                window.scrollTo({
+                    top: document.querySelector('.blog').offsetTop - 100,
+                    behavior: 'smooth'
+                });
+            };
         });
     </script>
 </body>
