@@ -1,0 +1,18 @@
+# みのる歯科 - robots.txt
+# 最終更新: 2025-07-20
+
+User-agent: *
+Allow: /
+
+# クロールを許可しないパス
+Disallow: /node_modules/
+Disallow: /_site/
+Disallow: /.git/
+Disallow: /.vercel/
+Disallow: /.claude/
+
+# Sitemap
+Sitemap: https://minoru-dental.vercel.app/sitemap.xml
+
+# クロール頻度の推奨設定
+Crawl-delay: 1
