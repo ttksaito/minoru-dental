@@ -100,7 +100,20 @@ npm run build
 
 ## デプロイ方法
 
-GitHub Pagesにデプロイする場合:
+### Vercelにデプロイする場合（推奨）:
+
+1. [Vercel](https://vercel.com)にログイン
+2. 「New Project」をクリック
+3. GitHubリポジトリをインポート
+4. プロジェクト設定:
+   - Framework Preset: `Other`
+   - Build Command: （空欄のまま）
+   - Output Directory: `.`
+5. 「Deploy」をクリック
+
+`vercel.json`の設定により、自動的に適切にデプロイされます。
+
+### 以前の方法（GitHub Pages）:
 
 ```bash
 # ビルド
