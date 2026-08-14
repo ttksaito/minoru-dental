@@ -16,3 +16,4 @@ node_modules/
 Thumbs.db
 **/.claude/settings.local.json
 DS_Store
+.vercel
