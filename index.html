@@ -373,8 +373,37 @@
             margin-bottom: 15px;
         }
         
-        .doctor-profile {
+        .doctor-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
             margin-top: 20px;
+        }
+
+        .doctor-photo {
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .doctor-photo img {
+            max-width: 320px;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .doctor-profile {
+            flex: 1;
+        }
+
+        /* タブレット以上で横並び */
+        @media (min-width: 600px) {
+            .doctor-section {
+                flex-direction: row;
+                align-items: center;
+                text-align: left;
+            }
         }
         
         .doctor-profile h4 {
@@ -1237,19 +1266,24 @@
                 <h3>院長挨拶</h3>
                 <p>当院では「痛みを抑えた優しい治療」をモットーに、みのる歯科院は平成元年に開業して以来、地域の皆さまに愛され続けています。小さなお子様からご高齢の方まで安心して通っていただける歯科医院を目指しています。</p>
                 <p>お口の健康は全身の健康にもつながります。特に噛み合わせを整えることで、肩こりや頭痛、姿勢の乱れといった全身の不調にもアプローチします。日々の丁寧なケアと定期的な検診で、いつまでも健康な歯を保ちましょう。何でもお気軽にご相談ください。</p>
-                
-                <div class="doctor-profile">
-                    <h4>院長プロフィール</h4>
-                    <ul>
-                        <li>氏名：斉藤 稔</li>
-                        <li>経歴：昭和医科大学</li>
-                        <li>専門：一般歯科、審美歯科、口腔外科</li>
-                        <li>所属学会：日本歯科医師会, 全身咬合学会, オーリング学会</li>
-                    </ul>
+
+                <div class="doctor-section">
+                    <div class="doctor-photo">
+                        <img src="image/院長.png" alt="みのる歯科 院長 斉藤 稔">
+                    </div>
+                    <div class="doctor-profile">
+                        <h4>院長プロフィール</h4>
+                        <ul>
+                            <li>氏名：斉藤 稔</li>
+                            <li>経歴：昭和医科大学</li>
+                            <li>専門：一般歯科、審美歯科、口腔外科</li>
+                            <li>所属学会：日本歯科医師会, 全身咬合学会, オーリング学会</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="about-image">
-                <img src="image/外観.png" alt="みのる歯科の外観 - 埼玉県東松山市沢口町にある歯科医院">
+                <img src="image/外観2.png" alt="みのる歯科の外観 - 埼玉県東松山市沢口町にある歯科医院">
             </div>
         </div>
     </section>
