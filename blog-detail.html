@@ -6,7 +6,7 @@
           "@context": "https://schema.org",
           "@type": "BlogPosting",
           "headline": "",
-          "image": "https://ttksaito.github.io/minoru-dental/image/blog-post1.jpg",
+          "image": "https://www.minoru-dental.jp/image/blog-post1.jpg",
           "datePublished": "",
           "dateModified": "",
           "author": {
@@ -18,7 +18,7 @@
             "name": "みのる歯科",
             "logo": {
               "@type": "ImageObject",
-              "url": "https://ttksaito.github.io/minoru-dental/image/logo.png"
+              "url": "https://www.minoru-dental.jp/image/logo.png"
             }
           },
           "description": ""
@@ -196,7 +196,7 @@
                     
                     postElement.innerHTML = `
                         <div class="blog-related-image">
-                            <img src="${post.image}" alt="${post.title}">
+                            <img src="${post.image}" alt="${post.title}" loading="lazy" decoding="async">
                         </div>
                         <div class="blog-related-content">
                             <h4>${post.title}</h4>

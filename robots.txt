@@ -12,7 +12,7 @@ Disallow: /.vercel/
 Disallow: /.claude/
 
 # Sitemap
-Sitemap: https://minoru-dental.vercel.app/sitemap.xml
+Sitemap: https://www.minoru-dental.jp/sitemap.xml
 
 # クロール頻度の推奨設定
 Crawl-delay: 1

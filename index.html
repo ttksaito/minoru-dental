@@ -6,7 +6,7 @@
           "@context": "https://schema.org",
           "@type": "Dentist",
           "name": "みのる歯科",
-          "image": "https://minoru-dental.vercel.app/image/外観.png",
+          "image": "https://www.minoru-dental.jp/image/外観.png",
           "address": {
             "@type": "PostalAddress",
             "streetAddress": "沢口町31-1",
@@ -15,7 +15,7 @@
             "postalCode": "355-0042",
             "addressCountry": "JP"
           },
-          "url": "https://minoru-dental.vercel.app/",
+          "url": "https://www.minoru-dental.jp/",
           "telephone": "0493-24-9080",
           "openingHours": [
             "Mo,Tu,We,Fr 09:30-13:00",
@@ -36,13 +36,13 @@
               "@type": "ListItem",
               "position": 1,
               "name": "ホーム",
-              "item": "https://minoru-dental.vercel.app/"
+              "item": "https://www.minoru-dental.jp/"
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": "医院案内",
-              "item": "https://minoru-dental.vercel.app/index-old.html"
+              "item": "https://www.minoru-dental.jp/#about"
             }
           ]
         }
@@ -105,22 +105,22 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://minoru-dental.vercel.app/">
+    <meta property="og:url" content="https://www.minoru-dental.jp/">
     <meta property="og:title" content="みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療">
     <meta property="og:description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。">
-    <meta property="og:image" content="https://minoru-dental.vercel.app/image/外観.png">
+    <meta property="og:image" content="https://www.minoru-dental.jp/image/外観.png">
     <meta property="og:locale" content="ja_JP">
     <meta property="og:site_name" content="みのる歯科">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://minoru-dental.vercel.app/">
+    <meta name="twitter:url" content="https://www.minoru-dental.jp/">
     <meta name="twitter:title" content="みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療">
     <meta name="twitter:description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。">
-    <meta name="twitter:image" content="https://minoru-dental.vercel.app/image/外観.png">
+    <meta name="twitter:image" content="https://www.minoru-dental.jp/image/外観.png">
 
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://minoru-dental.vercel.app/index-old.html">
+    <link rel="canonical" href="https://www.minoru-dental.jp/">
     <style>
         :root {
             --primary-color: #4caf50;
@@ -140,6 +140,23 @@
             font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
         }
         
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 110px; /* 固定ヘッダー分のオフセット */
+        }
+
+        @media (min-width: 992px) {
+            html {
+                scroll-padding-top: 90px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+        }
+
         body {
             color: var(--text-color);
             line-height: 1.6;
@@ -264,7 +281,7 @@
         }
         
         .hero {
-            background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('image/外観.png');
+            background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('image/外観.webp');
             background-size: cover;
             background-position: center;
             height: auto;
@@ -1222,8 +1239,8 @@
     <header>
         <div class="header-container">
             <div class="logo">
-                <img src="image/ヘッダーイラスト.png" alt="みのる歯科 東松山市沢口町の歯科医院" style="width: 50px; height: 50px; object-fit: contain;">
-                <img src="image/ヘッダーテキスト.png" alt="みのる歯科" style="height: 40px; margin-left: 10px;">
+                <img src="image/ヘッダーイラスト.webp" alt="みのる歯科 東松山市沢口町の歯科医院" width="50" height="50" style="width: 50px; height: 50px; object-fit: contain;">
+                <img src="image/ヘッダーテキスト.webp" alt="みのる歯科" style="height: 40px; margin-left: 10px;">
             </div>
             <div class="menu-toggle" id="menuToggle">
                 <span></span>
@@ -1269,7 +1286,7 @@
 
                 <div class="doctor-section">
                     <div class="doctor-photo">
-                        <img src="image/院長.png" alt="みのる歯科 院長 斉藤 稔">
+                        <img src="image/院長.webp" alt="みのる歯科 院長 斉藤 稔" loading="lazy" decoding="async">
                     </div>
                     <div class="doctor-profile">
                         <h4>院長プロフィール</h4>
@@ -1283,7 +1300,7 @@
                 </div>
             </div>
             <div class="about-image">
-                <img src="image/外観2.png" alt="みのる歯科の外観 - 埼玉県東松山市沢口町にある歯科医院">
+                <img src="image/外観2.webp" alt="みのる歯科の外観 - 埼玉県東松山市沢口町にある歯科医院" loading="lazy" decoding="async">
             </div>
         </div>
     </section>
@@ -1367,7 +1384,7 @@
         
         <div class="services-grid">
             <div class="service-card">
-                <img src="image/jon-tyson-kpLEaeScdHY-unsplash.jpg" alt="一般歯科">
+                <img src="image/jon-tyson-kpLEaeScdHY-unsplash.webp" alt="一般歯科" loading="lazy" decoding="async">
                 <div class="service-content">
                     <h3>一般歯科</h3>
                     <p>虫歯治療から詰め物・被せ物まで、一般的な歯科治療を行っています。痛みを抑えた治療を心がけ、できるだけ歯を削らない最小限の治療を提供します。</p>
@@ -1375,7 +1392,7 @@
             </div>
             
             <div class="service-card">
-                <img src="image/30157008_s.jpg" alt="小児歯科">
+                <img src="image/30157008_s.webp" alt="小児歯科" loading="lazy" decoding="async">
                 <div class="service-content">
                     <h3>小児歯科</h3>
                     <p>お子様が歯医者を怖がらないよう、楽しく通える環境づくりを心がけています。虫歯予防のためのシーラントやフッ素塗布も行っています。</p>
@@ -1383,7 +1400,7 @@
             </div>
             
             <!-- <div class="service-card">
-                <img src="image/diana-polekhina-Q_o_ob-3Ny4-unsplash.jpg" alt="矯正歯科">
+                <img src="image/diana-polekhina-Q_o_ob-3Ny4-unsplash.webp" alt="矯正歯科" loading="lazy" decoding="async">
                 <div class="service-content">
                     <h3>矯正歯科</h3>
                     <p>目立ちにくいマウスピース型矯正や、従来の矯正装置など、患者様に合わせた矯正治療をご提案します。無料相談も実施中です。</p>
@@ -1391,7 +1408,7 @@
             </div> -->
             
             <div class="service-card">
-                <img src="image/the-humble-co-cADflhZzgyo-unsplash.jpg" alt="口腔外科">
+                <img src="image/the-humble-co-cADflhZzgyo-unsplash.webp" alt="口腔外科" loading="lazy" decoding="async">
                 <div class="service-content">
                     <h3>口腔外科</h3>
                     <p>親知らずの抜歯や顎関節症、口内炎などの治療を行います。難症例にも対応できる設備と技術を備えています。</p>
@@ -1399,7 +1416,7 @@
             </div>
             
             <div class="service-card">
-                <img src="image/24488684_s.jpg" alt="予防歯科">
+                <img src="image/24488684_s.webp" alt="予防歯科" loading="lazy" decoding="async">
                 <div class="service-content">
                     <h3>予防歯科</h3>
                     <p>定期検診やクリーニングで虫歯や歯周病を予防します。一人ひとりに合わせたホームケア指導も行っています。</p>
@@ -1407,7 +1424,7 @@
             </div>
             
             <div class="service-card">
-                <img src="image/31619211_s.jpg" alt="審美歯科">
+                <img src="image/31619211_s.webp" alt="審美歯科" loading="lazy" decoding="async">
                 <div class="service-content">
                     <h3>審美歯科</h3>
                     <p>ホワイトニングやセラミック治療で美しい歯並びと白い歯を実現します。自然な見た目にこだわった審美治療を提供します。</p>
@@ -1445,7 +1462,7 @@
             <h3>設備・機器紹介</h3>
             <div class="equipment-grid">
                 <!-- <div class="equipment-item">
-                    <img src="image/3986831_s.jpg" alt="デジタルレントゲン">
+                    <img src="image/3986831_s.webp" alt="デジタルレントゲン" loading="lazy" decoding="async">
                     <h4>デジタルレントゲン</h4>
                     <p>従来の約1/10の被曝量で、より鮮明な画像が得られます</p>
                 </div>
@@ -1455,12 +1472,12 @@
                     <p>型取りの不快感なく、精密な3Dデータを取得できます</p>
                 </div> -->
                 <div class="equipment-item">
-                    <img src="image/3986831_s.jpg" alt="歯科用レーザー治療器 - 痛みの少ない歯茎治療に使用">
+                    <img src="image/3986831_s.webp" alt="歯科用レーザー治療器 - 痛みの少ない歯茎治療に使用" loading="lazy" decoding="async">
                     <h4>レーザー治療器</h4>
                     <p>痛みを抑えた治療や、歯茎の治療に活用しています</p>
                 </div>
                 <div class="equipment-item">
-                    <img src="image/katarzyna-zygnerska-rubu_NvklJE-unsplash.jpg" alt="高圧蒸気滅菌器 - 治療器具の徹底した衛生管理">
+                    <img src="image/katarzyna-zygnerska-rubu_NvklJE-unsplash.webp" alt="高圧蒸気滅菌器 - 治療器具の徹底した衛生管理" loading="lazy" decoding="async">
                     <h4>高圧蒸気滅菌器</h4>
                     <p>全ての器具は厳格な滅菌処理を行っています</p>
                 </div>
@@ -1479,7 +1496,7 @@
             <div class="blog-preview-grid">
                 <div class="blog-preview-card">
                     <div class="blog-preview-image">
-                        <img src="image/24488684_s.jpg" alt="歯科医院での定期検診の様子 - むし歯と歯周病の早期発見">
+                        <img src="image/24488684_s.webp" alt="歯科医院での定期検診の様子 - むし歯と歯周病の早期発見" loading="lazy" decoding="async">
                     </div>
                     <div class="blog-preview-content">
                         <div class="blog-preview-meta">
@@ -1493,7 +1510,7 @@
 
                 <div class="blog-preview-card">
                     <div class="blog-preview-image">
-                        <img src="image/candid-WFsNCIn8OF4-unsplash.jpg" alt="歯ブラシと歯磨き粉 - 正しいブラッシング方法">
+                        <img src="image/candid-WFsNCIn8OF4-unsplash.webp" alt="歯ブラシと歯磨き粉 - 正しいブラッシング方法" loading="lazy" decoding="async">
                     </div>
                     <div class="blog-preview-content">
                         <div class="blog-preview-meta">
@@ -1507,7 +1524,7 @@
 
                 <div class="blog-preview-card">
                     <div class="blog-preview-image">
-                        <img src="image/30157008_s.jpg" alt="小児歯科で診察を受ける子ども - 乳歯のケアと虫歯予防">
+                        <img src="image/30157008_s.webp" alt="小児歯科で診察を受ける子ども - 乳歯のケアと虫歯予防" loading="lazy" decoding="async">
                     </div>
                     <div class="blog-preview-content">
                         <div class="blog-preview-meta">
@@ -1603,7 +1620,7 @@
 
     <!-- トップに戻るボタン -->
     <div class="scroll-to-top" id="scrollToTop">
-        <img src="image/ヘッダーイラスト.png" alt="トップに戻る">
+        <img src="image/ヘッダーイラスト.webp" alt="トップに戻る">
     </div>
 
     <!-- ハンバーガーメニュー用JavaScript -->
