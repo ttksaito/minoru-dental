@@ -131,7 +131,7 @@ https://www.minoru-dental.jp/admin/ をブラウザで開き、「GitHubでロ�
 4. 保存すると **編集ワークフロー**（下書き → レビュー中 → 公開準備完了）で管理される
    - 「公開」するまで本番には反映されない（内部的にはPull Requestとして管理）
    - 院長監修は「レビュー中」の段階で行う運用を想定
-5. 「公開」すると `content/blog/` にコミット → GitHub Actionsが自動ビルド → Vercelが自動デプロイ
+5. 「公開」すると `content/blog/` にコミット → GitHub Actionsが自動ビルド → 本番サイトに自動反映
 
 ### 仕組み
 
@@ -140,15 +140,17 @@ https://www.minoru-dental.jp/admin/ をブラウザで開き、「GitHubでロ�
   → GitHub OAuth（api/auth.js, api/callback.js ※Vercelサーバーレス関数）
   → GitHub APIで content/blog/*.md をコミット
   → GitHub Actions（build-blog.yml）が自動ビルド・コミット
-  → Vercelが自動デプロイ
+  → 本番サイト（GitHub Pages）に自動反映
 ```
+
+※ 本番ドメイン（www.minoru-dental.jp）はGitHub Pages配信のためサーバーレス関数が動きません。OAuthエンドポイントのみVercelデプロイ（https://minoru-dental.vercel.app）を利用しています（`admin/config.yml` の `base_url`）。
 
 ### 初回セットアップ（要・手動作業）
 
 1. **GitHub OAuth Appの作成**: GitHub → Settings → Developer settings → OAuth Apps → New OAuth App
    - Application name: `minoru-dental CMS`（任意）
    - Homepage URL: `https://www.minoru-dental.jp`
-   - Authorization callback URL: `https://www.minoru-dental.jp/api/callback`
+   - Authorization callback URL: `https://minoru-dental.vercel.app/api/callback`（※Vercelドメイン）
 2. **Vercelの環境変数を登録**: Vercelプロジェクト → Settings → Environment Variables
    - `OAUTH_GITHUB_CLIENT_ID`: OAuth AppのClient ID
    - `OAUTH_GITHUB_CLIENT_SECRET`: OAuth AppのClient Secret（Generate a new client secretで発行）
@@ -164,7 +166,12 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 
 ## デプロイ方法
 
-GitHubの `main` ブランチにプッシュすると、Vercelが自動でデプロイします。
+GitHubの `main` ブランチにプッシュすると、以下の2箇所へ自動デプロイされます。
+
+| 配信先 | URL | 役割 |
+|---|---|---|
+| GitHub Pages | https://www.minoru-dental.jp （カスタムドメイン。`CNAME` ファイルで設定） | **本番サイト** |
+| Vercel | https://minoru-dental.vercel.app | CMSのOAuth用サーバーレス関数（`api/`）のホスト |
 
 Vercelプロジェクト設定（`vercel.json` で構成済み）:
 

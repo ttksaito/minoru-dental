@@ -276,8 +276,9 @@ VSCodeを使わず、ブラウザの管理画面（https://www.minoru-dental.jp/
   → 記事を作成・編集 →「編集ワークフロー」（下書き→レビュー中→公開準備完了）で管理
   → 「公開」で content/blog/*.md にコミット
   → GitHub Actions（build-blog.yml）が自動ビルド（記事HTML / blog-posts.json / sitemap.xml をコミット）
-  → Vercelが自動デプロイ
+  → 本番サイト（GitHub Pages）へ自動反映
 ```
+- **注意**: 本番ドメイン（www.minoru-dental.jp）はGitHub Pages配信でサーバーレス関数が動かないため、OAuthのみVercel（https://minoru-dental.vercel.app）を利用（config.ymlのbase_url / 2026-08-27判明・対応済み）
 - 公開前の記事はPull Requestとして保持されるため、**院長監修を「レビュー中」ステータスで運用できる**
 - ローカルの `npm run build:blog` は不要になった（確認用に残置）
 
@@ -289,12 +290,12 @@ VSCodeを使わず、ブラウザの管理画面（https://www.minoru-dental.jp/
 - [x] build-blog.js をfrontmatterのクォート付き値に対応（CMSがYAMLをクォートで書くケース）
 
 ### ⏳ 残タスク（手動セットアップ）
-- [ ] C-1. GitHub OAuth Appを作成（GitHub → Settings → Developer settings → OAuth Apps）
+- [x] C-1. GitHub OAuth Appを作成（GitHub → Settings → Developer settings → OAuth Apps）
   - Homepage URL: `https://www.minoru-dental.jp`
-  - Authorization callback URL: `https://www.minoru-dental.jp/api/callback`
-- [ ] C-2. Vercel環境変数を登録（Settings → Environment Variables）
+  - [ ] **callback URLの修正が必要**: `https://minoru-dental.vercel.app/api/callback` に変更する（当初案内の www.minoru-dental.jp はGitHub Pages配信のため不可）
+- [x] C-2. Vercel環境変数を登録（Settings → Environment Variables）
   - `OAUTH_GITHUB_CLIENT_ID` / `OAUTH_GITHUB_CLIENT_SECRET`
-- [ ] C-3. コミット＆プッシュ → デプロイ後に `/admin/` からログイン・記事作成をテスト
+- [ ] C-3. デプロイ後に `/admin/` からログイン・記事作成をテスト
 
 ---
 

@@ -18,12 +18,12 @@ module.exports = (req, res) => {
     return;
   }
 
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
   const state = crypto.randomBytes(16).toString('hex');
 
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: `https://${host}/api/callback`,
+    // OAuth Appの登録値と一致させるため固定（VercelのプロダクションURL）
+    redirect_uri: 'https://minoru-dental.vercel.app/api/callback',
     scope: 'repo,user',
     state,
   });

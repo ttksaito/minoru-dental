@@ -9,7 +9,15 @@
  *   - OAUTH_GITHUB_CLIENT_SECRET
  */
 
-function renderPostMessagePage(res, status, message, allowedOrigin) {
+// 管理画面（window.opener）として許可するオリジン
+// 本番サイトはGitHub Pages配信のため、このAPI（Vercel）とはオリジンが異なる
+const ALLOWED_ORIGINS = [
+  'https://www.minoru-dental.jp',
+  'https://minoru-dental.jp',
+  'https://minoru-dental.vercel.app',
+];
+
+function renderPostMessagePage(res, status, message) {
   // Decap CMSのハンドシェイク:
   //   1. このページが opener へ 'authorizing:github' を送る
   //   2. openerが応答メッセージを返す
@@ -21,16 +29,20 @@ function renderPostMessagePage(res, status, message, allowedOrigin) {
 <p>認証処理中です。この画面が閉じない場合は、管理画面に戻ってやり直してください。</p>
 <script>
   (function () {
-    var allowedOrigin = ${JSON.stringify(allowedOrigin)};
+    var allowedOrigins = ${JSON.stringify(ALLOWED_ORIGINS)};
     var message = ${JSON.stringify(`authorization:github:${status}:${message}`)};
     function receiveMessage(e) {
-      if (e.origin !== allowedOrigin) return;
+      if (allowedOrigins.indexOf(e.origin) === -1) return;
       window.opener.postMessage(message, e.origin);
       window.removeEventListener('message', receiveMessage, false);
     }
     if (window.opener) {
       window.addEventListener('message', receiveMessage, false);
-      window.opener.postMessage('authorizing:github', allowedOrigin);
+      // openerのオリジンはクロスオリジンのため読めない。許可リスト全てに通知し、
+      // 実際に応答してきたオリジン（許可リスト内）へのみトークンを渡す
+      allowedOrigins.forEach(function (origin) {
+        window.opener.postMessage('authorizing:github', origin);
+      });
     }
   })();
 </script>
@@ -47,7 +59,6 @@ module.exports = async (req, res) => {
   const clientId = process.env.OAUTH_GITHUB_CLIENT_ID;
   const clientSecret = process.env.OAUTH_GITHUB_CLIENT_SECRET;
   const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const allowedOrigin = `https://${host}`;
 
   if (!clientId || !clientSecret) {
     res.statusCode = 500;
@@ -56,7 +67,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const url = new URL(req.url, allowedOrigin);
+  const url = new URL(req.url, `https://${host}`);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const cookieMatch = (req.headers.cookie || '').match(/(?:^|;\s*)oauth_state=([^;]+)/);
@@ -64,7 +75,7 @@ module.exports = async (req, res) => {
 
   // CSRF対策: stateとCookieの照合
   if (!code || !state || !cookieState || state !== cookieState) {
-    renderPostMessagePage(res, 'error', JSON.stringify({ error: '不正なリクエストです（stateが一致しません）' }), allowedOrigin);
+    renderPostMessagePage(res, 'error', JSON.stringify({ error: '不正なリクエストです（stateが一致しません）' }));
     return;
   }
 
@@ -87,8 +98,7 @@ module.exports = async (req, res) => {
       renderPostMessagePage(
         res,
         'error',
-        JSON.stringify({ error: data.error_description || data.error || 'トークンの取得に失敗しました' }),
-        allowedOrigin
+        JSON.stringify({ error: data.error_description || data.error || 'トークンの取得に失敗しました' })
       );
       return;
     }
@@ -96,15 +106,13 @@ module.exports = async (req, res) => {
     renderPostMessagePage(
       res,
       'success',
-      JSON.stringify({ token: data.access_token, provider: 'github' }),
-      allowedOrigin
+      JSON.stringify({ token: data.access_token, provider: 'github' })
     );
   } catch (err) {
     renderPostMessagePage(
       res,
       'error',
-      JSON.stringify({ error: 'GitHubとの通信に失敗しました' }),
-      allowedOrigin
+      JSON.stringify({ error: 'GitHubとの通信に失敗しました' })
     );
   }
 };

@@ -1,12 +1,14 @@
 # Decap CMS 設定（みのる歯科ブログ 記事管理）
 # 管理画面: https://www.minoru-dental.jp/admin/
 # 認証: GitHub OAuth（api/auth, api/callback のVercelサーバーレス関数経由）
+# 注意: 本番ドメインはGitHub Pages配信（サーバーレス関数が動かない）ため、
+#       OAuthのbase_urlのみVercelデプロイのURLを指定している
 
 backend:
   name: github
   repo: ttksaito/minoru-dental
   branch: main
-  base_url: https://www.minoru-dental.jp
+  base_url: https://minoru-dental.vercel.app
   auth_endpoint: api/auth
   commit_messages:
     create: '記事を追加: {{slug}}'
