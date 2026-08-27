@@ -557,12 +557,12 @@
 </head>
 <body>
     <!-- Google Analyticsコード（取得後に置き換え） -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-P8PPKGZVRT"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
+      gtag('config', 'G-P8PPKGZVRT');
     </script>
     
     <!-- ブログ記事データを取得・表示するためのスクリプト -->
@@ -597,6 +597,9 @@
             
             // 最新記事リストを生成
             displayLatestPosts();
+
+            // 人気記事ランキングを生成（GA4集計データ）
+            displayPopularPosts();
             
             // カテゴリーリストを生成
             displayCategories();
@@ -735,6 +738,42 @@
         });
       }
       
+      // サイドバーの人気記事ランキングを生成（popular-posts.json はGitHub ActionsがGA4から自動集計）
+      function displayPopularPosts() {
+        fetch('popular-posts.json')
+          .then(response => {
+            if (!response.ok) throw new Error('popular-posts.json の読み込みに失敗');
+            return response.json();
+          })
+          .then(data => {
+            const section = document.getElementById('popular-posts-section');
+            const list = document.getElementById('popular-posts-list');
+            if (!section || !list) return;
+
+            // 記事IDをblog-posts.jsonのメタデータと突き合わせる
+            const rankedPosts = (data.posts || [])
+              .map(entry => blogPosts.find(post => post.id === entry.id))
+              .filter(post => post !== undefined);
+
+            // データがなければセクションを非表示のまま維持
+            if (rankedPosts.length === 0) return;
+
+            list.innerHTML = '';
+            rankedPosts.forEach((post, index) => {
+              const li = document.createElement('li');
+              const a = document.createElement('a');
+              a.href = 'blog/' + post.id + '/';
+              a.textContent = (index + 1) + '. ' + post.title;
+              li.appendChild(a);
+              list.appendChild(li);
+            });
+            section.style.display = 'block';
+          })
+          .catch(() => {
+            // 取得失敗時はセクションを表示しない（サイト全体には影響させない）
+          });
+      }
+
       // サイドバーの最新記事を生成
       function displayLatestPosts() {
         const latestPostsList = document.getElementById('latest-posts-list');
@@ -888,6 +927,14 @@
                     </div>
                 </div>
                 
+                <!-- よく読まれている記事 -->
+                <div class="blog-sidebar-section" id="popular-posts-section" style="display: none;">
+                    <h3>よく読まれている記事</h3>
+                    <ul id="popular-posts-list">
+                        <!-- JavaScriptで自動生成されます -->
+                    </ul>
+                </div>
+
                 <!-- 最新記事 -->
                 <div class="blog-sidebar-section">
                     <h3>最新記事</h3>

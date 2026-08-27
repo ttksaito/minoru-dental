@@ -1,0 +1,40 @@
+name: 人気記事ランキングの更新
+
+on:
+  schedule:
+    # 毎日 6:00 JST（21:00 UTC）に実行
+    - cron: '0 21 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+permissions:
+  contents: write
+
+jobs:
+  update-popular-posts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: GA4から人気記事データを集計
+        env:
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GA4_SERVICE_ACCOUNT_KEY: ${{ secrets.GA4_SERVICE_ACCOUNT_KEY }}
+        run: node scripts/fetch-popular-posts.js
+
+      - name: 変更があればコミット・プッシュ
+        run: |
+          if git diff --quiet popular-posts.json 2>/dev/null && [ -f popular-posts.json ]; then
+            echo "変更なし。コミットをスキップします。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add popular-posts.json
+          git commit -m "人気記事ランキングを自動更新"
+          git push
