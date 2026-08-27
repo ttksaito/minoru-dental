@@ -1,0 +1,112 @@
+# Decap CMS 設定（みのる歯科ブログ 記事管理）
+# 管理画面: https://www.minoru-dental.jp/admin/
+# 認証: GitHub OAuth（api/auth, api/callback のVercelサーバーレス関数経由）
+
+backend:
+  name: github
+  repo: ttksaito/minoru-dental
+  branch: main
+  base_url: https://www.minoru-dental.jp
+  auth_endpoint: api/auth
+  commit_messages:
+    create: '記事を追加: {{slug}}'
+    update: '記事を更新: {{slug}}'
+    delete: '記事を削除: {{slug}}'
+    uploadMedia: '画像を追加: {{path}}'
+    deleteMedia: '画像を削除: {{path}}'
+
+# 下書き→レビュー→公開のワークフロー（公開までPRとして保留される。院長監修に対応）
+publish_mode: editorial_workflow
+
+locale: ja
+
+# 記事に紐づかない汎用画像の置き場所
+media_folder: image/uploads
+public_folder: /image/uploads
+
+collections:
+  - name: blog
+    label: ブログ記事
+    label_singular: 記事
+    folder: content/blog
+    create: true
+    slug: '{{fields.slug}}'
+    summary: '{{title}}（{{date}}）'
+    sortable_fields: [date, title]
+    fields:
+      - label: 記事ID（URL用スラッグ）
+        name: slug
+        widget: string
+        pattern: ['^[a-z0-9][a-z0-9-]*$', '英小文字・数字・ハイフンのみで入力してください（例: best-brushing-timing）']
+        hint: '記事のURLになります。公開後は変更しないでください（例: best-brushing-timing → /blog/best-brushing-timing/）'
+      - label: タイトル
+        name: title
+        widget: string
+      - label: 公開日
+        name: date
+        widget: datetime
+        format: 'YYYY-MM-DD'
+        date_format: 'YYYY-MM-DD'
+        time_format: false
+      - label: 著者
+        name: author
+        widget: string
+        default: 斉藤 稔
+      - label: タグ（カンマ区切り）
+        name: tags
+        widget: string
+        hint: '例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
+      - label: サムネイル画像
+        name: image
+        widget: image
+        default: thumbnail.webp
+        media_folder: '/blog/{{slug}}'
+        public_folder: ''
+        hint: '英数字ファイル名の画像をアップロードしてください（thumbnail.webp 推奨。WebP形式・横長）'
+      - label: 要約
+        name: summary
+        widget: text
+        hint: '記事一覧・検索結果・SNSシェアで表示されます（100〜150字程度）'
+      - label: 本文
+        name: body
+        widget: markdown
+        hint: '見出しは「見出し2」「見出し3」を使用してください'
+
+  - name: drafts
+    label: 下書き（院長監修用）
+    label_singular: 下書き
+    folder: content/drafts
+    create: true
+    slug: '{{fields.slug}}'
+    summary: '{{title}}（{{date}}）'
+    fields:
+      - label: 記事ID（URL用スラッグ）
+        name: slug
+        widget: string
+        pattern: ['^[a-z0-9][a-z0-9-]*$', '英小文字・数字・ハイフンのみで入力してください']
+      - label: タイトル
+        name: title
+        widget: string
+      - label: 公開日（予定）
+        name: date
+        widget: datetime
+        format: 'YYYY-MM-DD'
+        date_format: 'YYYY-MM-DD'
+        time_format: false
+      - label: 著者
+        name: author
+        widget: string
+        default: 斉藤 稔
+      - label: タグ（カンマ区切り）
+        name: tags
+        widget: string
+      - label: サムネイル画像
+        name: image
+        widget: string
+        default: thumbnail.webp
+      - label: 要約
+        name: summary
+        widget: text
+      - label: 本文
+        name: body
+        widget: markdown

@@ -1,126 +1,176 @@
 # みのる歯科 Webサイト
 
-埼玉県東松山市の歯医者「みのる歯科」の公式Webサイトです。このサイトは11ty（Eleventy）を使用して構築されています。
+埼玉県東松山市の歯医者「みのる歯科」の公式Webサイトです。静的HTMLサイトとして構築され、Vercelでホスティングしています。ブログ記事はMarkdownから軽量なNodeスクリプトでビルドします。
 
 ## 機能
 
-- 静的サイトジェネレーター（11ty）を使用した高速なサイト
+- 静的HTMLベースの高速なサイト（ビルド不要でそのまま配信）
 - レスポンシブデザイン（モバイル、タブレット、デスクトップ対応）
-- ブログ機能（Markdownで記事作成）
-- タグ別アーカイブ
-- SEO対策（構造化データ、メタタグ最適化）
+- ブログ機能（Markdownで記事作成 → `npm run build:blog` でHTML生成）
+- Web管理画面（Decap CMS）からブラウザだけで記事の作成・編集が可能（`/admin/`）
+- 記事Markdownのpush時にGitHub Actionsが自動ビルド（ローカルビルド不要）
+- 人気記事ランキング（GA4 + GitHub Actionsで毎日自動集計）
+- SEO対策（構造化データ、OGP、サイトマップ自動生成）
 
 ## 開発環境のセットアップ
 
 ```bash
-# 依存関係のインストール
+# 依存関係のインストール（marked のみ）
 npm install
 
-# 開発サーバーの起動
-npm start
-# または
-npm run serve
-
-# 本番ビルド
-npm run build
+# ブログのビルド（Markdown → 記事HTML / blog-posts.json / sitemap.xml）
+npm run build:blog
 ```
+
+サイト自体はビルド不要です。HTMLファイルをブラウザで直接開くか、任意のローカルサーバー（例: `npx serve .`）で確認できます。
 
 ## ディレクトリ構成
 
 ```
 /minoru-dental/
-├── _includes/             # 共通パーツ（ヘッダー、フッターなど）
-├── _site/                 # ビルド後の出力先
-├── src/                   # ソースファイル
-│   ├── posts/             # ブログ記事用Markdownファイル
-│   └── ...
-├── _data/                 # サイト共通データ
-├── assets/                # 静的アセット（CSS、JS、画像）
-├── .eleventy.js           # Eleventyの設定ファイル
-└── package.json           # npm設定ファイル
+├── content/
+│   ├── blog/               # 公開記事のMarkdownソース（1記事1ファイル、ビルド対象）
+│   │   └── [記事ID].md
+│   └── drafts/             # 下書き（ビルド対象外。監修後に blog/ へ移動）
+├── templates/
+│   └── blog-post.html      # 記事ページのHTMLテンプレート
+├── scripts/
+│   ├── build-blog.js       # ブログビルドスクリプト
+│   └── fetch-popular-posts.js  # GA4人気記事集計（GitHub Actionsから実行）
+├── blog/                   # 生成された記事ページ（ビルド成果物）
+│   └── [記事ID]/
+│       ├── index.html      # 記事本文（build-blog.jsが生成。直接編集しない）
+│       └── thumbnail.webp  # サムネイル画像（手動配置）
+├── admin/                  # Decap CMS 管理画面（/admin/ で開く）
+│   ├── index.html
+│   └── config.yml          # CMSの設定（コレクション・フィールド定義）
+├── api/                    # Vercelサーバーレス関数（CMSのGitHub OAuth用）
+│   ├── auth.js             # 認証開始（GitHubへリダイレクト）
+│   └── callback.js         # コールバック（トークン交換）
+├── blog.html               # ブログ一覧ページ
+├── blog-posts.json         # 記事メタデータ（build-blog.jsが生成）
+├── popular-posts.json      # 人気記事ランキング（GitHub Actionsが生成）
+├── sitemap.xml             # サイトマップ（build-blog.jsが生成）
+├── index.html              # トップページ
+├── image/                  # サイト共通の画像
+└── .github/workflows/
+    ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
+    └── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
 ```
 
 ## ブログの管理
 
-### 静的サイトの構造について
+記事の作成・編集には2つの方法があります。
 
-このサイトは静的HTMLファイルベースで構築されています。ブログ記事は以下のディレクトリ構造で管理されています：
+- **方法A: Web管理画面（Decap CMS）** — ブラウザだけで完結。おすすめ（後述の「Web管理画面（Decap CMS）」参照）
+- **方法B: ローカルで直接Markdownを編集** — 以下の手順
+
+いずれの方法でも、`content/blog/` のMarkdownがpushされるとGitHub Actions（`build-blog.yml`）が自動でビルドし、記事HTML・blog-posts.json・sitemap.xml をコミットします。ローカルでの `npm run build:blog` は確認用で、必須ではありません。
+
+### 新規記事の作成（ローカル編集の場合）
+
+1. `content/blog/[記事ID].md` を作成します（記事IDは英数字のスラッグ。例: `best-brushing-timing`）
+
+   ```markdown
+   ---
+   slug: best-brushing-timing
+   title: 記事タイトル
+   date: 2025-04-01
+   author: 斉藤 稔
+   tags: 予防歯科, 歯磨き
+   image: thumbnail.webp
+   summary: 一覧ページやOGPに使われる記事の要約（100〜150字程度）。
+   ---
+
+   本文をMarkdownで書きます。見出しは ## と ### を使用してください。
+   ```
+
+2. サムネイル画像を `blog/[記事ID]/thumbnail.webp` に配置します（ファイル名は英数字のみ。WebP推奨、PNG併置可）
+
+3. ビルドを実行します
+
+   ```bash
+   npm run build:blog
+   ```
+
+   以下が自動で生成・更新されます:
+   - `blog/[記事ID]/index.html`（記事ページ。OGP・JSON-LD・関連記事・前後記事リンク付き）
+   - `blog-posts.json`（一覧ページ・サイドバーが参照するメタデータ）
+   - `sitemap.xml`
+
+4. 確認して問題なければコミット＆プッシュ（Markdownソースと生成物の両方をコミット）
+
+### 記事の更新・削除
+
+- **更新**: `content/blog/[記事ID].md` を編集して `npm run build:blog` を再実行
+- **削除**: `content/blog/[記事ID].md` と `blog/[記事ID]/` ディレクトリを削除して `npm run build:blog` を再実行
+
+`blog/[記事ID]/index.html` はビルド成果物なので直接編集しないでください（次回ビルドで上書きされます）。
+
+### frontmatter の仕様
+
+| キー | 必須 | 説明 |
+|---|---|---|
+| slug | ○ | 記事ID（ファイル名と同じ英数字スラッグ。CMSでのファイル名決定に使用） |
+| title | ○ | 記事タイトル |
+| date | ○ | 公開日（ISO形式 `YYYY-MM-DD`） |
+| author | ○ | 著者名 |
+| tags | ○ | カンマ区切りのタグ（一覧のカテゴリー・タグクラウド・関連記事の選定に使用） |
+| image | ○ | サムネイルのファイル名（`blog/[記事ID]/` 内。`thumbnail.webp` 推奨） |
+| summary | ○ | 記事の要約（一覧・meta description・OGPに使用） |
+
+## Web管理画面（Decap CMS）
+
+https://www.minoru-dental.jp/admin/ をブラウザで開き、「GitHubでログイン」するだけで記事の作成・編集ができます（リポジトリに書き込み権限のあるGitHubアカウントが必要）。
+
+### 使い方
+
+1. `/admin/` を開いてGitHubでログイン
+2. 「ブログ記事」（公開用）または「下書き」（監修前の原稿置き場）を選び、「新規作成」
+3. フォームに入力して本文をエディタで執筆（画像はドラッグ&ドロップでアップロード可能）
+4. 保存すると **編集ワークフロー**（下書き → レビュー中 → 公開準備完了）で管理される
+   - 「公開」するまで本番には反映されない（内部的にはPull Requestとして管理）
+   - 院長監修は「レビュー中」の段階で行う運用を想定
+5. 「公開」すると `content/blog/` にコミット → GitHub Actionsが自動ビルド → Vercelが自動デプロイ
+
+### 仕組み
 
 ```
-/minoru-dental/
-├── _site/                 # ビルド後の出力先
-│   ├── blog/              # ブログ記事一覧ページ
-│   │   ├── article-slug/  # 各記事のディレクトリ
-│   │   │   └── index.html # 記事本文
-├── blog/                  # ソースファイル側の記事ディレクトリ
-│   ├── article-slug/      # 各記事のディレクトリ
-│   │   └── index.html     # 記事のHTMLファイル
-├── blog.html              # ブログのトップページテンプレート
+/admin/（Decap CMS）
+  → GitHub OAuth（api/auth.js, api/callback.js ※Vercelサーバーレス関数）
+  → GitHub APIで content/blog/*.md をコミット
+  → GitHub Actions（build-blog.yml）が自動ビルド・コミット
+  → Vercelが自動デプロイ
 ```
 
-### 新規記事の作成
+### 初回セットアップ（要・手動作業）
 
-1. `blog/` ディレクトリに新しい記事のディレクトリを作成します
-   - ディレクトリ名は記事の英語スラッグを使用（例: `new-dental-article`）
+1. **GitHub OAuth Appの作成**: GitHub → Settings → Developer settings → OAuth Apps → New OAuth App
+   - Application name: `minoru-dental CMS`（任意）
+   - Homepage URL: `https://www.minoru-dental.jp`
+   - Authorization callback URL: `https://www.minoru-dental.jp/api/callback`
+2. **Vercelの環境変数を登録**: Vercelプロジェクト → Settings → Environment Variables
+   - `OAUTH_GITHUB_CLIENT_ID`: OAuth AppのClient ID
+   - `OAUTH_GITHUB_CLIENT_SECRET`: OAuth AppのClient Secret（Generate a new client secretで発行）
+3. 再デプロイ後、`/admin/` からログインできることを確認
 
-2. 作成したディレクトリ内に `index.html` ファイルを作成します
-   - 既存の記事ファイル（例: `blog/regular-checkup/index.html`）をテンプレートとして利用
-   - メタデータ（タイトル、説明、日付、タグなど）と本文を更新
+## 人気記事ランキング
 
-3. `blog.html` ファイルを編集して、記事一覧にも新しい記事を追加
-   - 記事の要約、タイトル、日付、タグ情報を追加
-   - サイドバーの「最新記事」セクションも更新
-   - 記事へのリンクは `blog/記事スラッグ/` という形式で作成
+GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JSTにGA4のページビューを集計し、`popular-posts.json` を自動コミットします。`blog.html` のサイドバー「よく読まれている記事」に表示されます。
 
-### 記事の更新（上書き）
-
-1. 更新したい記事の `blog/[記事スラッグ]/index.html` ファイルを開く
-2. HTML内のコンテンツを編集（タイトル、本文、タグなど）
-3. 必要に応じて `blog.html` の記事要約部分も更新
-
-### 記事の削除
-
-1. `blog/` ディレクトリから削除したい記事のディレクトリを削除
-2. `blog.html` から該当記事の要約ブロックを削除
-3. サイドバーの「最新記事」セクションからも該当記事を削除
-4. 関連記事で参照されている場合は、それらの記事からも参照を削除
-
-### 記事公開のワークフロー
-
-1. ローカルで記事の作成・編集を行う
-2. 変更内容をブラウザで確認（HTMLファイルを直接開く）
-3. 問題がなければGitでコミット
-4. GitHubにプッシュしてデプロイ
-
-### 注意点
-
-- 記事を追加・削除する場合は、関連するすべてのページ（記事一覧、サイドバーなど）を手動で更新する必要があります
-- タグやカテゴリーを追加・更新する場合も、関連するすべての箇所を手動で更新してください
-- 画像は `/image/` ディレクトリに配置し、記事から参照してください
+- 認証: Workload Identity Federation（キーレス）
+- 集計範囲: 直近90日の `/blog/` 配下ページビュー
+- 手動実行: GitHubの Actions タブ → Update Popular Posts → Run workflow
 
 ## デプロイ方法
 
-### Vercelにデプロイする場合（推奨）:
+GitHubの `main` ブランチにプッシュすると、Vercelが自動でデプロイします。
 
-1. [Vercel](https://vercel.com)にログイン
-2. 「New Project」をクリック
-3. GitHubリポジトリをインポート
-4. プロジェクト設定:
-   - Framework Preset: `Other`
-   - Build Command: （空欄のまま）
-   - Output Directory: `.`
-5. 「Deploy」をクリック
+Vercelプロジェクト設定（`vercel.json` で構成済み）:
 
-`vercel.json`の設定により、自動的に適切にデプロイされます。
-
-### 以前の方法（GitHub Pages）:
-
-```bash
-# ビルド
-npm run build
-
-# _siteディレクトリの内容をGitHubリポジトリにプッシュ
-```
+- Framework Preset: `Other`
+- Build Command: なし（静的配信）
+- Output Directory: `.`
 
 ## ライセンス
 

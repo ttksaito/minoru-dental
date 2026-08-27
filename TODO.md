@@ -183,69 +183,127 @@
 
 ---
 
-## 📝 ブログ機能の改善課題（2026-08-27 整理）
+## ✍️ ブログ記事プラン（2026-08-27 下書き10本完成 → 院長監修待ち）
 
-### 現状の仕組み
-- 静的HTML + `blog-posts.json`（メタデータ）+ クライアントサイドJSで一覧生成
-- 記事追加時は「記事HTML作成」「blog-posts.json追記」「sitemap.xml追記」の3箇所を手動更新
+患者さんの素朴な疑問に答える「豆知識系」10テーマ。**下書きは `content/drafts/` に作成済み**（ビルド対象外。監修完了後に `content/blog/` へ移動すると公開対象になる）。
 
-### 🔴 優先度：高
+| # | テーマ | 記事ID | 下書き | 予定日（仮） |
+|---|--------|--------|:---:|------|
+| 1 | 歯を磨くベストなタイミング | `best-brushing-timing` | ✅ | 2026-09-01 |
+| 2 | 食後30分は磨かない方がいい？ | `brushing-after-meals` | ✅ | 2026-09-08 |
+| 3 | フロスは歯磨きの前？後？ | `floss-before-or-after` | ✅ | 2026-09-15 |
+| 4 | 歯磨き後のうがいは何回？ | `rinsing-after-brushing` | ✅ | 2026-09-22 |
+| 5 | 入れ歯になるとどのくらい噛めなくなる？ | `denture-chewing-ability` | ✅ | 2026-09-29 |
+| 6 | 舌の「味覚地図」は本当？ | `tongue-taste-map` | ✅ | 2026-10-06 |
+| 7 | 虫歯は甘いものの量と回数、どちらが重要？ | `sugar-amount-vs-frequency` | ✅ | 2026-10-13 |
+| 8 | 歯周病はなぜ痛くない？ | `painless-periodontal-disease` | ✅ | 2026-10-20 |
+| 9 | 口が乾くとなぜ虫歯になる？ | `dry-mouth-cavities` | ✅ | 2026-10-27 |
+| 10 | 歯は骨と同じもの？ | `teeth-vs-bones` | ✅ | 2026-11-03 |
 
-#### B-1. 記事追加ワークフローの自動化
-**課題**: 記事1本ごとに3ファイルの手動更新が必要で、更新漏れ・不整合が起きやすい
+※予定日は週1本ペースの仮設定（frontmatterのdateに記入済み）。公開時に実際の日付へ変更する。
 
-**選択肢**（未決定）:
-- [ ] 案A: Node.jsスクリプトでMarkdown→記事HTML/JSON/sitemapを一括生成（現構成を維持、移行コスト小）
-- [ ] 案B: Eleventy（11ty）を導入して本格移行（テンプレート共通化まで解決、移行コスト中〜大）
+**公開手順（1記事ごと）**:
+- [ ] `content/drafts/[記事ID].md` を**院長が監修・確認**（医学的内容の正確性チェック）
+- [ ] frontmatterの `date` を実際の公開日に修正
+- [ ] `content/drafts/` → `content/blog/` へファイル移動（git mv）
+- [ ] サムネイル画像を `blog/[記事ID]/thumbnail.webp` に配置（英数字ファイル名、WebP形式）
+- [ ] `npm run build:blog` 実行（記事HTML / blog-posts.json / sitemap.xml が自動生成される）
+- [ ] コミット＆プッシュ → デプロイ後に表示・OGP確認
 
-#### B-2. コード重複の解消
-**課題**: 各記事の `index.html` にヘッダー・フッター・CSSがインラインで複製されており、デザイン変更時に全記事の修正が必要
-
-**対応案**:
-- [ ] 共通CSSを外部ファイル化（`css/blog.css` など）
-- [ ] B-1で案Bを採用すればテンプレートで完全解決
-
-### 🟡 優先度：中
-
-#### B-3. 日付形式のISO化
-**課題**: `blog-posts.json` の日付が「2025年3月15日」形式でプログラム的にソート不可
-
-**対応案**:
-- [ ] `"date": "2025-03-15"` のISO形式に変更し、表示時にJSで日本語整形
-- [ ] blog.html / blog-detail.html のソート・前後記事ナビを日付ベースに修正
-
-#### B-4. 画像ファイル名の英数字化
-**課題**: `ChatGPT Image 2025年5月4日 17_25_26.webp`、`サムネイル.webp` など日本語・スペース入りファイル名。URLエンコード問題の原因（sitemap.xmlで既に発生）
-
-**対応案**:
-- [ ] `thumbnail.webp` 等の英数字名にリネーム
-- [ ] blog-posts.json / 各記事HTML / sitemap.xml 内の参照を更新
-
-#### B-5. 一覧ページのSEO改善
-**課題**: blog.html の記事一覧はJS動的生成のため、JS非対応クローラー・OGPプレビューでは空表示。fetch失敗時のフォールバックも不十分
-
-**対応案**:
-- [ ] 記事一覧を静的HTMLとして埋め込み、フィルタ機能のみJSで提供（B-1の自動化と同時実施が効率的）
-
-### 🟢 優先度：低
-
-- [ ] B-6. README.md修正（「Eleventy使用」の記載が実装と乖離。実際の記事追加手順を文書化）
-- [ ] B-7. RSSフィード（feed.xml）追加
-- [ ] B-8. sitemap.xml の lastmod を記事ごとの実際の更新日に（現在は全ページ2026-08-25で一律）
-- [ ] B-9. 存在しない記事IDアクセス時の404ページ整備
-
-### 推奨実施順
-1. B-3 + B-4（データ整備。自動化の前提）
-2. B-1（方式決定→自動化）
-3. B-2 + B-5 + B-7 + B-8（自動化に乗せて一括対応）
+**方針メモ**:
+- 週1本ペースで公開すれば約2.5ヶ月分のネタになる（継続タスクの「ブログ記事を1本追加」に対応）
+- 10本追加すると人気記事ランキング・タグ別推薦が意味を持ち始める
+- サムネイルは未作成（10枚必要）。画像生成ツール等で作成し、WebP変換して配置する
 
 ---
 
-## 📊 人気記事ランキング機能（2026-08-27 実装）
+## 📝 ブログ機能の改善課題（2026-08-27 整理 / 同日B-1〜B-4・B-6・B-8対応完了）
 
-### 実装済みの仕組み
+### 現在の仕組み（B-1自動化後）
+```
+content/blog/[記事ID].md（Markdown + frontmatter）
+  → npm run build:blog（scripts/build-blog.js + templates/blog-post.html）
+  → blog/[記事ID]/index.html ＋ blog-posts.json ＋ sitemap.xml を自動生成
+```
+詳細な記事追加手順は README.md 参照。
+
+### ✅ 完了（2026-08-27）
+
+#### B-1. 記事追加ワークフローの自動化 ✅
+- 案A（Node.jsスクリプト方式）を採用。依存は `marked` のみ（package.json新設）
+- 副次的に修正: 壊れたプレースホルダー画像（/api/placeholder/）、ダミーのサイドバー固定データ、死んでいたシェアリンク（実URLのX/Facebook/LINEシェアに変更）、存在しない記事への関連リンク
+- 記事ページにOGP/Twitter Cardを追加。関連記事・前後記事・カテゴリー数はビルド時に実データから生成
+
+#### B-2. コード重複の解消 ✅（実質解決）
+- 記事HTMLは `templates/blog-post.html` から生成されるため、デザイン変更はテンプレート修正＋再ビルドで全記事に反映
+- （CSSの外部ファイル化自体は未実施。必要になれば対応）
+
+#### B-3. 日付形式のISO化 ✅
+- frontmatter / blog-posts.json は `YYYY-MM-DD`。blog.html / blog-detail.html に `formatDateJa()` を追加し表示は「YYYY年M月D日」
+
+#### B-4. 画像ファイル名の英数字化 ✅
+- 3記事とも `thumbnail.webp` / `thumbnail.png` にリネーム（git mv）。参照はビルドで自動更新
+
+#### B-6. README.md修正 ✅
+- Eleventy記載を削除し、実際のMarkdownワークフローを文書化
+
+#### B-8. sitemap.xml の lastmod ✅
+- 記事は公開日、トップ/一覧ページはビルド日を自動設定
+
+### 🟡 残課題
+
+#### B-5. 一覧ページのSEO改善
+**課題**: blog.html の記事一覧はJS動的生成のため、JS非対応クローラー・OGPプレビューでは空表示
+
+**対応案**:
+- [ ] build-blog.js を拡張し、記事一覧を静的HTMLとして blog.html に埋め込み（フィルタ機能のみJS）
+
+### 🟢 優先度：低
+
+- [ ] B-7. RSSフィード（feed.xml）追加（build-blog.jsへの追加で対応可能）
+- [ ] B-9. 存在しない記事IDアクセス時の404ページ整備
+
+---
+
+## ✏️ Web管理画面（Decap CMS）（2026-08-27 実装完了 / セットアップ残り）
+
+VSCodeを使わず、ブラウザの管理画面（https://www.minoru-dental.jp/admin/ ）から記事を作成・編集できる仕組み。無料（Decap CMSはOSS、ホスティングは既存のVercel/GitHubのみ）。
+
+### 仕組み
+```
+/admin/（Decap CMS 管理画面）
+  → GitHub OAuthでログイン（api/auth.js, api/callback.js ※Vercelサーバーレス関数）
+  → 記事を作成・編集 →「編集ワークフロー」（下書き→レビュー中→公開準備完了）で管理
+  → 「公開」で content/blog/*.md にコミット
+  → GitHub Actions（build-blog.yml）が自動ビルド（記事HTML / blog-posts.json / sitemap.xml をコミット）
+  → Vercelが自動デプロイ
+```
+- 公開前の記事はPull Requestとして保持されるため、**院長監修を「レビュー中」ステータスで運用できる**
+- ローカルの `npm run build:blog` は不要になった（確認用に残置）
+
+### 実装済み（2026-08-27）
+- [x] `.github/workflows/build-blog.yml`（content/blog/** のpushで自動ビルド・自動コミット）
+- [x] `admin/index.html` + `admin/config.yml`（GitHub backend / editorial_workflow / 日本語UI / ブログ・下書きの2コレクション）
+- [x] `api/auth.js` / `api/callback.js`（GitHub OAuth。state Cookie照合によるCSRF対策付き）
+- [x] 既存md 13ファイルに `slug` フィールド追加（CMS互換）
+- [x] build-blog.js をfrontmatterのクォート付き値に対応（CMSがYAMLをクォートで書くケース）
+
+### ⏳ 残タスク（手動セットアップ）
+- [ ] C-1. GitHub OAuth Appを作成（GitHub → Settings → Developer settings → OAuth Apps）
+  - Homepage URL: `https://www.minoru-dental.jp`
+  - Authorization callback URL: `https://www.minoru-dental.jp/api/callback`
+- [ ] C-2. Vercel環境変数を登録（Settings → Environment Variables）
+  - `OAUTH_GITHUB_CLIENT_ID` / `OAUTH_GITHUB_CLIENT_SECRET`
+- [ ] C-3. コミット＆プッシュ → デプロイ後に `/admin/` からログイン・記事作成をテスト
+
+---
+
+## 📊 人気記事ランキング機能（2026-08-27 実装・セットアップ完了 ✅）
+
+### 仕組み
 ```
 GitHub Actions（毎日6:00 JST）
+  → WIF（Workload Identity Federation）でGoogle Cloudに認証（JSONキー不使用）
   → scripts/fetch-popular-posts.js がGA4 Data APIで直近90日の記事別PVを集計
   → popular-posts.json を生成・コミット
   → Vercelが自動デプロイ
@@ -254,31 +312,30 @@ GitHub Actions（毎日6:00 JST）
 - データが空・取得失敗の場合はセクション自体が非表示になる（サイトに影響なし）
 - 手動実行: GitHubリポジトリ → Actions → 「人気記事ランキングの更新」→ Run workflow
 
-### 🔴 稼働に必要な残作業（手動セットアップ）
+### 設定情報（2026-08-27 セットアップ完了）
+| 項目 | 値 |
+|------|-----|
+| GCPプロジェクト | `minoru-dental` |
+| サービスアカウント | `ga4-popular-posts@minoru-dental.iam.gserviceaccount.com`（GA4閲覧者権限） |
+| GA4プロパティID | `546270564`（GitHub Secret `GA4_PROPERTY_ID` に登録済み） |
+| 認証方式 | Workload Identity Federation（Pool: `github` / Provider: `minoru-dental`、`ttksaito/minoru-dental` リポジトリに限定） |
 
-#### P-1. GCPでサービスアカウントを作成
-- [ ] https://console.cloud.google.com/ でプロジェクトを作成（または既存を使用）
-- [ ] 「APIとサービス」→「ライブラリ」で **Google Analytics Data API** を有効化
-- [ ] 「IAMと管理」→「サービスアカウント」→ 作成（名前例: `ga4-popular-posts`）
-- [ ] 作成したサービスアカウントで「キー」→「新しい鍵を作成」→ **JSON** をダウンロード
+※ 組織ポリシーによりサービスアカウントのJSONキー発行が禁止されていたため、当初予定のJSONキー方式からWIF方式に変更。`GA4_SERVICE_ACCOUNT_KEY` は不使用。
 
-#### P-2. GA4にサービスアカウントを閲覧者として追加
-- [ ] GA4管理画面 → 「管理」→「プロパティのアクセス管理」
-- [ ] サービスアカウントのメールアドレス（`xxx@yyy.iam.gserviceaccount.com`）を **閲覧者** 権限で追加
+### 完了済み
+- [x] GCPプロジェクト作成・Analytics Data API有効化
+- [x] サービスアカウント作成・GA4に閲覧者として追加
+- [x] WIF（Workload Identity Pool / OIDC Provider）設定・リポジトリ限定
+- [x] GitHub Secret登録（GA4_PROPERTY_ID）
+- [x] ワークフロー・スクリプトのWIF対応
+- [x] 手動実行で動作確認（認証〜popular-posts.json生成まで成功。現時点は0件で正常）
 
-#### P-3. GA4のプロパティIDを確認
-- [ ] GA4管理画面 → 「管理」→「プロパティ設定」→ プロパティID（数字のみ。測定ID `G-P8PPKGZVRT` とは別物）
-
-#### P-4. GitHub Secretsを登録
-- [ ] リポジトリ → Settings → Secrets and variables → Actions → New repository secret
-  - `GA4_PROPERTY_ID`: P-3で確認した数字のID
-  - `GA4_SERVICE_ACCOUNT_KEY`: P-1でダウンロードしたJSONファイルの中身をそのまま貼り付け
-- [ ] ダウンロードしたJSONキーファイルは登録後にローカルから削除（リポジトリに絶対コミットしない）
-
-#### P-5. 動作確認
-- [ ] Actions → 「人気記事ランキングの更新」→ Run workflow で手動実行
-- [ ] popular-posts.json が更新されたことを確認
-- [ ] https://www.minoru-dental.jp/blog.html のサイドバーに「よく読まれている記事」が表示されることを確認
+### ⏳ 残タスク（データ蓄積待ち）
+- [ ] P-6. データ反映の確認（目安: 1〜2週間後）
+  - GA4の「レポート」→「エンゲージメント」→「ページとスクリーン」で `/blog/` 配下のPVが記録され始めているか確認
+  - Actionsの実行ログで「popular-posts.json を更新しました（1件以上）」になっているか確認
+  - https://www.minoru-dental.jp/blog.html のサイドバーに「よく読まれている記事」が表示されるか確認
+- [ ] P-7. ランキング表示の見た目調整（実データ表示後に必要なら実施）
 
 ### 📌 注意事項
 - ブログ関連ページのGAタグが `G-XXXXXXXXXX`（プレースホルダー）のままだったため、2026-08-27に `G-P8PPKGZVRT` へ修正済み。**それ以前のブログ閲覧データはGA4に存在しない**ので、ランキングにデータが反映されるのは修正デプロイ後にアクセスが蓄積されてから

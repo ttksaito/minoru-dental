@@ -1,0 +1,12 @@
+{
+  "name": "minoru-dental",
+  "version": "1.0.0",
+  "private": true,
+  "description": "みのる歯科 公式サイト（静的HTML + ブログビルドスクリプト）",
+  "scripts": {
+    "build:blog": "node scripts/build-blog.js"
+  },
+  "devDependencies": {
+    "marked": "^15.0.0"
+  }
+}

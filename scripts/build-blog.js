@@ -1,0 +1,312 @@
+#!/usr/bin/env node
+/**
+ * ブログビルドスクリプト
+ *
+ * content/blog/*.md（frontmatter付きMarkdown）から以下を一括生成する:
+ *   - blog/[記事ID]/index.html （templates/blog-post.html ベース）
+ *   - blog-posts.json          （記事一覧メタデータ、日付降順）
+ *   - sitemap.xml              （全ページ）
+ *
+ * 使い方:
+ *   npm install        （初回のみ）
+ *   npm run build:blog
+ *
+ * 記事の追加方法:
+ *   1. content/blog/[記事ID].md を作成（既存記事を参考にfrontmatterを記述）
+ *   2. blog/[記事ID]/ にサムネイル画像（thumbnail.webp 推奨）を配置
+ *   3. npm run build:blog を実行
+ *   4. git commit & push → Vercelが自動デプロイ
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+let marked;
+try {
+  ({ marked } = require('marked'));
+} catch {
+  console.error('エラー: marked がインストールされていません。`npm install` を実行してください。');
+  process.exit(1);
+}
+
+const SITE_URL = 'https://www.minoru-dental.jp';
+const BASE_KEYWORDS = ['歯医者', '歯科', '東松山市', '沢口町', 'みのる歯科', '埼玉県'];
+
+const ROOT = path.resolve(__dirname, '..');
+const CONTENT_DIR = path.join(ROOT, 'content', 'blog');
+const TEMPLATE_PATH = path.join(ROOT, 'templates', 'blog-post.html');
+const BLOG_DIR = path.join(ROOT, 'blog');
+const POSTS_JSON_PATH = path.join(ROOT, 'blog-posts.json');
+const SITEMAP_PATH = path.join(ROOT, 'sitemap.xml');
+
+function fail(message) {
+  console.error(`エラー: ${message}`);
+  process.exit(1);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** frontmatter付きMarkdownを解析する */
+function parseMarkdownFile(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!match) fail(`${path.basename(filePath)}: frontmatter（--- で囲まれたメタ情報）がありません`);
+
+  const meta = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const kv = line.match(/^([A-Za-z_]+):\s*(.*)$/);
+    if (!kv) continue;
+    let value = kv[2].trim();
+    // Decap CMS等がYAML値をクォートで囲む場合に対応
+    const quoted = value.match(/^(['"])([\s\S]*)\1$/);
+    if (quoted) value = quoted[2];
+    meta[kv[1]] = value;
+  }
+
+  const id = path.basename(filePath, '.md');
+  const required = ['title', 'date', 'author', 'tags', 'image', 'summary'];
+  for (const key of required) {
+    if (!meta[key]) fail(`${id}.md: frontmatterに「${key}」がありません`);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) {
+    fail(`${id}.md: dateはISO形式（YYYY-MM-DD）で記述してください（現在: ${meta.date}）`);
+  }
+
+  return {
+    id,
+    title: meta.title,
+    date: meta.date,
+    author: meta.author,
+    tags: meta.tags.split(/[,、]/).map((t) => t.trim()).filter(Boolean),
+    image: meta.image,
+    summary: meta.summary,
+    body: match[2].trim(),
+  };
+}
+
+/** ISO日付を「YYYY年M月D日」に整形 */
+function formatDateJa(isoDate) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return `${y}年${m}月${d}日`;
+}
+
+/** Markdown本文をHTMLへ変換（見出しレベルを h2→h3, h3→h4 にシフト） */
+function renderContent(markdownBody) {
+  let html = marked.parse(markdownBody, { gfm: true, async: false });
+  // 記事タイトルがh2のため、本文見出しを1段下げる（h3→h4 を先に処理）
+  html = html.replace(/<(\/?)h3(\s|>)/g, '<$1h4$2');
+  html = html.replace(/<(\/?)h2(\s|>)/g, '<$1h3$2');
+  return html.trim();
+}
+
+/** タグの共通数から関連記事を最大3件選ぶ（不足時は新しい記事で補完） */
+function selectRelatedPosts(post, allPosts) {
+  const others = allPosts.filter((p) => p.id !== post.id);
+  const scored = others
+    .map((p) => ({
+      post: p,
+      score: p.tags.filter((t) => post.tags.includes(t)).length,
+    }))
+    .sort((a, b) => b.score - a.score || b.post.date.localeCompare(a.post.date));
+  return scored.slice(0, 3).map((s) => s.post);
+}
+
+function buildArticleHtml(template, post, allPosts) {
+  const canonicalUrl = `${SITE_URL}/blog/${post.id}/`;
+  const ogImageUrl = encodeURI(`${SITE_URL}/blog/${post.id}/${post.image}`);
+  const encodedUrl = encodeURIComponent(canonicalUrl);
+  const encodedTitle = encodeURIComponent(`${post.title} | みのる歯科ブログ`);
+
+  const jsonld = JSON.stringify(
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      image: ogImageUrl,
+      datePublished: `${post.date}T09:00:00+09:00`,
+      dateModified: `${post.date}T09:00:00+09:00`,
+      author: { '@type': 'Person', name: post.author },
+      publisher: {
+        '@type': 'Organization',
+        name: 'みのる歯科',
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/image/logo.png` },
+      },
+      description: post.summary,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+    },
+    null,
+    2
+  );
+
+  const tagsHtml = post.tags
+    .map((t) => `                        <span class="blog-post-tag">${escapeHtml(t)}</span>`)
+    .join('\n');
+
+  const related = selectRelatedPosts(post, allPosts);
+  const relatedItems = related
+    .map(
+      (p) => `                        <a href="../${p.id}/" class="blog-related-item">
+                            <div class="blog-related-image">
+                                <img src="../${p.id}/${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" loading="lazy" decoding="async">
+                            </div>
+                            <div class="blog-related-content">
+                                <h4>${escapeHtml(p.title)}</h4>
+                                <span class="post-date">${formatDateJa(p.date)}</span>
+                            </div>
+                        </a>`
+    )
+    .join('\n');
+
+  // 前後の記事（allPostsは日付降順: index+1 = 古い記事、index-1 = 新しい記事）
+  const index = allPosts.findIndex((p) => p.id === post.id);
+  const older = allPosts[index + 1];
+  const newer = allPosts[index - 1];
+  const prevLink = older
+    ? `                    <a href="../${older.id}/" class="pagination-link">← 前の記事</a>`
+    : '                    <span></span>';
+  const nextLink = newer
+    ? `                    <a href="../${newer.id}/" class="pagination-link">次の記事 →</a>`
+    : '                    <span></span>';
+
+  const latestItems = allPosts
+    .slice(0, 5)
+    .map(
+      (p) => `                        <li>
+                            <a href="../${p.id}/">${escapeHtml(p.title)}</a>
+                            <span class="post-date">${formatDateJa(p.date)}</span>
+                        </li>`
+    )
+    .join('\n');
+
+  const tagCounts = {};
+  for (const p of allPosts) for (const t of p.tags) tagCounts[t] = (tagCounts[t] || 0) + 1;
+  const categoryItems = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(
+      ([tag, count]) =>
+        `                        <li><a href="../../blog.html">${escapeHtml(tag)} <span class="category-count">${count}</span></a></li>`
+    )
+    .join('\n');
+
+  const keywords = [...BASE_KEYWORDS, ...post.tags].join(',');
+
+  return template
+    .replaceAll('{{JSONLD}}', jsonld)
+    .replaceAll('{{TITLE}}', escapeHtml(post.title))
+    .replaceAll('{{DESCRIPTION}}', escapeHtml(post.summary))
+    .replaceAll('{{KEYWORDS}}', escapeHtml(keywords))
+    .replaceAll('{{CANONICAL_URL}}', canonicalUrl)
+    .replaceAll('{{OG_IMAGE_URL}}', ogImageUrl)
+    .replaceAll('{{DATE_JA}}', formatDateJa(post.date))
+    .replaceAll('{{AUTHOR}}', escapeHtml(post.author))
+    .replaceAll('{{TAGS_HTML}}', tagsHtml)
+    .replaceAll('{{IMAGE_SRC}}', escapeHtml(post.image))
+    .replaceAll('{{CONTENT}}', post.contentHtml)
+    .replaceAll('{{SHARE_TWITTER}}', `https://twitter.com/intent/tweet?url=${encodedUrl}&amp;text=${encodedTitle}`)
+    .replaceAll('{{SHARE_FACEBOOK}}', `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`)
+    .replaceAll('{{SHARE_LINE}}', `https://social-plugins.line.me/lineit/share?url=${encodedUrl}`)
+    .replaceAll('{{RELATED_ITEMS}}', relatedItems)
+    .replaceAll('{{PREV_LINK}}', prevLink)
+    .replaceAll('{{NEXT_LINK}}', nextLink)
+    .replaceAll('{{LATEST_ITEMS}}', latestItems)
+    .replaceAll('{{CATEGORY_ITEMS}}', categoryItems);
+}
+
+function buildSitemap(allPosts) {
+  const today = new Date().toISOString().slice(0, 10);
+  const staticPages = [
+    { loc: `${SITE_URL}/`, lastmod: today, changefreq: 'weekly', priority: '1.0' },
+    { loc: `${SITE_URL}/blog.html`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
+  ];
+
+  const entries = [];
+  for (const page of staticPages) {
+    entries.push(`  <url>
+    <loc>${page.loc}</loc>
+    <lastmod>${page.lastmod}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`);
+  }
+  for (const post of allPosts) {
+    entries.push(`  <url>
+    <loc>${SITE_URL}/blog/${post.id}/</loc>
+    <lastmod>${post.date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>${encodeURI(`${SITE_URL}/blog/${post.id}/${post.image}`)}</image:loc>
+      <image:title>${escapeHtml(post.title)}</image:title>
+    </image:image>
+  </url>`);
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+${entries.join('\n\n')}
+
+</urlset>
+`;
+}
+
+function main() {
+  if (!fs.existsSync(CONTENT_DIR)) fail(`${CONTENT_DIR} がありません`);
+  const template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+
+  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith('.md'));
+  if (files.length === 0) fail('content/blog/ にMarkdownファイルがありません');
+
+  const posts = files
+    .map((f) => parseMarkdownFile(path.join(CONTENT_DIR, f)))
+    .sort((a, b) => b.date.localeCompare(a.date)); // 新しい順
+
+  // 本文を変換
+  for (const post of posts) {
+    post.contentHtml = renderContent(post.body);
+  }
+
+  // 記事HTMLを生成
+  for (const post of posts) {
+    const dir = path.join(BLOG_DIR, post.id);
+    fs.mkdirSync(dir, { recursive: true });
+
+    const imagePath = path.join(dir, post.image);
+    if (!fs.existsSync(imagePath)) {
+      console.warn(`警告: ${post.id}/${post.image} が見つかりません（サムネイルを配置してください）`);
+    }
+
+    fs.writeFileSync(path.join(dir, 'index.html'), buildArticleHtml(template, post, posts), 'utf8');
+    console.log(`生成: blog/${post.id}/index.html`);
+  }
+
+  // blog-posts.json を生成
+  const postsJson = {
+    posts: posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      date: p.date,
+      author: p.author,
+      tags: p.tags,
+      summary: p.summary,
+      image: `blog/${p.id}/${p.image}`,
+    })),
+  };
+  fs.writeFileSync(POSTS_JSON_PATH, JSON.stringify(postsJson, null, 2) + '\n', 'utf8');
+  console.log('生成: blog-posts.json');
+
+  // sitemap.xml を生成
+  fs.writeFileSync(SITEMAP_PATH, buildSitemap(posts), 'utf8');
+  console.log('生成: sitemap.xml');
+
+  console.log(`\n完了: ${posts.length}記事をビルドしました`);
+}
+
+main();
