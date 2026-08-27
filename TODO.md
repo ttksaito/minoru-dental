@@ -1,6 +1,6 @@
 # みのる歯科 Webサイト・オンライン対策 TODO
 
-最終更新: 2026-08-27
+最終更新: 2026-08-28
 
 ## 📊 完了済み項目
 
@@ -289,13 +289,13 @@ VSCodeを使わず、ブラウザの管理画面（https://www.minoru-dental.jp/
 - [x] 既存md 13ファイルに `slug` フィールド追加（CMS互換）
 - [x] build-blog.js をfrontmatterのクォート付き値に対応（CMSがYAMLをクォートで書くケース）
 
-### ⏳ 残タスク（手動セットアップ）
+### ✅ セットアップ完了（2026-08-28）
 - [x] C-1. GitHub OAuth Appを作成（GitHub → Settings → Developer settings → OAuth Apps）
   - Homepage URL: `https://www.minoru-dental.jp`
-  - [ ] **callback URLの修正が必要**: `https://minoru-dental.vercel.app/api/callback` に変更する（当初案内の www.minoru-dental.jp はGitHub Pages配信のため不可）
+  - [x] callback URLを `https://minoru-dental.vercel.app/api/callback` に修正済み（www.minoru-dental.jp はGitHub Pages配信のため不可）
 - [x] C-2. Vercel環境変数を登録（Settings → Environment Variables）
   - `OAUTH_GITHUB_CLIENT_ID` / `OAUTH_GITHUB_CLIENT_SECRET`
-- [ ] C-3. デプロイ後に `/admin/` からログイン・記事作成をテスト
+- [x] C-3. `/admin/` からのログイン・記事一覧表示を確認済み（2026-08-28）
 
 ---
 
