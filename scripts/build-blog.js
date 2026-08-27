@@ -4,6 +4,7 @@
  *
  * content/blog/*.md（frontmatter付きMarkdown）から以下を一括生成する:
  *   - blog/[記事ID]/index.html （templates/blog-post.html ベース）
+ *   - blog.html                （templates/blog-list.html ベース。一覧を静的HTMLとして埋め込み＝SEO対応）
  *   - blog-posts.json          （記事一覧メタデータ、日付降順）
  *   - sitemap.xml              （全ページ）
  *
@@ -35,7 +36,9 @@ const BASE_KEYWORDS = ['歯医者', '歯科', '東松山市', '沢口町', 'み�
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content', 'blog');
 const TEMPLATE_PATH = path.join(ROOT, 'templates', 'blog-post.html');
+const LIST_TEMPLATE_PATH = path.join(ROOT, 'templates', 'blog-list.html');
 const BLOG_DIR = path.join(ROOT, 'blog');
+const BLOG_LIST_PATH = path.join(ROOT, 'blog.html');
 const POSTS_JSON_PATH = path.join(ROOT, 'blog-posts.json');
 const SITEMAP_PATH = path.join(ROOT, 'sitemap.xml');
 
@@ -218,6 +221,75 @@ function buildArticleHtml(template, post, allPosts) {
     .replaceAll('{{CATEGORY_ITEMS}}', categoryItems);
 }
 
+/** ブログ一覧ページ（blog.html）を生成する。記事一覧・サイドバーを静的HTMLとして埋め込む（SEO対応） */
+function buildListPage(listTemplate, allPosts) {
+  // 記事一覧（data-tags はJSのカテゴリー絞り込みで使用）
+  const postItems = allPosts
+    .map((p) => {
+      const url = `blog/${p.id}/`;
+      const imageSrc = `blog/${p.id}/${p.image}`;
+      const tagsHtml = p.tags
+        .map((t) => `<span class="blog-post-tag">${escapeHtml(t)}</span>`)
+        .join('');
+      return `                <article class="blog-post" data-tags="${escapeHtml(p.tags.join(','))}">
+                    <div class="blog-post-image">
+                        <a href="${url}"><img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(p.title)}" loading="lazy" decoding="async"></a>
+                    </div>
+                    <div class="blog-post-content">
+                        <div class="blog-post-meta">
+                            <span>${formatDateJa(p.date)}</span>
+                            <span>投稿者: ${escapeHtml(p.author)}</span>
+                        </div>
+                        <div class="blog-post-tags">${tagsHtml}</div>
+                        <h3><a href="${url}">${escapeHtml(p.title)}</a></h3>
+                        <p>${escapeHtml(p.summary)}</p>
+                        <a href="${url}" class="read-more">続きを読む →</a>
+                    </div>
+                </article>`;
+    })
+    .join('\n');
+
+  // サイドバー: 最新記事（5件）
+  const latestItems = allPosts
+    .slice(0, 5)
+    .map(
+      (p) => `                        <li>
+                            <a href="blog/${p.id}/">${escapeHtml(p.title)}</a>
+                            <span class="post-date">${formatDateJa(p.date)}</span>
+                        </li>`
+    )
+    .join('\n');
+
+  // サイドバー: カテゴリー（記事数の多い順）
+  const tagCounts = {};
+  for (const p of allPosts) for (const t of p.tags) tagCounts[t] = (tagCounts[t] || 0) + 1;
+  const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+  const categoryItems = sortedTags
+    .map(
+      ([tag, count]) =>
+        `                        <li><a href="#" data-category="${escapeHtml(tag)}">${escapeHtml(tag)} <span class="category-count">${count}</span></a></li>`
+    )
+    .join('\n');
+
+  // サイドバー: タグクラウド
+  const tagItems = sortedTags
+    .map(
+      ([tag]) =>
+        `                        <span class="blog-post-tag tag-filter" data-category="${escapeHtml(tag)}" role="button" tabindex="0">${escapeHtml(tag)}</span>`
+    )
+    .join('\n');
+
+  // 人気記事ランキング用のID→タイトル対応表（<script>内に埋め込むため < をエスケープ）
+  const postsMetaJson = JSON.stringify(allPosts.map((p) => ({ id: p.id, title: p.title }))).replace(/</g, '\\u003c');
+
+  return listTemplate
+    .replaceAll('{{POST_ITEMS}}', postItems)
+    .replaceAll('{{LATEST_ITEMS}}', latestItems)
+    .replaceAll('{{CATEGORY_ITEMS}}', categoryItems)
+    .replaceAll('{{TAG_ITEMS}}', tagItems)
+    .replaceAll('{{POSTS_META_JSON}}', postsMetaJson);
+}
+
 function buildSitemap(allPosts) {
   const today = new Date().toISOString().slice(0, 10);
   const staticPages = [
@@ -286,6 +358,11 @@ function main() {
     fs.writeFileSync(path.join(dir, 'index.html'), buildArticleHtml(template, post, posts), 'utf8');
     console.log(`生成: blog/${post.id}/index.html`);
   }
+
+  // blog.html（一覧ページ）を生成
+  const listTemplate = fs.readFileSync(LIST_TEMPLATE_PATH, 'utf8');
+  fs.writeFileSync(BLOG_LIST_PATH, buildListPage(listTemplate, posts), 'utf8');
+  console.log('生成: blog.html');
 
   // blog-posts.json を生成
   const postsJson = {

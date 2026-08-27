@@ -1,7 +1,7 @@
 name: ブログの自動ビルド
 
 # content/blog/ のMarkdown、テンプレート、ビルドスクリプトが変更されたら
-# 記事HTML・blog-posts.json・sitemap.xml を再生成してコミットする。
+# 記事HTML・blog.html・blog-posts.json・sitemap.xml を再生成してコミットする。
 # （Decap CMSやGitHub Web UIからの記事追加を自動で公開反映するための仕組み）
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
 
       - name: 変更があればコミット・プッシュ
         run: |
-          git add blog blog-posts.json sitemap.xml
+          git add blog blog.html blog-posts.json sitemap.xml
           if git diff --cached --quiet; then
             echo "変更なし。コミットをスキップします。"
             exit 0
