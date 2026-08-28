@@ -1,5 +1,14 @@
 {
-  "updated": "2026-08-27",
+  "updated": "2026-08-28",
   "rangeDays": 90,
-  "posts": []
+  "posts": [
+    {
+      "id": "child-dental-care",
+      "views": 2
+    },
+    {
+      "id": "regular-checkup",
+      "views": 2
+    }
+  ]
 }
