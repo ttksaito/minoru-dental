@@ -3,5 +3,12 @@
   "buildCommand": null,
   "outputDirectory": ".",
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "https://www.minoru-dental.jp/$1",
+      "permanent": true
+    }
+  ]
 }
