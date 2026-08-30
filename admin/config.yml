@@ -58,7 +58,7 @@ collections:
         name: tags
         widget: string
         required: false
-        hint: '任意。未入力のまま保存すると本文から自動で付与されます。手動指定する例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
+        hint: '任意。未入力のまま保存すると本文から自動で付与されます（画面には記事を開き直すと表示されます）。手動指定する例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
       - label: サムネイル画像
         name: image
         widget: image
@@ -105,7 +105,7 @@ collections:
         name: tags
         widget: string
         required: false
-        hint: '任意。未入力のまま保存すると本文から自動で付与されます'
+        hint: '任意。未入力のまま保存すると本文から自動で付与されます（画面には記事を開き直すと表示されます）'
       - label: サムネイル画像
         name: image
         widget: string
