@@ -1,10 +1,14 @@
 {
-  "updated": "2026-08-29",
+  "updated": "2026-08-30",
   "rangeDays": 90,
   "posts": [
     {
       "id": "regular-checkup",
-      "views": 6
+      "views": 8
+    },
+    {
+      "id": "best-brushing-timing",
+      "views": 2
     },
     {
       "id": "child-dental-care",
