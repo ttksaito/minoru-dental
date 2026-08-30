@@ -57,7 +57,8 @@ collections:
       - label: タグ（カンマ区切り）
         name: tags
         widget: string
-        hint: '例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
+        required: false
+        hint: '任意。未入力の場合は本文から自動で付与されます。手動指定する例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
       - label: サムネイル画像
         name: image
         widget: image
@@ -68,7 +69,8 @@ collections:
       - label: 要約
         name: summary
         widget: text
-        hint: '記事一覧・検索結果・SNSシェアで表示されます（100〜150字程度）'
+        required: false
+        hint: '任意。記事一覧・検索結果・SNSシェアで表示されます（100〜150字程度）。未入力の場合は空欄で表示されます'
       - label: 本文
         name: body
         widget: markdown
@@ -102,6 +104,8 @@ collections:
       - label: タグ（カンマ区切り）
         name: tags
         widget: string
+        required: false
+        hint: '任意。未入力の場合は公開時に本文から自動で付与されます'
       - label: サムネイル画像
         name: image
         widget: string
@@ -109,6 +113,7 @@ collections:
       - label: 要約
         name: summary
         widget: text
+        required: false
       - label: 本文
         name: body
         widget: markdown

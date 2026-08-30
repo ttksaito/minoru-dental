@@ -55,6 +55,31 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/**
+ * タグ自動判定用のキーワード対応表（タグ → 本文・タイトル中のキーワード）
+ * frontmatterのtagsが未入力の場合に使用。判定順に評価される。
+ */
+const TAG_KEYWORDS = [
+  ['歯磨き', ['歯磨き', 'ブラッシング', '歯ブラシ', '磨き方']],
+  ['虫歯予防', ['虫歯', 'むし歯']],
+  ['歯周病', ['歯周病', '歯肉炎', '歯周炎', '歯ぐき', '歯茎']],
+  ['小児歯科', ['小児', '子ども', '子供', 'お子さん', 'お子様', '乳歯']],
+  ['定期検診', ['定期検診', '定期健診', 'メンテナンス', '検診']],
+  ['入れ歯', ['入れ歯', '義歯', 'インプラント', 'ブリッジ']],
+  ['予防歯科', ['予防', 'フッ素', 'フロス', 'デンタルフロス', '唾液']],
+];
+const FALLBACK_TAG = '歯の豆知識';
+
+/** タイトル＋本文からタグを自動判定する（最大3件。マッチなしはフォールバック） */
+function inferTags(title, body) {
+  const text = `${title}\n${body}`;
+  const tags = TAG_KEYWORDS
+    .filter(([, keywords]) => keywords.some((kw) => text.includes(kw)))
+    .map(([tag]) => tag)
+    .slice(0, 3);
+  return tags.length > 0 ? tags : [FALLBACK_TAG];
+}
+
 /** frontmatter付きMarkdownを解析する */
 function parseMarkdownFile(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8');
@@ -73,12 +98,23 @@ function parseMarkdownFile(filePath) {
   }
 
   const id = path.basename(filePath, '.md');
-  const required = ['title', 'date', 'author', 'tags', 'image', 'summary'];
+  const required = ['title', 'date', 'author', 'image'];
   for (const key of required) {
     if (!meta[key]) fail(`${id}.md: frontmatterに「${key}」がありません`);
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) {
     fail(`${id}.md: dateはISO形式（YYYY-MM-DD）で記述してください（現在: ${meta.date}）`);
+  }
+  if (!meta.summary) {
+    console.warn(`警告: ${id}.md に「summary」がありません（meta description・一覧の説明文が空になります）`);
+  }
+
+  // タグ: 手入力があれば優先、未入力ならタイトル＋本文から自動判定
+  const body = match[2].trim();
+  let tags = (meta.tags || '').split(/[,、]/).map((t) => t.trim()).filter(Boolean);
+  if (tags.length === 0) {
+    tags = inferTags(meta.title, body);
+    console.log(`情報: ${id}.md はタグ未入力のため自動付与しました → ${tags.join(', ')}`);
   }
 
   return {
@@ -86,10 +122,10 @@ function parseMarkdownFile(filePath) {
     title: meta.title,
     date: meta.date,
     author: meta.author,
-    tags: meta.tags.split(/[,、]/).map((t) => t.trim()).filter(Boolean),
+    tags,
     image: meta.image,
-    summary: meta.summary,
-    body: match[2].trim(),
+    summary: meta.summary || '', // 任意項目（未入力時は空文字。meta description等が空になる）
+    body,
   };
 }
 
