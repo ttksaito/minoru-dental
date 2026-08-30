@@ -119,6 +119,25 @@ function parseMarkdownFile(filePath) {
   };
 }
 
+/**
+ * サムネイルのサイト内パス（先頭スラッシュなし）を返す。
+ *   - '/blog/uploads/画像.png' のような絶対パス（CMSアップロード）→ 'blog/uploads/画像.png'
+ *   - 'thumbnail.webp' のような相対パス（既存記事）→ 'blog/[記事ID]/thumbnail.webp'
+ */
+function imageWebPath(post) {
+  return post.image.startsWith('/') ? post.image.slice(1) : `blog/${post.id}/${post.image}`;
+}
+
+/** HTMLに埋め込むサムネイルURL（サイトルート絶対パス）。日本語ファイル名をURLエンコードする */
+function imageUrl(post) {
+  return `/${encodeURI(imageWebPath(post))}`;
+}
+
+/** OGP・サイトマップ用のサムネイル完全URL */
+function imageFullUrl(post) {
+  return `${SITE_URL}${imageUrl(post)}`;
+}
+
 /** ISO日付を「YYYY年M月D日」に整形 */
 function formatDateJa(isoDate) {
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -148,7 +167,7 @@ function selectRelatedPosts(post, allPosts) {
 
 function buildArticleHtml(template, post, allPosts) {
   const canonicalUrl = `${SITE_URL}/blog/${post.id}/`;
-  const ogImageUrl = encodeURI(`${SITE_URL}/blog/${post.id}/${post.image}`);
+  const ogImageUrl = imageFullUrl(post);
   const encodedUrl = encodeURIComponent(canonicalUrl);
   const encodedTitle = encodeURIComponent(`${post.title} | みのる歯科ブログ`);
 
@@ -181,7 +200,7 @@ function buildArticleHtml(template, post, allPosts) {
     .map(
       (p) => `                        <a href="../${p.id}/" class="blog-related-item">
                             <div class="blog-related-image">
-                                <img src="../${p.id}/${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" loading="lazy" decoding="async">
+                                <img src="${escapeHtml(imageUrl(p))}" alt="${escapeHtml(p.title)}" loading="lazy" decoding="async">
                             </div>
                             <div class="blog-related-content">
                                 <h4>${escapeHtml(p.title)}</h4>
@@ -233,7 +252,7 @@ function buildArticleHtml(template, post, allPosts) {
     .replaceAll('{{OG_IMAGE_URL}}', ogImageUrl)
     .replaceAll('{{DATE_JA}}', formatDateJa(post.date))
     .replaceAll('{{TAGS_HTML}}', tagsHtml)
-    .replaceAll('{{IMAGE_SRC}}', escapeHtml(post.image))
+    .replaceAll('{{IMAGE_SRC}}', escapeHtml(imageUrl(post)))
     .replaceAll('{{CONTENT}}', post.contentHtml)
     .replaceAll('{{SHARE_TWITTER}}', `https://twitter.com/intent/tweet?url=${encodedUrl}&amp;text=${encodedTitle}`)
     .replaceAll('{{SHARE_FACEBOOK}}', `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`)
@@ -251,7 +270,7 @@ function buildListPage(listTemplate, allPosts) {
   const postItems = allPosts
     .map((p) => {
       const url = `blog/${p.id}/`;
-      const imageSrc = `blog/${p.id}/${p.image}`;
+      const imageSrc = imageUrl(p);
       const tagsHtml = p.tags
         .map((t) => `<span class="blog-post-tag">${escapeHtml(t)}</span>`)
         .join('');
@@ -336,7 +355,7 @@ function buildSitemap(allPosts) {
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <image:image>
-      <image:loc>${encodeURI(`${SITE_URL}/blog/${post.id}/${post.image}`)}</image:loc>
+      <image:loc>${imageFullUrl(post)}</image:loc>
       <image:title>${escapeHtml(post.title)}</image:title>
     </image:image>
   </url>`);
@@ -373,9 +392,9 @@ function main() {
     const dir = path.join(BLOG_DIR, post.id);
     fs.mkdirSync(dir, { recursive: true });
 
-    const imagePath = path.join(dir, post.image);
+    const imagePath = path.join(ROOT, imageWebPath(post));
     if (!fs.existsSync(imagePath)) {
-      console.warn(`警告: ${post.id}/${post.image} が見つかりません（サムネイルを配置してください）`);
+      console.warn(`警告: ${imageWebPath(post)} が見つかりません（サムネイルを配置してください）`);
     }
 
     fs.writeFileSync(path.join(dir, 'index.html'), buildArticleHtml(template, post, posts), 'utf8');
@@ -395,7 +414,7 @@ function main() {
       date: p.date,
       tags: p.tags,
       summary: p.summary,
-      image: `blog/${p.id}/${p.image}`,
+      image: imageWebPath(p),
     })),
   };
   fs.writeFileSync(POSTS_JSON_PATH, JSON.stringify(postsJson, null, 2) + '\n', 'utf8');

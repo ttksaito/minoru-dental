@@ -58,10 +58,9 @@ collections:
       - label: サムネイル画像
         name: image
         widget: image
-        default: thumbnail.webp
-        media_folder: '/blog/{{slug}}'
-        public_folder: ''
-        hint: '英数字ファイル名の画像をアップロードしてください（thumbnail.webp 推奨。WebP形式・横長）'
+        media_folder: '/blog/uploads'
+        public_folder: '/blog/uploads'
+        hint: '画像をアップロードしてください（日本語ファイル名でもOK。横長の画像を推奨）'
       - label: 本文
         name: body
         widget: markdown
@@ -96,11 +95,10 @@ collections:
       - label: サムネイル画像
         name: image
         widget: image
-        default: thumbnail.webp
         required: false
-        media_folder: '/blog/{{slug}}'
-        public_folder: ''
-        hint: '英数字ファイル名の画像をアップロードしてください（thumbnail.webp 推奨。WebP形式・横長）。公開後も同じ画像がそのまま使われます'
+        media_folder: '/blog/uploads'
+        public_folder: '/blog/uploads'
+        hint: '画像をアップロードしてください（日本語ファイル名でもOK。横長の画像を推奨）。公開後も同じ画像がそのまま使われます'
       - label: 本文
         name: body
         widget: markdown
