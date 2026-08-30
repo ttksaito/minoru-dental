@@ -684,6 +684,19 @@
                         <a href="blog/best-brushing-timing/" class="read-more">続きを読む →</a>
                     </div>
                 </article>
+                <article class="blog-post" data-tags="入れ歯">
+                    <div class="blog-post-image">
+                        <a href="blog/denture-chewing-power/"><img src="blog/denture-chewing-power/chatgpt-image-2026年8月30日-23_56_28.png" alt="入れ歯になると、どのくらい噛めなくなる？" loading="lazy" decoding="async"></a>
+                    </div>
+                    <div class="blog-post-content">
+                        <div class="blog-post-meta">
+                            <span>2026年8月30日</span>
+                        </div>
+                        <div class="blog-post-tags"><span class="blog-post-tag">入れ歯</span></div>
+                        <h3><a href="blog/denture-chewing-power/">入れ歯になると、どのくらい噛めなくなる？</a></h3>
+                        <a href="blog/denture-chewing-power/" class="read-more">続きを読む →</a>
+                    </div>
+                </article>
                 <article class="blog-post" data-tags="予防歯科,定期検診">
                     <div class="blog-post-image">
                         <a href="blog/regular-checkup/"><img src="blog/regular-checkup/thumbnail.webp" alt="定期検診の重要性について" loading="lazy" decoding="async"></a>
@@ -760,6 +773,10 @@
                             <span class="post-date">2026年8月30日</span>
                         </li>
                         <li>
+                            <a href="blog/denture-chewing-power/">入れ歯になると、どのくらい噛めなくなる？</a>
+                            <span class="post-date">2026年8月30日</span>
+                        </li>
+                        <li>
                             <a href="blog/regular-checkup/">定期検診の重要性について</a>
                             <span class="post-date">2025年3月15日</span>
                         </li>
@@ -783,6 +800,7 @@
                         <li><a href="#" data-category="予防歯科">予防歯科 <span class="category-count">2</span></a></li>
                         <li><a href="#" data-category="小児歯科">小児歯科 <span class="category-count">1</span></a></li>
                         <li><a href="#" data-category="定期検診">定期検診 <span class="category-count">1</span></a></li>
+                        <li><a href="#" data-category="入れ歯">入れ歯 <span class="category-count">1</span></a></li>
                     </ul>
                 </div>
 
@@ -795,6 +813,7 @@
                         <span class="blog-post-tag tag-filter" data-category="予防歯科" role="button" tabindex="0">予防歯科</span>
                         <span class="blog-post-tag tag-filter" data-category="小児歯科" role="button" tabindex="0">小児歯科</span>
                         <span class="blog-post-tag tag-filter" data-category="定期検診" role="button" tabindex="0">定期検診</span>
+                        <span class="blog-post-tag tag-filter" data-category="入れ歯" role="button" tabindex="0">入れ歯</span>
                     </div>
                 </div>
                 
@@ -1020,7 +1039,7 @@
 
             // ===== 人気記事ランキング（popular-posts.json はGitHub ActionsがGA4から自動集計） =====
             // 記事ID→タイトルの対応表（ビルド時に埋め込み）
-            const POSTS_META = [{"id":"best-brushing-timing","title":"歯を磨くベストなタイミングはいつ？"},{"id":"regular-checkup","title":"定期検診の重要性について"},{"id":"proper-brushing","title":"正しい歯磨きの方法と注意点"},{"id":"child-dental-care","title":"お子様の歯を守るために知っておきたいこと"}];
+            const POSTS_META = [{"id":"best-brushing-timing","title":"歯を磨くベストなタイミングはいつ？"},{"id":"denture-chewing-power","title":"入れ歯になると、どのくらい噛めなくなる？"},{"id":"regular-checkup","title":"定期検診の重要性について"},{"id":"proper-brushing","title":"正しい歯磨きの方法と注意点"},{"id":"child-dental-care","title":"お子様の歯を守るために知っておきたいこと"}];
             fetch('popular-posts.json')
                 .then(response => {
                     if (!response.ok) throw new Error('popular-posts.json の読み込みに失敗');
