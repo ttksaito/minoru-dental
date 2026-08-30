@@ -1,6 +1,17 @@
 {
   "posts": [
     {
+      "id": "best-brushing-timing",
+      "title": "歯を磨くベストなタイミングはいつ？",
+      "date": "2026-08-30",
+      "tags": [
+        "歯磨き",
+        "虫歯予防"
+      ],
+      "summary": "",
+      "image": "blog/best-brushing-timing/chatgpt-image-2026年8月30日-16_19_45.png"
+    },
+    {
       "id": "regular-checkup",
       "title": "定期検診の重要性について",
       "date": "2025-03-15",
