@@ -3,7 +3,7 @@ slug: denture-chewing-power
 title: 入れ歯になると、どのくらい噛めなくなる？
 date: 2026-08-30
 tags: 入れ歯
-image: chatgpt-image-2026年8月30日-23_56_28.png
+image: /blog/uploads/chatgpt-image-2026年8月30日-23_56_28.png
 ---
 入れ歯にすると、以前のように何でも噛めなくなるのでしょうか？
 
