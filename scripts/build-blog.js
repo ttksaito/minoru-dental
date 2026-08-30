@@ -112,7 +112,6 @@ function parseMarkdownFile(filePath) {
     id,
     title: meta.title,
     date: meta.date,
-    author: meta.author || '斉藤 稔', // CMSの入力項目からは削除済み（院長固定）。既存記事の値は尊重
     tags,
     image: meta.image,
     summary: meta.summary || '', // CMSの入力項目からは削除済み。既存記事に残っている値のみ使用
@@ -161,7 +160,6 @@ function buildArticleHtml(template, post, allPosts) {
       image: ogImageUrl,
       datePublished: `${post.date}T09:00:00+09:00`,
       dateModified: `${post.date}T09:00:00+09:00`,
-      author: { '@type': 'Person', name: post.author },
       publisher: {
         '@type': 'Organization',
         name: 'みのる歯科',
@@ -234,7 +232,6 @@ function buildArticleHtml(template, post, allPosts) {
     .replaceAll('{{CANONICAL_URL}}', canonicalUrl)
     .replaceAll('{{OG_IMAGE_URL}}', ogImageUrl)
     .replaceAll('{{DATE_JA}}', formatDateJa(post.date))
-    .replaceAll('{{AUTHOR}}', escapeHtml(post.author))
     .replaceAll('{{TAGS_HTML}}', tagsHtml)
     .replaceAll('{{IMAGE_SRC}}', escapeHtml(post.image))
     .replaceAll('{{CONTENT}}', post.contentHtml)
@@ -265,7 +262,6 @@ function buildListPage(listTemplate, allPosts) {
                     <div class="blog-post-content">
                         <div class="blog-post-meta">
                             <span>${formatDateJa(p.date)}</span>
-                            <span>投稿者: ${escapeHtml(p.author)}</span>
                         </div>
                         <div class="blog-post-tags">${tagsHtml}</div>
                         <h3><a href="${url}">${escapeHtml(p.title)}</a></h3>${p.summary ? `
@@ -397,7 +393,6 @@ function main() {
       id: p.id,
       title: p.title,
       date: p.date,
-      author: p.author,
       tags: p.tags,
       summary: p.summary,
       image: `blog/${p.id}/${p.image}`,
