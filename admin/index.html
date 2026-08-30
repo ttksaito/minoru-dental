@@ -10,8 +10,9 @@
     <!-- Decap CMS（記事管理画面）。設定は同ディレクトリの config.yml -->
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
     <script>
-        // タグの自動付与（保存時）
-        // タグ欄が空のまま保存すると、タイトル＋本文からキーワード判定してタグを自動入力する。
+        // タグの自動付与
+        // 1. タグ欄の「本文から自動入力」ボタン（カスタムウィジェット）: 押すとその場で欄に反映
+        // 2. 保険: 空のまま保存した場合はpreSaveフックで保存データに自動付与
         // 判定ルールは tag-keywords.json（scripts/build-blog.js と共通）。
         (function () {
             var tagConfig = null;
@@ -34,6 +35,62 @@
                 return tags.length > 0 ? tags : [tagConfig.fallback];
             }
 
+            // カスタムウィジェット: テキスト欄＋「本文から自動入力」ボタン
+            // （createClass / h はdecap-cms.jsがCDN利用向けに公開しているグローバル）
+            var TagsWithAutoControl = createClass({
+                handleChange: function (e) {
+                    this.props.onChange(e.target.value);
+                },
+                handleAuto: function () {
+                    if (!tagConfig) {
+                        alert('判定ルールの読み込みに失敗しました。ページを再読み込みしてください。');
+                        return;
+                    }
+                    var entry = this.props.entry;
+                    var title = entry.getIn(['data', 'title']) || '';
+                    var body = entry.getIn(['data', 'body']) || '';
+                    if (!title && !body) {
+                        alert('タイトルまたは本文を入力してから押してください。');
+                        return;
+                    }
+                    this.props.onChange(inferTags(title, body).join(', '));
+                },
+                render: function () {
+                    return h(
+                        'div',
+                        { style: { display: 'flex', gap: '8px', alignItems: 'stretch' } },
+                        h('input', {
+                            type: 'text',
+                            id: this.props.forID,
+                            className: this.props.classNameWrapper,
+                            value: this.props.value || '',
+                            onChange: this.handleChange,
+                            style: { flex: '1' },
+                        }),
+                        h(
+                            'button',
+                            {
+                                type: 'button',
+                                onClick: this.handleAuto,
+                                style: {
+                                    whiteSpace: 'nowrap',
+                                    padding: '0 16px',
+                                    border: '2px solid #dfdfe3',
+                                    borderRadius: '5px',
+                                    background: '#f2f2f2',
+                                    color: '#444',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                },
+                            },
+                            '本文から自動入力'
+                        )
+                    );
+                },
+            });
+            CMS.registerWidget('tagsWithAuto', TagsWithAutoControl);
+
+            // 保険: タグ欄が空のまま保存された場合は保存データに自動付与
             CMS.registerEventListener({
                 name: 'preSave',
                 handler: function (payload) {

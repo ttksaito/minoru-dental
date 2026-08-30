@@ -50,15 +50,11 @@ collections:
         format: 'YYYY-MM-DD'
         date_format: 'YYYY-MM-DD'
         time_format: false
-      - label: 著者
-        name: author
-        widget: string
-        default: 斉藤 稔
       - label: タグ（カンマ区切り）
         name: tags
-        widget: string
+        widget: tagsWithAuto
         required: false
-        hint: '任意。未入力のまま保存すると本文から自動で付与されます（画面には記事を開き直すと表示されます）。手動指定する例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
+        hint: '任意。「本文から自動入力」ボタンで本文から判定してその場で入力できます。空のまま保存した場合も自動で付与されます。手動指定する例: 予防歯科, 歯磨き（既存タグ: 予防歯科 / 定期検診 / 歯磨き / 虫歯予防 / 小児歯科 / 歯周病 / 入れ歯 / 歯の豆知識）'
       - label: サムネイル画像
         name: image
         widget: image
@@ -66,11 +62,6 @@ collections:
         media_folder: '/blog/{{slug}}'
         public_folder: ''
         hint: '英数字ファイル名の画像をアップロードしてください（thumbnail.webp 推奨。WebP形式・横長）'
-      - label: 要約
-        name: summary
-        widget: text
-        required: false
-        hint: '任意。記事一覧・検索結果・SNSシェアで表示されます（100〜150字程度）。未入力の場合は空欄で表示されます'
       - label: 本文
         name: body
         widget: markdown
@@ -97,23 +88,19 @@ collections:
         format: 'YYYY-MM-DD'
         date_format: 'YYYY-MM-DD'
         time_format: false
-      - label: 著者
-        name: author
-        widget: string
-        default: 斉藤 稔
       - label: タグ（カンマ区切り）
         name: tags
-        widget: string
+        widget: tagsWithAuto
         required: false
-        hint: '任意。未入力のまま保存すると本文から自動で付与されます（画面には記事を開き直すと表示されます）'
+        hint: '任意。「本文から自動入力」ボタンで本文から判定してその場で入力できます。空のまま保存した場合も自動で付与されます'
       - label: サムネイル画像
         name: image
-        widget: string
+        widget: image
         default: thumbnail.webp
-      - label: 要約
-        name: summary
-        widget: text
         required: false
+        media_folder: '/blog/{{slug}}'
+        public_folder: ''
+        hint: '英数字ファイル名の画像をアップロードしてください（thumbnail.webp 推奨。WebP形式・横長）。公開後も同じ画像がそのまま使われます'
       - label: 本文
         name: body
         widget: markdown

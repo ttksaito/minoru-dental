@@ -92,15 +92,12 @@ function parseMarkdownFile(filePath) {
   }
 
   const id = path.basename(filePath, '.md');
-  const required = ['title', 'date', 'author', 'image'];
+  const required = ['title', 'date', 'image'];
   for (const key of required) {
     if (!meta[key]) fail(`${id}.md: frontmatterに「${key}」がありません`);
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) {
     fail(`${id}.md: dateはISO形式（YYYY-MM-DD）で記述してください（現在: ${meta.date}）`);
-  }
-  if (!meta.summary) {
-    console.warn(`警告: ${id}.md に「summary」がありません（meta description・一覧の説明文が空になります）`);
   }
 
   // タグ: 手入力があれば優先、未入力ならタイトル＋本文から自動判定
@@ -115,10 +112,10 @@ function parseMarkdownFile(filePath) {
     id,
     title: meta.title,
     date: meta.date,
-    author: meta.author,
+    author: meta.author || '斉藤 稔', // CMSの入力項目からは削除済み（院長固定）。既存記事の値は尊重
     tags,
     image: meta.image,
-    summary: meta.summary || '', // 任意項目（未入力時は空文字。meta description等が空になる）
+    summary: meta.summary || '', // CMSの入力項目からは削除済み。既存記事に残っている値のみ使用
     body,
   };
 }
@@ -271,8 +268,8 @@ function buildListPage(listTemplate, allPosts) {
                             <span>投稿者: ${escapeHtml(p.author)}</span>
                         </div>
                         <div class="blog-post-tags">${tagsHtml}</div>
-                        <h3><a href="${url}">${escapeHtml(p.title)}</a></h3>
-                        <p>${escapeHtml(p.summary)}</p>
+                        <h3><a href="${url}">${escapeHtml(p.title)}</a></h3>${p.summary ? `
+                        <p>${escapeHtml(p.summary)}</p>` : ''}
                         <a href="${url}" class="read-more">続きを読む →</a>
                     </div>
                 </article>`;
