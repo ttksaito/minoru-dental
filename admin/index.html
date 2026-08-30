@@ -9,5 +9,43 @@
 <body>
     <!-- Decap CMS（記事管理画面）。設定は同ディレクトリの config.yml -->
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <script>
+        // タグの自動付与（保存時）
+        // タグ欄が空のまま保存すると、タイトル＋本文からキーワード判定してタグを自動入力する。
+        // 判定ルールは tag-keywords.json（scripts/build-blog.js と共通）。
+        (function () {
+            var tagConfig = null;
+
+            fetch('tag-keywords.json')
+                .then(function (res) { return res.json(); })
+                .then(function (json) { tagConfig = json; })
+                .catch(function () {
+                    console.warn('tag-keywords.json の読み込みに失敗しました。タグの自動付与は無効です。');
+                });
+
+            function inferTags(title, body) {
+                var text = title + '\n' + body;
+                var tags = tagConfig.rules
+                    .filter(function (rule) {
+                        return rule.keywords.some(function (kw) { return text.indexOf(kw) !== -1; });
+                    })
+                    .map(function (rule) { return rule.tag; })
+                    .slice(0, tagConfig.maxTags);
+                return tags.length > 0 ? tags : [tagConfig.fallback];
+            }
+
+            CMS.registerEventListener({
+                name: 'preSave',
+                handler: function (payload) {
+                    var data = payload.entry.get('data');
+                    if (!tagConfig) return data;
+                    var tags = (data.get('tags') || '').trim();
+                    if (tags) return data; // 手入力があれば優先
+                    var inferred = inferTags(data.get('title') || '', data.get('body') || '');
+                    return data.set('tags', inferred.join(', '));
+                },
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -56,28 +56,22 @@ function escapeHtml(str) {
 }
 
 /**
- * タグ自動判定用のキーワード対応表（タグ → 本文・タイトル中のキーワード）
- * frontmatterのtagsが未入力の場合に使用。判定順に評価される。
+ * タグ自動判定用のキーワード対応表（admin/tag-keywords.json）
+ * 通常はCMSの保存時（admin/index.htmlのpreSaveフック）でタグが付与されるため、
+ * ここでの判定はfrontmatterのtagsが空のままだった場合の保険。
  */
-const TAG_KEYWORDS = [
-  ['歯磨き', ['歯磨き', 'ブラッシング', '歯ブラシ', '磨き方']],
-  ['虫歯予防', ['虫歯', 'むし歯']],
-  ['歯周病', ['歯周病', '歯肉炎', '歯周炎', '歯ぐき', '歯茎']],
-  ['小児歯科', ['小児', '子ども', '子供', 'お子さん', 'お子様', '乳歯']],
-  ['定期検診', ['定期検診', '定期健診', 'メンテナンス', '検診']],
-  ['入れ歯', ['入れ歯', '義歯', 'インプラント', 'ブリッジ']],
-  ['予防歯科', ['予防', 'フッ素', 'フロス', 'デンタルフロス', '唾液']],
-];
-const FALLBACK_TAG = '歯の豆知識';
+const TAG_CONFIG = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'admin', 'tag-keywords.json'), 'utf8')
+);
 
-/** タイトル＋本文からタグを自動判定する（最大3件。マッチなしはフォールバック） */
+/** タイトル＋本文からタグを自動判定する（最大maxTags件。マッチなしはフォールバック） */
 function inferTags(title, body) {
   const text = `${title}\n${body}`;
-  const tags = TAG_KEYWORDS
-    .filter(([, keywords]) => keywords.some((kw) => text.includes(kw)))
-    .map(([tag]) => tag)
-    .slice(0, 3);
-  return tags.length > 0 ? tags : [FALLBACK_TAG];
+  const tags = TAG_CONFIG.rules
+    .filter((rule) => rule.keywords.some((kw) => text.includes(kw)))
+    .map((rule) => rule.tag)
+    .slice(0, TAG_CONFIG.maxTags);
+  return tags.length > 0 ? tags : [TAG_CONFIG.fallback];
 }
 
 /** frontmatter付きMarkdownを解析する */
