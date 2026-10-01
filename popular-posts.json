@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-30",
+  "updated": "2026-10-01",
   "rangeDays": 90,
   "posts": [
     {
@@ -12,6 +12,10 @@
     },
     {
       "id": "child-dental-care",
+      "views": 2
+    },
+    {
+      "id": "denture-chewing-power",
       "views": 2
     }
   ]
