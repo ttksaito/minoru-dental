@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "rangeDays": 90,
   "posts": [
     {
@@ -7,15 +7,15 @@
       "views": 8
     },
     {
+      "id": "denture-chewing-power",
+      "views": 4
+    },
+    {
       "id": "best-brushing-timing",
       "views": 3
     },
     {
       "id": "child-dental-care",
-      "views": 2
-    },
-    {
-      "id": "denture-chewing-power",
       "views": 2
     }
   ]
