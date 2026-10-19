@@ -2,7 +2,7 @@
 slug: proper-brushing
 title: 正しい歯磨きの方法と注意点
 date: 2025-02-20
-author: 斉藤 稔
+author: サイト運営
 tags: 予防歯科, 歯磨き, 虫歯予防
 image: thumbnail.webp
 summary: 正しい歯磨きは、むし歯や歯周病を予防するための基本です。しかし、多くの方が適切な方法で磨けていないのが現状です。今回は、効果的な歯磨きのコツと、よくある間違いについて解説します。

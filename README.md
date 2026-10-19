@@ -85,7 +85,7 @@ npm run build:blog
    slug: best-brushing-timing
    title: 記事タイトル
    date: 2025-04-01
-   author: 斉藤 稔
+   author: サイト運営
    tags: 予防歯科, 歯磨き
    image: thumbnail.webp
    summary: 一覧ページやOGPに使われる記事の要約（100〜150字程度）。
@@ -123,7 +123,7 @@ npm run build:blog
 | slug | ○ | 記事ID（ファイル名と同じ英数字スラッグ。CMSでのファイル名決定に使用） |
 | title | ○ | 記事タイトル |
 | date | ○ | 公開日（ISO形式 `YYYY-MM-DD`） |
-| author | ○ | 著者名 |
+| author | △ | 著者。`サイト運営`（既定）または `院長`。記事末尾の著者欄・開示文・構造化データの author に反映 |
 | tags | ○ | カンマ区切りのタグ（一覧のカテゴリー・タグクラウド・関連記事の選定に使用） |
 | image | ○ | サムネイルのファイル名（`blog/[記事ID]/` 内。`thumbnail.webp` 推奨） |
 | summary | △ | 記事の要約（一覧・meta description・OGPに使用）。未入力なら本文冒頭から自動生成 |

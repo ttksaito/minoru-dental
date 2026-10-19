@@ -21,6 +21,7 @@
  * frontmatter の任意項目:
  *   updated: YYYY-MM-DD  内容を見直した日。dateModified・sitemap・記事ページの「最終更新日」に反映
  *   summary: 要約文      未入力なら本文冒頭から自動生成
+ *   author: サイト運営 | 院長   著者プロフィール（未指定はサイト運営）
  */
 
 const fs = require('fs');
@@ -36,15 +37,60 @@ try {
 
 const SITE_URL = 'https://www.minoru-dental.jp';
 
-/** 記事の執筆者・監修者（構造化データ用）。トップページの院長プロフィール（#about）に紐づける */
-const AUTHOR = {
-  '@type': 'Person',
-  '@id': `${SITE_URL}/#director`,
-  name: '斉藤 稔',
-  jobTitle: '院長・歯科医師',
-  url: `${SITE_URL}/#about`,
-  worksFor: { '@type': 'Dentist', name: 'みのる歯科', url: `${SITE_URL}/` },
+/**
+ * 著者プロフィール。frontmatter の author で切り替える（未指定は operator）。
+ *   author: サイト運営 / operator → サイト運営者
+ *   author: 院長 / 斉藤 稔 / director → 院長（医学的な内容を院長が執筆・確認した記事のみ）
+ * 表示名・紹介文はここを直せば全記事に反映される。
+ */
+const CLINIC = { '@type': 'Dentist', name: 'みのる歯科', url: `${SITE_URL}/` };
+const AUTHORS = {
+  operator: {
+    key: 'operator',
+    name: 'サイト運営（次男）',
+    role: 'みのる歯科 サイト運営担当',
+    avatar: null,
+    bio: '院長の次男で、このサイトの運営をしています。医療従事者ではないので、患者の立場で気になったことや、数字・データの読み方を中心に書いています。',
+    disclosure:
+      '本記事はサイト運営（次男）が執筆しています。医療従事者ではないため、医学的な記述は公的機関や学会などの公開情報を参照しています。情報整理や草稿作成の一部に生成AIを使用しています。',
+    person: {
+      '@type': 'Person',
+      '@id': `${SITE_URL}/#site-operator`,
+      name: 'サイト運営（次男）',
+      jobTitle: 'サイト運営担当',
+      worksFor: CLINIC,
+    },
+    reviewed: false,
+  },
+  director: {
+    key: 'director',
+    name: '斉藤 稔',
+    role: 'みのる歯科 院長・歯科医師',
+    avatar: '../../image/院長.webp',
+    bio: '昭和医科大学卒業。一般歯科・審美歯科・口腔外科を専門とし、痛みの少ない治療と予防歯科に力を入れています。日本歯科医師会、全身咬合学会、オーリング学会所属。',
+    disclosure:
+      '本記事は院長・斉藤 稔が執筆・確認しています。情報整理や草稿作成の一部に生成AIを使用しています。',
+    person: {
+      '@type': 'Person',
+      '@id': `${SITE_URL}/#director`,
+      name: '斉藤 稔',
+      jobTitle: '院長・歯科医師',
+      url: `${SITE_URL}/#about`,
+      worksFor: CLINIC,
+    },
+    reviewed: true,
+  },
 };
+
+/** frontmatter の author 文字列から著者プロフィールを決める */
+function resolveAuthor(value) {
+  const v = (value || '').trim();
+  if (['院長', '斉藤 稔', '斉藤稔', 'director'].includes(v)) return AUTHORS.director;
+  if (v && !['サイト運営', 'サイト運営（次男）', 'operator'].includes(v)) {
+    console.log(`情報: author「${v}」は未登録のため「サイト運営」として扱います`);
+  }
+  return AUTHORS.operator;
+}
 const BASE_KEYWORDS = ['歯医者', '歯科', '東松山市', '沢口町', 'みのる歯科', '埼玉県'];
 
 const ROOT = path.resolve(__dirname, '..');
@@ -164,6 +210,7 @@ function parseMarkdownFile(filePath) {
     title: meta.title,
     date: meta.date,
     updated: meta.updated || null,
+    author: resolveAuthor(meta.author),
     tags,
     image: meta.image,
     summary,
@@ -231,7 +278,7 @@ function buildArticleHtml(template, post, allPosts) {
       image: ogImageUrl,
       datePublished: `${post.date}T09:00:00+09:00`,
       dateModified: `${post.updated || post.date}T09:00:00+09:00`,
-      author: AUTHOR,
+      author: post.author.person,
       inLanguage: 'ja',
       keywords: post.tags.join(', '),
       publisher: {
@@ -243,8 +290,8 @@ function buildArticleHtml(template, post, allPosts) {
       mainEntityOfPage: {
         '@type': 'WebPage',
         '@id': canonicalUrl,
-        // 医療情報のため、院長が内容を確認・監修したことを明示
-        reviewedBy: AUTHOR,
+        // 院長が執筆・確認した記事のみ、監修者として明示
+        ...(post.author.reviewed ? { reviewedBy: post.author.person } : {}),
       },
     },
     null,
@@ -312,6 +359,17 @@ function buildArticleHtml(template, post, allPosts) {
     .replaceAll('{{OG_IMAGE_URL}}', ogImageUrl)
     .replaceAll('{{DATE_JA}}', formatDateJa(post.date))
     .replaceAll('{{DATE_ISO}}', post.date)
+    .replaceAll('{{AUTHOR_NAME}}', escapeHtml(post.author.name))
+    .replaceAll('{{AUTHOR_ROLE}}', escapeHtml(post.author.role))
+    .replaceAll('{{AUTHOR_BIO}}', escapeHtml(post.author.bio))
+    .replaceAll(
+      '{{AUTHOR_AVATAR_HTML}}',
+      post.author.avatar
+        ? `<div class="blog-author-avatar"><img src="${post.author.avatar}" alt="${escapeHtml(post.author.name)}"></div>`
+        : ''
+    )
+    .replaceAll('{{AUTHOR_PROFILE_LINK}}', post.author.key === 'director' ? ' <a href="../../#about">院長プロフィール</a>' : '')
+    .replaceAll('{{DISCLOSURE}}', escapeHtml(post.author.disclosure))
     .replaceAll(
       '{{UPDATED_HTML}}',
       post.updated

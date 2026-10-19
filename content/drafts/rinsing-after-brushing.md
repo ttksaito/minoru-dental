@@ -2,7 +2,7 @@
 slug: rinsing-after-brushing
 title: 歯磨き後のうがいは何回が正解？フッ素を活かす磨き方
 date: 2026-09-22
-author: 斉藤 稔
+author: サイト運営
 tags: 歯磨き, 虫歯予防
 image: thumbnail.webp
 summary: 歯磨きの後、何度も口をゆすいでいませんか？実は、うがいのしすぎは歯磨き粉に含まれるフッ素の効果を洗い流してしまいます。今回は、フッ素の力を最大限に活かす「うがいの回数」について解説します。

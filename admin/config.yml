@@ -44,6 +44,14 @@ collections:
       - label: タイトル
         name: title
         widget: string
+      - label: 著者
+        name: author
+        widget: select
+        options:
+          - { label: 'サイト運営（次男）', value: 'サイト運営' }
+          - { label: '院長（斉藤 稔）', value: '院長' }
+        default: 'サイト運営'
+        hint: '記事末尾の著者欄と開示文、検索エンジン向けの著者情報に使われます。院長が執筆・確認した記事だけ「院長」にしてください'
       - label: 公開日
         name: date
         widget: datetime
@@ -90,6 +98,14 @@ collections:
       - label: タイトル
         name: title
         widget: string
+      - label: 著者
+        name: author
+        widget: select
+        options:
+          - { label: 'サイト運営（次男）', value: 'サイト運営' }
+          - { label: '院長（斉藤 稔）', value: '院長' }
+        default: 'サイト運営'
+        hint: '記事末尾の著者欄と開示文、検索エンジン向けの著者情報に使われます。院長が執筆・確認した記事だけ「院長」にしてください'
       - label: 公開日（予定）
         name: date
         widget: datetime
