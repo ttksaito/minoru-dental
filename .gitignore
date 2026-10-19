@@ -1,8 +1,7 @@
-# Eleventy
-_site/
+# 依存パッケージ
 node_modules/
 
-# Editor directories and files
+# エディタ
 .idea
 .vscode
 *.suo
@@ -11,9 +10,13 @@ node_modules/
 *.sln
 *.sw?
 
-# System Files
+# OS生成ファイル
 .DS_Store
 Thumbs.db
+
+# 旧Eleventy時代のビルド出力（未使用。ローカルから削除してよい）
+_site/
+
+# ローカル設定
 **/.claude/settings.local.json
-DS_Store
 .vercel
