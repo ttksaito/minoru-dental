@@ -1,6 +1,16 @@
 {
   "posts": [
     {
+      "id": "first-visit-questions",
+      "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
+      "date": "2026-10-20",
+      "tags": [
+        "歯の豆知識"
+      ],
+      "summary": "診察室で「何を聞けばいいか分からない」をなくすための質問リストです。行く前に整理しておくこと、受診の各場面で聞いていいこと、言いにくいことの伝え方を、患者の立場でまとめました。",
+      "image": "blog/uploads/first-visit-questions.webp"
+    },
+    {
       "id": "best-brushing-timing",
       "title": "歯を磨くベストなタイミングはいつ？",
       "date": "2026-08-30",
