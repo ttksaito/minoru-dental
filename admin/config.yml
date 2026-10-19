@@ -17,7 +17,7 @@ backend:
     uploadMedia: '画像を追加: {{path}}'
     deleteMedia: '画像を削除: {{path}}'
 
-# 下書き→レビュー→公開のワークフロー（公開までPRとして保留される。院長監修に対応）
+# 下書き→レビュー中→公開準備完了→公開のワークフロー（「公開」するまでPRとして保留され、本番には出ない）
 publish_mode: editorial_workflow
 
 locale: ja
@@ -82,48 +82,3 @@ collections:
         name: body
         widget: markdown
         hint: '見出しは「見出し2」「見出し3」を使用してください'
-
-  - name: drafts
-    label: 下書き（院長監修用）
-    label_singular: 下書き
-    folder: content/drafts
-    create: true
-    slug: '{{fields.slug}}'
-    summary: '{{title}}（{{date}}）'
-    fields:
-      - label: 記事ID（URL用スラッグ）
-        name: slug
-        widget: string
-        pattern: ['^[a-z0-9][a-z0-9-]*$', '英小文字・数字・ハイフンのみで入力してください']
-      - label: タイトル
-        name: title
-        widget: string
-      - label: 著者
-        name: author
-        widget: select
-        options:
-          - { label: 'サイト運営（次男）', value: 'サイト運営' }
-          - { label: '院長（斉藤 稔）', value: '院長' }
-        default: 'サイト運営'
-        hint: '記事末尾の著者欄と開示文、検索エンジン向けの著者情報に使われます。院長が執筆・確認した記事だけ「院長」にしてください'
-      - label: 公開日（予定）
-        name: date
-        widget: datetime
-        format: 'YYYY-MM-DD'
-        date_format: 'YYYY-MM-DD'
-        time_format: false
-      - label: タグ（カンマ区切り）
-        name: tags
-        widget: tagsWithAuto
-        required: false
-        hint: '任意。「本文から自動入力」ボタンで本文から判定してその場で入力できます。空のまま保存した場合も自動で付与されます'
-      - label: サムネイル画像
-        name: image
-        widget: image
-        required: false
-        media_folder: '/blog/uploads'
-        public_folder: '/blog/uploads'
-        hint: '画像をアップロードしてください（日本語ファイル名でもOK。横長の画像を推奨）。公開後も同じ画像がそのまま使われます'
-      - label: 本文
-        name: body
-        widget: markdown
