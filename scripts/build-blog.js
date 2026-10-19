@@ -16,7 +16,11 @@
  *   1. content/blog/[記事ID].md を作成（既存記事を参考にfrontmatterを記述）
  *   2. blog/[記事ID]/ にサムネイル画像（thumbnail.webp 推奨）を配置
  *   3. npm run build:blog を実行
- *   4. git commit & push → Vercelが自動デプロイ
+ *   4. git commit & push → GitHub Pagesに自動デプロイ（content/blog/ のpushならGitHub Actionsが自動ビルド）
+ *
+ * frontmatter の任意項目:
+ *   updated: YYYY-MM-DD  内容を見直した日。dateModified・sitemap・記事ページの「最終更新日」に反映
+ *   summary: 要約文      未入力なら本文冒頭から自動生成
  */
 
 const fs = require('fs');
@@ -31,6 +35,16 @@ try {
 }
 
 const SITE_URL = 'https://www.minoru-dental.jp';
+
+/** 記事の執筆者・監修者（構造化データ用）。トップページの院長プロフィール（#about）に紐づける */
+const AUTHOR = {
+  '@type': 'Person',
+  '@id': `${SITE_URL}/#director`,
+  name: '斉藤 稔',
+  jobTitle: '院長・歯科医師',
+  url: `${SITE_URL}/#about`,
+  worksFor: { '@type': 'Dentist', name: 'みのる歯科', url: `${SITE_URL}/` },
+};
 const BASE_KEYWORDS = ['歯医者', '歯科', '東松山市', '沢口町', 'みのる歯科', '埼玉県'];
 
 const ROOT = path.resolve(__dirname, '..');
@@ -74,6 +88,29 @@ function inferTags(title, body) {
   return tags.length > 0 ? tags : [TAG_CONFIG.fallback];
 }
 
+/**
+ * 本文Markdownの冒頭段落から要約文を作る（最大 maxLen 文字）。
+ * 見出し・画像・リンク記法・強調・脚注番号（［1］等）を除去し、文の区切りで切る。
+ */
+function extractSummary(markdownBody, maxLen = 120) {
+  const paragraphs = markdownBody
+    .split(/\r?\n\s*\r?\n/)
+    .map((p) => p.trim())
+    .filter((p) => p && !/^(#|!\[|>|[-*] |\d+\. |\|)/.test(p));
+  const text = paragraphs
+    .slice(0, 2)
+    .join('')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`~]+/g, '')
+    .replace(/［\d+］|\[\d+\]/g, '')
+    .replace(/\s+/g, '');
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastEnd = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('？'), cut.lastIndexOf('！'));
+  return lastEnd >= maxLen * 0.5 ? cut.slice(0, lastEnd + 1) : `${cut}…`;
+}
+
 /** frontmatter付きMarkdownを解析する */
 function parseMarkdownFile(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8');
@@ -99,6 +136,13 @@ function parseMarkdownFile(filePath) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) {
     fail(`${id}.md: dateはISO形式（YYYY-MM-DD）で記述してください（現在: ${meta.date}）`);
   }
+  // updated（最終更新日）は任意。指定があれば dateModified・sitemap lastmod・記事ページの表示に使う
+  if (meta.updated && !/^\d{4}-\d{2}-\d{2}$/.test(meta.updated)) {
+    fail(`${id}.md: updatedはISO形式（YYYY-MM-DD）で記述してください（現在: ${meta.updated}）`);
+  }
+  if (meta.updated && meta.updated < meta.date) {
+    fail(`${id}.md: updated（${meta.updated}）が date（${meta.date}）より前になっています`);
+  }
 
   // タグ: 手入力があれば優先、未入力ならタイトル＋本文から自動判定
   const body = match[2].trim();
@@ -108,13 +152,21 @@ function parseMarkdownFile(filePath) {
     console.log(`情報: ${id}.md はタグ未入力のため自動付与しました → ${tags.join(', ')}`);
   }
 
+  // 要約: frontmatterにあれば優先、なければ本文の冒頭から自動生成（meta description・OGP・一覧に使用）
+  let summary = meta.summary || '';
+  if (!summary) {
+    summary = extractSummary(body);
+    console.log(`情報: ${id}.md は summary 未入力のため本文冒頭から生成しました`);
+  }
+
   return {
     id,
     title: meta.title,
     date: meta.date,
+    updated: meta.updated || null,
     tags,
     image: meta.image,
-    summary: meta.summary || '', // CMSの入力項目からは削除済み。既存記事に残っている値のみ使用
+    summary,
     body,
   };
 }
@@ -178,14 +230,22 @@ function buildArticleHtml(template, post, allPosts) {
       headline: post.title,
       image: ogImageUrl,
       datePublished: `${post.date}T09:00:00+09:00`,
-      dateModified: `${post.date}T09:00:00+09:00`,
+      dateModified: `${post.updated || post.date}T09:00:00+09:00`,
+      author: AUTHOR,
+      inLanguage: 'ja',
+      keywords: post.tags.join(', '),
       publisher: {
         '@type': 'Organization',
         name: 'みのる歯科',
         logo: { '@type': 'ImageObject', url: `${SITE_URL}/image/logo.png` },
       },
       description: post.summary,
-      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': canonicalUrl,
+        // 医療情報のため、院長が内容を確認・監修したことを明示
+        reviewedBy: AUTHOR,
+      },
     },
     null,
     2
@@ -251,6 +311,13 @@ function buildArticleHtml(template, post, allPosts) {
     .replaceAll('{{CANONICAL_URL}}', canonicalUrl)
     .replaceAll('{{OG_IMAGE_URL}}', ogImageUrl)
     .replaceAll('{{DATE_JA}}', formatDateJa(post.date))
+    .replaceAll('{{DATE_ISO}}', post.date)
+    .replaceAll(
+      '{{UPDATED_HTML}}',
+      post.updated
+        ? `<span>最終更新日: <time datetime="${post.updated}">${formatDateJa(post.updated)}</time></span>`
+        : ''
+    )
     .replaceAll('{{TAGS_HTML}}', tagsHtml)
     .replaceAll('{{IMAGE_SRC}}', escapeHtml(imageUrl(post)))
     .replaceAll('{{CONTENT}}', post.contentHtml)
@@ -351,7 +418,7 @@ function buildSitemap(allPosts) {
   for (const post of allPosts) {
     entries.push(`  <url>
     <loc>${SITE_URL}/blog/${post.id}/</loc>
-    <lastmod>${post.date}</lastmod>
+    <lastmod>${post.updated || post.date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <image:image>

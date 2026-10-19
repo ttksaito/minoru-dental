@@ -50,6 +50,15 @@ collections:
         format: 'YYYY-MM-DD'
         date_format: 'YYYY-MM-DD'
         time_format: false
+      - label: 最終更新日（任意）
+        name: updated
+        widget: datetime
+        required: false
+        default: ''
+        format: 'YYYY-MM-DD'
+        date_format: 'YYYY-MM-DD'
+        time_format: false
+        hint: '公開後に内容を見直したときに入力してください。記事ページの「最終更新日」と検索エンジン向けの更新日に反映されます'
       - label: タグ（カンマ区切り）
         name: tags
         widget: tagsWithAuto

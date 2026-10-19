@@ -9,6 +9,20 @@
   "image": "https://www.minoru-dental.jp/blog/proper-brushing/thumbnail.webp",
   "datePublished": "2025-02-20T09:00:00+09:00",
   "dateModified": "2025-02-20T09:00:00+09:00",
+  "author": {
+    "@type": "Person",
+    "@id": "https://www.minoru-dental.jp/#director",
+    "name": "斉藤 稔",
+    "jobTitle": "院長・歯科医師",
+    "url": "https://www.minoru-dental.jp/#about",
+    "worksFor": {
+      "@type": "Dentist",
+      "name": "みのる歯科",
+      "url": "https://www.minoru-dental.jp/"
+    }
+  },
+  "inLanguage": "ja",
+  "keywords": "予防歯科, 歯磨き, 虫歯予防",
   "publisher": {
     "@type": "Organization",
     "name": "みのる歯科",
@@ -20,7 +34,19 @@
   "description": "正しい歯磨きは、むし歯や歯周病を予防するための基本です。しかし、多くの方が適切な方法で磨けていないのが現状です。今回は、効果的な歯磨きのコツと、よくある間違いについて解説します。",
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://www.minoru-dental.jp/blog/proper-brushing/"
+    "@id": "https://www.minoru-dental.jp/blog/proper-brushing/",
+    "reviewedBy": {
+      "@type": "Person",
+      "@id": "https://www.minoru-dental.jp/#director",
+      "name": "斉藤 稔",
+      "jobTitle": "院長・歯科医師",
+      "url": "https://www.minoru-dental.jp/#about",
+      "worksFor": {
+        "@type": "Dentist",
+        "name": "みのる歯科",
+        "url": "https://www.minoru-dental.jp/"
+      }
+    }
   }
 }
     </script>
@@ -391,6 +417,24 @@
             color: #555;
         }
 
+        .blog-author-info p a {
+            color: var(--primary-color);
+            margin-left: 6px;
+        }
+
+        .blog-disclosure {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 15px;
+            margin-bottom: 40px;
+            font-size: 13px;
+            color: #777;
+            line-height: 1.7;
+        }
+
+        .blog-disclosure p + p {
+            margin-top: 6px;
+        }
+
         .blog-related-posts {
             margin-bottom: 40px;
         }
@@ -730,7 +774,8 @@
                 <div class="blog-detail-header">
                     <h2>正しい歯磨きの方法と注意点</h2>
                     <div class="blog-detail-meta">
-                        <span>2025年2月20日</span>
+                        <span>公開日: <time datetime="2025-02-20">2025年2月20日</time></span>
+                        
                     </div>
                     <div class="blog-post-tags">
                         <span class="blog-post-tag">予防歯科</span>
@@ -800,9 +845,14 @@
                         <img src="../../image/院長.webp" alt="斉藤 稔">
                     </div>
                     <div class="blog-author-info">
-                        <h4>斉藤 稔（院長）</h4>
-                        <p>昭和医科大学卒業。一般歯科・審美歯科・口腔外科を専門とし、痛みの少ない治療と予防歯科に力を入れています。日本歯科医師会、全身咬合学会、オーリング学会所属。</p>
+                        <h4>執筆・監修：斉藤 稔（みのる歯科 院長・歯科医師）</h4>
+                        <p>昭和医科大学卒業。一般歯科・審美歯科・口腔外科を専門とし、痛みの少ない治療と予防歯科に力を入れています。日本歯科医師会、全身咬合学会、オーリング学会所属。<a href="../../#about">院長プロフィール</a></p>
                     </div>
+                </div>
+
+                <div class="blog-disclosure">
+                    <p>本記事は、情報整理・草稿作成の一部に生成AIを使用し、院長・斉藤 稔が内容を確認・監修したうえで公開しています。</p>
+                    <p>記事の内容は一般的な情報提供を目的としたもので、個別の診断や治療に代わるものではありません。症状やお口の状態には個人差がありますので、気になることがあれば歯科医院にご相談ください。</p>
                 </div>
 
                 <div class="blog-related-posts">

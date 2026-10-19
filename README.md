@@ -28,34 +28,43 @@ npm run build:blog
 
 ```
 /minoru-dental/
+├── index.html              # トップページ
+├── blog.html               # ブログ一覧ページ（build-blog.jsが生成。直接編集しない）
+├── blog-posts.json         # 記事メタデータ（build-blog.jsが生成）
+├── popular-posts.json      # 人気記事ランキング（GitHub Actionsが生成）
+├── sitemap.xml             # サイトマップ（build-blog.jsが生成）
+├── robots.txt
+├── CNAME                   # GitHub Pages のカスタムドメイン設定
+├── google*.html            # Google Search Console のサイト所有権確認ファイル（削除しない）
 ├── content/
 │   ├── blog/               # 公開記事のMarkdownソース（1記事1ファイル、ビルド対象）
 │   │   └── [記事ID].md
-│   └── drafts/             # 下書き（ビルド対象外。監修後に blog/ へ移動）
+│   └── drafts/             # 下書き（ビルド対象外。監修後に blog/ へ移動し、drafts側は削除）
 ├── templates/
-│   └── blog-post.html      # 記事ページのHTMLテンプレート
+│   ├── blog-post.html      # 記事ページのHTMLテンプレート
+│   └── blog-list.html      # 一覧ページ（blog.html）のHTMLテンプレート
 ├── scripts/
 │   ├── build-blog.js       # ブログビルドスクリプト
 │   └── fetch-popular-posts.js  # GA4人気記事集計（GitHub Actionsから実行）
 ├── blog/                   # 生成された記事ページ（ビルド成果物）
-│   └── [記事ID]/
-│       ├── index.html      # 記事本文（build-blog.jsが生成。直接編集しない）
-│       └── thumbnail.webp  # サムネイル画像（手動配置）
+│   ├── [記事ID]/
+│   │   ├── index.html      # 記事本文（build-blog.jsが生成。直接編集しない）
+│   │   └── thumbnail.webp  # サムネイル画像（ローカル編集時に手動配置）
+│   └── uploads/            # CMSからアップロードしたサムネイル画像
+├── image/                  # サイト共通の画像（配信はWebP。外観.png はOGP用、logo.png は構造化データ用）
 ├── admin/                  # Decap CMS 管理画面（/admin/ で開く）
 │   ├── index.html
-│   └── config.yml          # CMSの設定（コレクション・フィールド定義）
+│   ├── config.yml          # CMSの設定（コレクション・フィールド定義）
+│   └── tag-keywords.json   # タグ自動判定のキーワード表（CMSとbuild-blog.jsで共用）
 ├── api/                    # Vercelサーバーレス関数（CMSのGitHub OAuth用）
 │   ├── auth.js             # 認証開始（GitHubへリダイレクト）
 │   └── callback.js         # コールバック（トークン交換）
-├── blog.html               # ブログ一覧ページ
-├── blog-posts.json         # 記事メタデータ（build-blog.jsが生成）
-├── popular-posts.json      # 人気記事ランキング（GitHub Actionsが生成）
-├── sitemap.xml             # サイトマップ（build-blog.jsが生成）
-├── index.html              # トップページ
-├── image/                  # サイト共通の画像
-└── .github/workflows/
-    ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
-    └── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
+├── .github/workflows/
+│   ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
+│   └── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
+├── vercel.json             # Vercel設定（api/ 以外は本番ドメインへリダイレクト）
+├── package.json
+└── TODO.md                 # サイト改善・集客施策のタスク管理
 ```
 
 ## ブログの管理
@@ -85,7 +94,7 @@ npm run build:blog
    本文をMarkdownで書きます。見出しは ## と ### を使用してください。
    ```
 
-2. サムネイル画像を `blog/[記事ID]/thumbnail.webp` に配置します（ファイル名は英数字のみ。WebP推奨、PNG併置可）
+2. サムネイル画像を `blog/[記事ID]/thumbnail.webp` に配置します（ファイル名は英数字のみ。WebP形式）
 
 3. ビルドを実行します
 
@@ -117,7 +126,8 @@ npm run build:blog
 | author | ○ | 著者名 |
 | tags | ○ | カンマ区切りのタグ（一覧のカテゴリー・タグクラウド・関連記事の選定に使用） |
 | image | ○ | サムネイルのファイル名（`blog/[記事ID]/` 内。`thumbnail.webp` 推奨） |
-| summary | ○ | 記事の要約（一覧・meta description・OGPに使用） |
+| summary | △ | 記事の要約（一覧・meta description・OGPに使用）。未入力なら本文冒頭から自動生成 |
+| updated | △ | 最終更新日（`YYYY-MM-DD`）。内容を見直した日。記事ページの表示・構造化データの dateModified・sitemap の lastmod に反映 |
 
 ## Web管理画面（Decap CMS）
 

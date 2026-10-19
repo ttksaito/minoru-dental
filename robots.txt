@@ -6,10 +6,10 @@ Allow: /
 
 # クロールを許可しないパス
 Disallow: /node_modules/
-Disallow: /_site/
 Disallow: /.git/
 Disallow: /.vercel/
 Disallow: /.claude/
+Disallow: /docs/
 
 # Sitemap
 Sitemap: https://www.minoru-dental.jp/sitemap.xml
