@@ -24,6 +24,40 @@ npm run build:blog
 
 サイト自体はビルド不要です。HTMLファイルをブラウザで直接開くか、任意のローカルサーバー（例: `npx serve .`）で確認できます。
 
+### 別のPCで作業する
+
+ソースは GitHub（`ttksaito/minoru-dental`）で管理しているので、どのPCからでも同じリポジトリを取得して編集・反映できます。
+
+**初回だけ（新しいPCでのセットアップ）**
+
+```bash
+# 1. Git / Node.js / GitHub CLI をインストールしておく（macOS: brew install git node gh）
+
+# 2. GitHub にログイン（ブラウザが開くので指示に従う。HTTPS を選べば SSH 鍵の設定は不要）
+gh auth login
+
+# 3. リポジトリを取得して依存関係を入れる
+gh repo clone ttksaito/minoru-dental
+cd minoru-dental
+npm install
+```
+
+**毎回の流れ（どのPCでも共通）**
+
+```bash
+# 作業を始める前に、他のPC・管理画面・GitHub Actions の変更を取り込む
+git pull
+
+# ファイルを編集したら、変更をまとめて GitHub に送る（送るとVercelが自動でデプロイ）
+git add -A
+git commit -m "変更内容を書く"
+git push
+```
+
+- 作業前に必ず `git pull` してください。Web管理画面（Decap CMS）からの記事投稿や、GitHub Actions による自動ビルド（`blog/`、`blog-posts.json`、`popular-posts.json` など）もすべて GitHub 上で更新されるため、pull せずに push すると衝突します。
+- APIキーなどの秘密情報は Vercel（GitHub OAuth）と GitHub Actions（GA4）側に設定済みで、ローカルPCには何も置く必要がありません。
+- 記事の作成・編集だけなら、PCにセットアップしなくても `/admin/` のWeb管理画面からブラウザだけで行えます（後述）。
+
 ## ディレクトリ構成
 
 ```
