@@ -78,7 +78,6 @@ git push
 ├── content/
 │   ├── blog/               # 公開記事のMarkdownソース（1記事1ファイル、ビルド対象）
 │   │   └── [記事ID].md
-│   └── drafts/             # 未公開の原稿置き場（ビルド対象外・CMSからは見えない。公開するときは blog/ へ移動）
 ├── templates/
 │   ├── blog-post.html      # 記事ページのHTMLテンプレート
 │   └── blog-list.html      # 一覧ページ（blog.html）のHTMLテンプレート
