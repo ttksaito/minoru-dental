@@ -39,7 +39,9 @@ main にマージ → build-blog.yml が記事 HTML・一覧・sitemap を生成
 3. 未公開の下書きが溜まっていないか確認する: `git ls-remote --heads origin 'cms/blog/*'` で 3 本以上あれば、**新しい記事は作らず終了**する（その旨だけ出力）
 
 ### 1. ネタを選ぶ（1 つ）
-読むもの: `dashboard/insights.json`（検索キーワード・検索から来たページ・記事別閲覧数）、`blog-posts.json`（公開済み記事）、`content/blog/*.md`（公開済み本文）、`content/drafts/*.md`（ストック）、`git ls-remote --heads origin 'cms/blog/*'`（作成中）
+まずダッシュボードの全データを読む: 環境変数 `DASHBOARD_PASSWORD` があれば `node scripts/decrypt-dashboard-data.js` を実行すると `dashboard/data.json` ができる（訪問者数・流入チャネル・検索キーワード・ページ別・地域・広告・キーイベント）。このファイルとパスワードは絶対にコミット・出力・記事や調査メモへ転記しない（data.json は .gitignore 済み）。環境変数がない・復号できないときは `dashboard/insights.json`（検索キーワード・記事別閲覧数だけの平文）で進める。
+
+読むもの: 復号した `dashboard/data.json`（または `insights.json`）、`blog-posts.json`（公開済み記事）、`content/blog/*.md`（公開済み本文）、`content/drafts/*.md`（ストック）、`git ls-remote --heads origin 'cms/blog/*'`（作成中）
 
 優先順位:
 1. insights.json の検索キーワードで、表示回数があるのにクリックが少なく、既存記事で正面から答えていないもの（例: 「東松山 歯医者 日曜日」→ 休診日と急患時の相談先、「子供 歯磨き」→ 年齢別の仕上げ磨き）
@@ -52,7 +54,7 @@ main にマージ → build-blog.yml が記事 HTML・一覧・sitemap を生成
 ### 2. 調査する
 - WebSearch で調べる。WebFetch はクラウド環境のネットワーク制限で開けないサイト（自治体・学会など）が多い。開けなければ検索結果の要約と複数の検索で裏を取り、確認しきれない数字・時間・電話番号は本文に書かず「公式ページで確認を」と案内する。その旨を draft-notes とカレンダーの本文に書く優先する情報源: 厚生労働省 e-ヘルスネット、日本歯科医師会、日本小児歯科学会、日本歯周病学会、日本口腔衛生学会、大学病院・学会の一般向けページ。個人ブログや他院のサイトは根拠にしない
 - 記事に書く数字は出典が確認できたものだけ。確認できなければ数字を書かない
-- 調査の要点と URL を `content/.draft-notes/<slug>.md` に残す（ネタを選んだ理由、参考 URL、チェックリストの自己確認）
+- 調査の要点と URL を `content/.draft-notes/<slug>.md` に残す（ネタを選んだ理由、参考 URL、チェックリストの自己確認）。ダッシュボードの数字はキーワードの表示回数・順位程度にとどめ、広告費や訪問者数の合計は書かない（このメモは PR とメールに転記される）
 
 ### 3. 書く
 - ファイル: `content/blog/<slug>.md`。slug は英小文字・数字・ハイフンのみ
@@ -114,6 +116,8 @@ Vercel の 2 つを設定し、`draft-article.yml` のメール本文のボタ�
 
 GitHub Secrets は `gh secret set 名前 --body "値"`、Vercel は `vercel env add 名前 production`（または Vercel の Settings → Environment Variables）。
 Secrets が未設定の間はメールが送られないだけで、CMS のワークフローからは従来どおり公開できる。
+
+AI にダッシュボードの全データを読ませるには、定期エージェントの実行環境に環境変数 `DASHBOARD_PASSWORD`（GitHub Secrets と同じ値）を設定する。https://claude.ai/code の環境設定（Environments → Default）で登録できる。未設定でも `insights.json` で動く。
 
 ## 運用メモ（人間向け）
 
