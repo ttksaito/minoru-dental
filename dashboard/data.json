@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-14T12:04:31.110Z",
+  "generatedAt": "2026-11-14T12:09:30.997Z",
   "days": 28,
   "ga4": {
     "summary": {
@@ -640,6 +640,98 @@
       {
         "device": "desktop",
         "sessions": 15
+      }
+    ],
+    "cities": [
+      {
+        "city": "(not set)",
+        "region": "Tokyo",
+        "users": 4,
+        "sessions": 4
+      },
+      {
+        "city": "Higashimatsuyama",
+        "region": "Saitama",
+        "users": 4,
+        "sessions": 4
+      },
+      {
+        "city": "Kashiwa",
+        "region": "Chiba",
+        "users": 4,
+        "sessions": 4
+      },
+      {
+        "city": "Kawagoe",
+        "region": "Saitama",
+        "users": 3,
+        "sessions": 3
+      },
+      {
+        "city": "Osaka",
+        "region": "Osaka",
+        "users": 3,
+        "sessions": 3
+      },
+      {
+        "city": "Saitama",
+        "region": "Saitama",
+        "users": 3,
+        "sessions": 3
+      },
+      {
+        "city": "Kudamatsu",
+        "region": "Yamaguchi",
+        "users": 2,
+        "sessions": 2
+      },
+      {
+        "city": "Shihoro",
+        "region": "Hokkaido",
+        "users": 2,
+        "sessions": 2
+      },
+      {
+        "city": "Shinjuku City",
+        "region": "Tokyo",
+        "users": 2,
+        "sessions": 2
+      },
+      {
+        "city": "Yokohama",
+        "region": "Kanagawa",
+        "users": 2,
+        "sessions": 2
+      },
+      {
+        "city": "(not set)",
+        "region": "(not set)",
+        "users": 1,
+        "sessions": 1
+      },
+      {
+        "city": "(not set)",
+        "region": "Colorado",
+        "users": 1,
+        "sessions": 1
+      },
+      {
+        "city": "Aspen",
+        "region": "Colorado",
+        "users": 1,
+        "sessions": 1
+      },
+      {
+        "city": "Chiyoda City",
+        "region": "Tokyo",
+        "users": 1,
+        "sessions": 1
+      },
+      {
+        "city": "Glenview",
+        "region": "Illinois",
+        "users": 1,
+        "sessions": 1
       }
     ],
     "keyEvents": [],
