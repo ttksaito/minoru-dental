@@ -5,6 +5,8 @@
  *
  * 使い方: node scripts/make-thumbnail.js <記事スラッグ> [出力パス]
  *   既定の出力: blog/uploads/<slug>.png
+ *   content/.thumb-overrides/<slug>.json があれば、その title / tags / sub を優先して描く
+ *   （例: {"title": "日曜に歯が痛い！東松山の相談先", "tags": ["緊急時"], "sub": "休日の歯医者の探し方"}）
  * 必要なもの: Google Chrome / Chromium（環境変数 CHROME_BIN で指定可）
  */
 const fs = require('fs');
@@ -22,8 +24,19 @@ const out = path.resolve(ROOT, process.argv[3] || path.join('blog', 'uploads', `
 const md = fs.readFileSync(mdPath, 'utf8');
 const fm = (md.match(/^---\n([\s\S]*?)\n---/) || [, ''])[1];
 const get = (k) => ((fm.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')) || [, ''])[1] || '').trim().replace(/^["']|["']$/g, '');
-const title = get('title') || slug;
-const tags = get('tags').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 2);
+let title = get('title') || slug;
+let tags = get('tags').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 2);
+let sub = '';
+const overridePath = path.join(ROOT, 'content', '.thumb-overrides', `${slug}.json`);
+if (fs.existsSync(overridePath)) {
+  try {
+    const o = JSON.parse(fs.readFileSync(overridePath, 'utf8'));
+    if (o.title) title = String(o.title);
+    if (Array.isArray(o.tags)) tags = o.tags.map(String).slice(0, 2);
+    if (o.sub) sub = String(o.sub);
+    console.log(`上書き設定を使用: ${path.relative(ROOT, overridePath)}`);
+  } catch (e) { console.warn(`上書き設定を読めませんでした: ${e.message}`); }
+}
 
 function findChrome() {
   const candidates = [
@@ -65,7 +78,7 @@ const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><style>
 </style></head><body>
   <div class="bar"></div><div class="circle"></div><div class="circle2"></div>
   <div class="tags">${tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
-  <div class="title"><h1>${esc(title)}</h1></div>
+  <div class="title"><div><h1>${esc(title)}</h1>${sub ? `<p style="margin:18px 0 0;font-size:28px;color:#4f5a50;font-weight:600">${esc(sub)}</p>` : ''}</div></div>
   <div class="brand">${logo ? `<img src="${logo}" alt="">` : ''}<span class="name">みのる歯科</span><span class="sub">ブログ｜埼玉県東松山市</span></div>
   <div class="url">www.minoru-dental.jp</div>
 </body></html>`;

@@ -53,9 +53,23 @@ jobs:
         env:
           SLUG: ${{ steps.slug.outputs.slug }}
         run: |
-          if [ -f "blog/uploads/$SLUG.png" ] || [ -f "blog/uploads/$SLUG.webp" ] || [ -f "blog/uploads/$SLUG.jpg" ]; then
+          IMG="$(grep -m1 '^image:' "content/blog/$SLUG.md" | sed 's/^image:[[:space:]]*//')"
+          case "$IMG" in
+            /blog/uploads/$SLUG.png|"") ;;
+            *) echo "サムネイルは独自の画像（$IMG）です。生成をスキップします。"; exit 0 ;;
+          esac
+          if [ -f "blog/uploads/$SLUG.png" ] && [ ! -f "content/.thumb-overrides/$SLUG.json" ]; then
             echo "サムネイルは既にあります。生成をスキップします。"
             exit 0
+          fi
+          if [ -f "blog/uploads/$SLUG.png" ] && [ -f "content/.thumb-overrides/$SLUG.json" ]; then
+            # 上書き設定が画像より新しいときだけ作り直す
+            NEWER="$(git log -1 --format=%ct -- "content/.thumb-overrides/$SLUG.json")"
+            OLDER="$(git log -1 --format=%ct -- "blog/uploads/$SLUG.png")"
+            if [ -n "$NEWER" ] && [ -n "$OLDER" ] && [ "$NEWER" -le "$OLDER" ]; then
+              echo "サムネイルは上書き設定より新しいです。生成をスキップします。"
+              exit 0
+            fi
           fi
           CHROME_BIN="$(command -v google-chrome || command -v chromium-browser || command -v chromium)" \
             node scripts/make-thumbnail.js "$SLUG"

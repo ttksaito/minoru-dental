@@ -48,9 +48,9 @@ const actions = `
     <p style="margin:0 0 12px;font-size:14px;color:#555;line-height:1.6">読み終えたら、下のボタンから GitHub のページを開いて操作します（GitHub にログインが必要です）。</p>
     ${btn(prUrl, '公開する → 緑の「Merge pull request」を押す', 'linear-gradient(135deg,#ff6b35,#ff8563)', '#fff')}
     ${btn(prUrl, '没にする → 下の方の「Close pull request」を押す', '#fff', '#777', '1px solid #ccc')}
-    ${btn(cms, '文章やサムネを直す → CMS を開く', '#fff', '#388e3c', '1px solid #4caf50')}
+    ${btn(prUrl + '#new_comment_field', '文章やサムネを直したい → コメントで AI に頼む', '#fff', '#388e3c', '1px solid #4caf50')}
     <p style="margin:8px 0 0;font-size:12px;color:#888;line-height:1.6">「Merge pull request」→「Confirm merge」の 2 回押しで公開され、3〜5 分で本番に反映されます。</p>
-    <p style="margin:10px 0 0;font-size:13px;color:#555;line-height:1.6;background:#f7faf7;padding:8px 12px;border-radius:8px">✏️ <b>直したいところがあるとき</b>: 同じ GitHub ページの一番下のコメント欄に、日本語で「3 段落目を短く」「タイトルに東松山市を入れて」のように書いてください。AI が 1 時間以内に直して、修正版のメールを送り直します。何回でも続けられます。</p>
+    <p style="margin:10px 0 0;font-size:13px;color:#555;line-height:1.6;background:#f7faf7;padding:8px 12px;border-radius:8px">✏️ <b>直したいとき</b>: GitHub ページの一番下のコメント欄に日本語で書くだけです。<br>・文章: 「3 段落目を短く」「タイトルに東松山市を入れて」<br>・サムネの文字: 「サムネの文字を『日曜に歯が痛い！東松山の相談先』にして」<br>・サムネの画像: 写真を添付して「サムネはこれにして」<br>AI が 1 時間以内に直して、修正版のメールを送り直します。何回でも続けられます。<span style="color:#999">（手で直したい場合は <a href="${cms}" style="color:#999">CMS</a> も使えます）</span></p>
   </div>`;
 
 process.stdout.write(`

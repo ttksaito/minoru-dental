@@ -7,6 +7,8 @@
 - 「タイトルに『東松山市』を入れて、もう少し柔らかく」
 - 「休日歯科センターの電話番号は 0493-xx-xxxx。市の公式ページで確認済みなので本文に入れて」
 - 「まとめの前に『子どもの場合』の見出しを足して」
+- 「サムネの文字を『日曜に歯が痛い！東松山の相談先』にして」（仮サムネの文字を変える）
+- 写真を添付して「サムネはこれにして」（添付画像をサムネにする）
 
 修正担当のエージェント（routine `trig_01DkdubRACRuw8RJegjm4Yzx`、毎時 0 分・7:00〜23:00 JST）が未対応のコメントを見つけて修正し、push して PR に「🤖 直した内容」を返信する。
 push によって確認メールも修正版で再送される。納得したら「Merge pull request」で公開。
@@ -40,9 +42,14 @@ slug はブランチ名の `cms/blog/` 以降。記事は `content/blog/<slug>.m
 - 変更が summary や date に関わるなら整合させる
 - 指示が曖昧で複数の解釈がある場合は、いちばん自然な解釈で直し、返信にその旨を書く。指示が実行不能（事実が確認できない等）な場合は直さずに返信で理由を伝える
 
+### 2b. サムネイルの指示があるとき
+- **文字を変える指示**: `content/.thumb-overrides/<slug>.json` を書く（例 `{"title": "日曜に歯が痛い！東松山の相談先", "tags": ["緊急時の相談先"], "sub": "休日歯科センターの使い方"}`）。`title` は 30 文字以内、`sub` は任意。画像そのものは作らない（push 後に GitHub Actions が Chrome で作り直す）。frontmatter の `image` は `/blog/uploads/<slug>.png` のまま
+- **画像が添付された指示**: コメント本文の画像 URL（`https://github.com/user-attachments/assets/...` や `![...](...)`）を `curl -fsSL -o blog/uploads/<slug>-custom.<拡張子> <URL>` で保存する（拡張子は `file` コマンドか Content-Type で判定。png/jpg/webp のみ）。成功したら frontmatter の `image` を `/blog/uploads/<slug>-custom.<拡張子>` に変える。ダウンロードできなければ直さずに、返信で「画像を取得できなかったので CMS のサムネイル欄からアップロードしてください」と伝える
+- 変更したファイル（json / 画像 / md）は 3 のコミットに含める
+
 ### 3. push して返信
 ```bash
-git add content/blog/<slug>.md
+git add content/blog/<slug>.md content/.thumb-overrides/<slug>.json blog/uploads/<slug>-custom.* 2>/dev/null
 git commit -m "記事を修正: <slug>（コメント対応）"
 git push origin cms/blog/<slug>
 gh api -X POST repos/ttksaito/minoru-dental/issues/<番号>/comments -f body="🤖 直しました。
