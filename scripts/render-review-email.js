@@ -50,6 +50,7 @@ const actions = `
     ${btn(prUrl, '没にする → 下の方の「Close pull request」を押す', '#fff', '#777', '1px solid #ccc')}
     ${btn(cms, '文章やサムネを直す → CMS を開く', '#fff', '#388e3c', '1px solid #4caf50')}
     <p style="margin:8px 0 0;font-size:12px;color:#888;line-height:1.6">「Merge pull request」→「Confirm merge」の 2 回押しで公開され、3〜5 分で本番に反映されます。</p>
+    <p style="margin:10px 0 0;font-size:13px;color:#555;line-height:1.6;background:#f7faf7;padding:8px 12px;border-radius:8px">✏️ <b>直したいところがあるとき</b>: 同じ GitHub ページの一番下のコメント欄に、日本語で「3 段落目を短く」「タイトルに東松山市を入れて」のように書いてください。AI が 1 時間以内に直して、修正版のメールを送り直します。何回でも続けられます。</p>
   </div>`;
 
 process.stdout.write(`
