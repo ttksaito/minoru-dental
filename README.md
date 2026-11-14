@@ -11,7 +11,7 @@
 - 記事Markdownのpush時にGitHub Actionsが自動ビルド（ローカルビルド不要）
 - 人気記事ランキング（GA4 + GitHub Actionsで毎日自動集計）
 - 集客ダッシュボード（GA4・Search Console・Google 広告の数値を `/dashboard/` に毎日自動集計）
-- ブログ記事の自動作成（3 日ごとに AI が下書きを作って CMS のワークフローに登録。人間は確認して公開するだけ。`docs/ops/auto-blog.md`）
+- ブログ記事の自動作成（3 日ごとに AI が下書きを作成 → 確認メール → スマホでプレビューして「公開する」を押すだけ。`docs/ops/auto-blog.md`）
 - SEO対策（構造化データ、OGP、サイトマップ自動生成）
 
 ## 開発環境のセットアップ
@@ -100,7 +100,8 @@ git push
 │   └── tag-keywords.json   # タグ自動判定のキーワード表（CMSとbuild-blog.jsで共用）
 ├── api/                    # Vercelサーバーレス関数（CMSのGitHub OAuth用）
 │   ├── auth.js             # 認証開始（GitHubへリダイレクト）
-│   └── callback.js         # コールバック（トークン交換）
+│   ├── callback.js         # コールバック（トークン交換）
+│   └── review.js           # 記事下書きのスマホ確認・公開（メールの署名付きリンクから）
 ├── .github/workflows/
 │   ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
 │   ├── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）

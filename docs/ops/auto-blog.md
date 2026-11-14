@@ -1,7 +1,8 @@
 # ブログ記事の自動作成パイプライン（2026-11-14 稼働）
 
-人間がやるのは **CMS で文章を確認して「公開」を押す** ことと、**気に入らなければサムネイルを差し替える** ことだけ。
-それ以外（ネタ選び・調査・執筆・仮サムネ・下書き登録・チェック予定の登録）は自動。
+人間がやるのは **届いたメールのリンクを開いて本文を読み、「公開する」か「没にする」を押す** ことだけ（スマホで完結）。
+文章を直したいときとサムネイルを差し替えたいときだけ CMS を使う。
+それ以外（ネタ選び・調査・執筆・仮サムネ・下書き登録・メール・チェック予定の登録）は自動。
 
 ## 流れ
 
@@ -13,10 +14,12 @@
    ▼
 GitHub Actions（draft-article.yml）
    │  仮サムネイル blog/uploads/<slug>.png を生成してコミット
-   │  PR を「記事を追加: <slug>」+ ラベル decap-cms/draft で作成
+   │  PR（ラベル decap-cms/draft）を確認し、確認メールを送る
    ▼
-CMS のワークフロー（https://www.minoru-dental.jp/admin/#/workflow）に「下書き」として表示
-   │  ★人間: 本文を読む → 必要なら直す → サムネを差し替えたければアップロード → 「公開」
+メール「【要確認】ブログ下書き: <タイトル>」が届く（Gmail）
+   │  ★人間: 「本文を確認する」を押す → スマホでプレビュー → 画面下の「公開する」or「没にする」
+   │     （文章を直したい・サムネを変えたいときだけ CMS のワークフローへ）
+   │  プレビュー・公開ボタンは Vercel の /api/review（メールのリンクにしか効かない署名付き）
    ▼
 main にマージ → build-blog.yml が記事 HTML・一覧・sitemap を生成 → 本番に反映
    │
@@ -96,10 +99,25 @@ Google カレンダーに予定を 1 件作る: 翌日 10:00〜10:15（Asia/Toky
 ### 最後に出力すること
 作った記事のタイトル・slug・ネタを選んだ理由・参考 URL・カレンダー登録の有無を簡潔に。
 
+## 初回セットアップ（メールとワンタップ公開に必要な設定）
+
+| 置き場所 | 名前 | 値 |
+|---|---|---|
+| GitHub Secrets | `REVIEW_SECRET` | ランダムな長い文字列（`openssl rand -hex 24` で作る）。Vercel と同じ値 |
+| GitHub Secrets | `MAIL_USERNAME` | 送信に使う Gmail アドレス |
+| GitHub Secrets | `MAIL_APP_PASSWORD` | その Gmail の「アプリ パスワード」（Google アカウント → セキュリティ → 2 段階認証プロセス → アプリ パスワード） |
+| GitHub Secrets | `MAIL_TO` | 受け取るメールアドレス（スマホで見るもの） |
+| Vercel 環境変数 | `REVIEW_SECRET` | GitHub と同じ値 |
+| Vercel 環境変数 | `GITHUB_PUBLISH_TOKEN` | GitHub の Fine-grained personal access token。対象リポジトリ minoru-dental のみ、権限は Contents: Read and write、Pull requests: Read and write |
+
+GitHub Secrets は `gh secret set 名前 --body "値"`、Vercel は `vercel env add 名前 production`（または Vercel の Settings → Environment Variables）。
+Secrets が未設定の間はメールが送られないだけで、CMS のワークフローからは従来どおり公開できる。
+
 ## 運用メモ（人間向け）
 
 - 下書きが 3 本溜まるとエージェントは新規作成を止める。溜まったら CMS で公開するか、PR を閉じて（ブランチも削除）減らす
-- PR を閉じる = 没にする。CMS の「ワークフロー」で削除してもよい
+- メールの「没にする」= PR を閉じてブランチ削除。CMS の「ワークフロー」で削除してもよい
+- メールのリンクは PR ごとの署名付き。転送すると受け取った人も公開できるので注意
 - 仮サムネイルを差し替えるには、CMS の記事画面の「サムネイル画像」から画像を上げ直すだけ
 - 頻度や曜日を変える: https://claude.ai/code/routines/trig_01YAV7MzCNJ3kzaV7CBgbaAy （定期エージェント「ブログ下書きの自動作成（みのる歯科）」。3 日ごと 6:00 JST、モデル claude-sonnet-5-5。実行ログもここ）
 - 書き方のルールを変える: `docs/ops/blog-workflow.md` と、このファイルの「エージェントへの指示」を直す。エージェントは毎回これを読む
