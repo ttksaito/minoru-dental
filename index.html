@@ -118,14 +118,14 @@
         
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。沢口町にあり地域の皆様の健康をサポート。">
-    <title>みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療</title>
+    <meta name="description" content="埼玉県東松山市沢口町の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れ、小さなお子様からご高齢の方まで診療しています。土曜も診療、駐車場4台、予約制。東松山駅から車で約10分。">
+    <title>東松山市の歯医者 みのる歯科｜痛みの少ない治療と予防歯科｜沢口町</title>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.minoru-dental.jp/">
-    <meta property="og:title" content="みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療">
-    <meta property="og:description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。">
+    <meta property="og:title" content="東松山市の歯医者 みのる歯科｜痛みの少ない治療と予防歯科">
+    <meta property="og:description" content="埼玉県東松山市沢口町の歯医者。痛みの少ない治療と予防歯科に力を入れています。土曜も診療、駐車場4台、予約制。">
     <meta property="og:image" content="https://www.minoru-dental.jp/image/外観.png">
     <meta property="og:locale" content="ja_JP">
     <meta property="og:site_name" content="みのる歯科">
@@ -133,8 +133,8 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://www.minoru-dental.jp/">
-    <meta name="twitter:title" content="みのる歯科 | 埼玉県東松山市の歯医者 | 痛みの少ない治療">
-    <meta name="twitter:description" content="埼玉県東松山市の歯医者「みのる歯科」。痛みの少ない治療と予防歯科に力を入れています。一般歯科、小児歯科、矯正歯科、口腔外科に対応。">
+    <meta name="twitter:title" content="東松山市の歯医者 みのる歯科｜痛みの少ない治療と予防歯科">
+    <meta name="twitter:description" content="埼玉県東松山市沢口町の歯医者。痛みの少ない治療と予防歯科に力を入れています。土曜も診療、駐車場4台、予約制。">
     <meta name="twitter:image" content="https://www.minoru-dental.jp/image/外観.png">
 
     <!-- Canonical URL -->
@@ -312,16 +312,77 @@
             padding: 100px 20px 50px;
         }
         
-        .hero h2 {
+        .hero h1 {
             font-size: 28px;
-            margin-bottom: 20px;
+            line-height: 1.3;
+            margin: 0 0 20px;
             color: var(--primary-color);
+        }
+        
+        .hero .hero-sub {
+            font-size: 15px;
+            color: var(--accent-color);
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
         }
         
         .hero p {
             font-size: 16px;
             max-width: 100%;
             margin-bottom: 30px;
+        }
+        
+        .hero .pc-only {
+            display: none;
+        }
+        
+        .hero-points {
+            list-style: none;
+            padding: 0;
+            margin: -10px 0 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px 10px;
+        }
+        
+        .hero-points li {
+            background: var(--white);
+            color: var(--accent-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .local-intro {
+            background: var(--white);
+            padding: 50px 20px;
+        }
+        
+        .local-intro-inner {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .local-intro h2 {
+            font-size: 22px;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 0 0 24px;
+        }
+        
+        .local-intro p {
+            font-size: 15px;
+            line-height: 1.9;
+            margin: 0 0 16px;
+        }
+        
+        .local-intro a {
+            color: var(--accent-color);
+            text-decoration: underline;
         }
         
         .cta-button {
@@ -1091,8 +1152,16 @@
                 grid-template-columns: repeat(2, 1fr); 
             }
             
-            .hero h2 {
-                font-size: 32px;
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero .pc-only {
+                display: inline;
+            }
+            
+            .local-intro h2 {
+                font-size: 26px;
             }
             
             .footer-content {
@@ -1302,9 +1371,25 @@
     </header>
 
     <section class="hero">
-        <h2>あなたの笑顔を守る<br>地域密着の歯科医院</h2>
-        <p>みのる歯科では、痛みの少ない治療と予防歯科に力を入れています。<br>東松山市の皆様のお口の健康をサポートします。</p>
+        <p class="hero-sub">あなたの笑顔を守る、地域密着の歯科医院</p>
+        <h1>東松山市沢口町の歯医者<br>みのる歯科</h1>
+        <p>痛みの少ない治療と予防歯科に力を入れ、<br class="pc-only">小さなお子様からご高齢の方まで、東松山市の皆様のお口の健康をサポートします。</p>
+        <ul class="hero-points" aria-label="当院の特徴">
+            <li>予約制</li>
+            <li>土曜も診療</li>
+            <li>駐車場4台</li>
+            <li>平成元年開業</li>
+        </ul>
         <a href="#contact" class="cta-button">ご予約・お問い合わせ</a>
+    </section>
+
+    <section class="local-intro">
+        <div class="local-intro-inner">
+            <h2>東松山市で歯医者をお探しの方へ</h2>
+            <p>みのる歯科は、埼玉県東松山市沢口町にある歯科医院です。東武東上線「東松山駅」から車で約10分、関越自動車道「東松山IC」からも約10分で、駐車場を4台ご用意しています。東松山市内はもちろん、吉見町・滑川町・川島町・嵐山町など近隣からもお車で通いやすい立地です。</p>
+            <p>平成元年の開業以来、「痛みを抑えた優しい治療」を大切にしてきました。虫歯や歯周病の治療、お子様の歯のケア、親知らずの抜歯などの口腔外科まで、お口のことは一通りご相談いただけます。治療が終わった後も、定期検診とクリーニングで健康な歯を長く保つお手伝いをします。</p>
+            <p>診療は予約制です。平日は18:30まで、土曜は17:00まで診療しています（木曜・日曜・祝日は休診）。初めての方も、お電話か<a href="https://lin.ee/zFdXAeb" target="_blank" rel="noopener noreferrer">公式LINE</a>からお気軽にご予約ください。<a href="#info">診療時間・アクセスはこちら</a>、<a href="#services">診療内容はこちら</a>をご覧ください。</p>
+        </div>
     </section>
 
     <section id="about" class="about">
