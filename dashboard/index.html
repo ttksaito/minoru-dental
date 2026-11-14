@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>集客ダッシュボード | みのる歯科</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f5f3f0;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --brand: #388e3c;
+    --brand-soft: #e8f5e9;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --good: #006300;
+    --bad: #d03b3b;
+    --tip-bg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --brand: #66bb6a;
+      --brand-soft: #1f2d20;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --good: #0ca30c;
+      --bad: #e66767;
+      --tip-bg: #262624;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 8px; }
+  header.top h1 { font-size: 20px; margin: 0; font-weight: 700; }
+  header.top h1 span { color: var(--brand); margin-right: 8px; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .note { color: var(--ink-2); font-size: 13px; margin: 0 0 20px; }
+  .alert {
+    background: var(--brand-soft); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; margin: 0 0 20px; font-size: 13px; color: var(--ink-2);
+  }
+  .alert.err { background: rgba(208,59,59,0.08); }
+  .alert code { font-size: 12px; }
+  h2 {
+    font-size: 15px; font-weight: 700; margin: 32px 0 12px; display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap;
+  }
+  h2 .tag {
+    font-size: 11px; font-weight: 600; color: var(--ink-2); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px;
+  }
+  h2 .sub { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .grid { display: grid; gap: 12px; }
+  .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .card h3 { font-size: 13px; font-weight: 600; margin: 0 0 2px; color: var(--ink); }
+  .card .desc { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .tile .label { font-size: 12px; color: var(--ink-2); }
+  .tile .value { font-size: 26px; font-weight: 600; line-height: 1.2; margin: 4px 0 2px; }
+  .tile .value small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+  .tile .delta { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .tile .delta b { font-weight: 600; }
+  .tile .delta.up b { color: var(--good); }
+  .tile .delta.down b { color: var(--bad); }
+  .filters { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; flex-wrap: wrap; }
+  .filters .lbl { font-size: 12px; color: var(--ink-2); }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg button {
+    appearance: none; border: 0; background: transparent; color: var(--ink-2); padding: 6px 12px; font: inherit;
+    font-size: 13px; cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--brand-soft); color: var(--ink); font-weight: 600; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin: 0 0 6px; flex-wrap: wrap; }
+  .chart .legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+  .chart .legend i.rect { height: 10px; border-radius: 2px; }
+  .tip {
+    position: absolute; pointer-events: none; background: var(--tip-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+    min-width: 120px; z-index: 2; display: none;
+  }
+  .tip .d { color: var(--muted); margin-bottom: 4px; }
+  .tip .row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  .tip .row i { display: inline-block; width: 10px; height: 2px; margin-right: 6px; vertical-align: middle; }
+  .tip .row b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tip .row span { color: var(--ink-2); }
+  .axis text { fill: var(--muted); font-size: 11px; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .baseline { stroke: var(--axis); stroke-width: 1; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; display: none; }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { font-weight: 600; color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td .t { display: block; color: var(--ink); }
+  td .p { display: block; color: var(--muted); font-size: 11px; word-break: break-all; }
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .bar .trk { flex: 1; height: 10px; border-radius: 4px; background: transparent; position: relative; }
+  .bar .fill { height: 10px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
+  .bar .v { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  .glossary { font-size: 13px; color: var(--ink-2); }
+  .glossary dt { font-weight: 600; color: var(--ink); margin-top: 8px; }
+  .glossary dd { margin: 0; }
+  .dim { color: var(--muted); }
+  @media (max-width: 600px) {
+    .tile .value { font-size: 22px; }
+    th, td { padding: 6px 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><span>みのる歯科</span>集客ダッシュボード</h1>
+    <div class="meta" id="generated"></div>
+  </header>
+  <p class="note">Google アナリティクス（GA4）・Search Console・Google 広告（GA4 連携）の数値を毎朝まとめています。「直近28日」とその前の28日を比べています。</p>
+  <div id="alerts"></div>
+
+  <h2>サマリー <span class="sub">直近28日 と 前の28日の比較</span></h2>
+  <div class="grid tiles" id="tiles"></div>
+
+  <h2>日別の推移</h2>
+  <div class="filters">
+    <span class="lbl">期間</span>
+    <div class="seg" role="group" aria-label="期間">
+      <button type="button" data-range="28" aria-pressed="true">直近28日</button>
+      <button type="button" data-range="90" aria-pressed="false">直近90日</button>
+    </div>
+  </div>
+  <div class="grid two" id="trends"></div>
+
+  <h2>どこから来ているか <span class="tag">GA4</span></h2>
+  <div class="grid two">
+    <div class="card" id="channels"></div>
+    <div class="card" id="devices"></div>
+  </div>
+
+  <h2>Google 検索での見つかり方 <span class="tag">Search Console</span> <span class="sub" id="gsc-range"></span></h2>
+  <div class="grid two">
+    <div class="card" id="queries"></div>
+    <div class="card" id="gsc-pages"></div>
+  </div>
+
+  <h2>よく見られたページ <span class="tag">GA4</span></h2>
+  <div class="card" id="ga-pages"></div>
+
+  <h2>Google 広告 <span class="tag">GA4 連携</span></h2>
+  <div class="card" id="ads"></div>
+
+  <h2>成果につながる行動（キーイベント） <span class="tag">GA4</span></h2>
+  <div class="card" id="key-events"></div>
+
+  <h2>用語の説明</h2>
+  <div class="card glossary">
+    <dl>
+      <dt>ユーザー / セッション / 表示回数（GA4）</dt>
+      <dd>ユーザーはサイトに来た人数、セッションは訪問回数、表示回数はページが見られた回数です。1人が2回来て3ページ見ると、1・2・3になります。</dd>
+      <dt>エンゲージメント率（GA4）</dt>
+      <dd>10秒以上見た・2ページ以上見た・キーイベントが起きた、のいずれかに当てはまる訪問の割合。すぐ離脱されていないかの目安です。</dd>
+      <dt>表示回数 / クリック数 / CTR / 平均掲載順位（Search Console）</dt>
+      <dd>Google の検索結果に出た回数と、そこからクリックされた回数。CTR はクリック÷表示。平均掲載順位は検索結果で何番目に出たかの平均で、小さいほど上位です。</dd>
+      <dt>流入チャネル</dt>
+      <dd>Organic Search＝検索から、Direct＝URL直打ちやブックマーク、Referral＝他サイトのリンク、Paid Search＝Google 広告、Organic Social＝SNS、Unassigned＝判別できなかったもの。</dd>
+      <dt>キーイベント</dt>
+      <dd>電話番号のタップや予約ページの閲覧など、GA4 で「成果」として設定した行動。未設定だとここは空になります。</dd>
+    </dl>
+  </div>
+</div>
+
+<script>
+(async function () {
+  const $ = (sel) => document.querySelector(sel);
+  const fmtInt = (n) => (n == null ? '–' : Math.round(n).toLocaleString('ja-JP'));
+  const fmtPct = (n, d = 1) => (n == null ? '–' : (n * 100).toFixed(d) + '%');
+  const fmtYen = (n) => (n == null ? '–' : '¥' + Math.round(n).toLocaleString('ja-JP'));
+  const fmtDur = (s) => {
+    if (s == null) return '–';
+    const m = Math.floor(s / 60), r = Math.round(s % 60);
+    return m > 0 ? `${m}分${String(r).padStart(2, '0')}秒` : `${r}秒`;
+  };
+  const fmtDate = (iso) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${m}/${d}`;
+  };
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+
+  let data;
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+  } catch (e) {
+    $('#alerts').appendChild(el('div', 'alert err',
+      'data.json がまだありません。GitHub Actions の「集客ダッシュボードの更新」を一度実行すると表示されます。'));
+    return;
+  }
+
+  const ga = data.ga4, gsc = data.gsc, ads = ga && ga.ads;
+  const gen = new Date(data.generatedAt);
+  $('#generated').textContent = `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`;
+
+  if (data.errors && data.errors.gsc) {
+    const a = el('div', 'alert err');
+    a.append('Search Console のデータを取得できませんでした。Search Console の「設定 → ユーザーと権限」でサービスアカウント ');
+    a.appendChild(el('code', null, 'ga4-popular-posts@minoru-dental.iam.gserviceaccount.com'));
+    a.append(' を追加してください。 ');
+    a.appendChild(el('span', 'dim', data.errors.gsc.slice(0, 160)));
+    $('#alerts').appendChild(a);
+  }
+  if (data.errors && data.errors.ga4) {
+    $('#alerts').appendChild(el('div', 'alert err', 'GA4 のデータを取得できませんでした: ' + data.errors.ga4.slice(0, 200)));
+  }
+
+  // ---------------------------------------------------------- tiles
+  function tile(label, value, unit, cur, prev, opts = {}) {
+    const t = el('div', 'card tile');
+    t.appendChild(el('div', 'label', label));
+    const v = el('div', 'value', value);
+    if (unit) v.appendChild(el('small', null, unit));
+    t.appendChild(v);
+    const d = el('div', 'delta');
+    if (cur != null && prev != null && prev > 0) {
+      const diff = (cur - prev) / prev;
+      const up = diff > 0.005, down = diff < -0.005;
+      const better = opts.lowerIsBetter ? down : up;
+      const worse = opts.lowerIsBetter ? up : down;
+      d.classList.add(better ? 'up' : worse ? 'down' : 'flat');
+      d.appendChild(el('b', null, (diff > 0 ? '+' : '') + (diff * 100).toFixed(0) + '%'));
+      d.append(`前の28日: ${opts.fmtPrev ? opts.fmtPrev(prev) : fmtInt(prev)}`);
+    } else if (cur != null && prev != null) {
+      d.append(`前の28日: ${opts.fmtPrev ? opts.fmtPrev(prev) : fmtInt(prev)}`);
+    } else {
+      d.append(opts.na || 'データなし');
+    }
+    t.appendChild(d);
+    return t;
+  }
+  const tiles = $('#tiles');
+  if (ga) {
+    const c = ga.summary.current, p = ga.summary.previous;
+    tiles.append(
+      tile('ユーザー数', fmtInt(c.users), '人', c.users, p.users),
+      tile('セッション（訪問回数）', fmtInt(c.sessions), '回', c.sessions, p.sessions),
+      tile('ページ表示回数', fmtInt(c.pageViews), '回', c.pageViews, p.pageViews),
+      tile('エンゲージメント率', fmtPct(c.engagementRate, 0), '', c.engagementRate, p.engagementRate, { fmtPrev: (v) => fmtPct(v, 0) })
+    );
+  }
+  if (gsc) {
+    const c = gsc.current, p = gsc.previous;
+    tiles.append(
+      tile('検索クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks),
+      tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions),
+      tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v) }),
+      tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位' })
+    );
+  }
+  if (ads && ads.linked) {
+    const c = ads.current, p = ads.previous;
+    tiles.append(
+      tile('広告費', fmtYen(c.cost), '', c.cost, p.cost, { fmtPrev: fmtYen }),
+      tile('広告クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks)
+    );
+  }
+
+  // ---------------------------------------------------------- charts
+  const W = 520, H = 200, PAD = { t: 10, r: 14, b: 26, l: 40 };
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const svgEl = (tag, attrs = {}) => {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  };
+  function niceMax(v) {
+    if (v <= 0) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v / p;
+    const m = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+    return m * p;
+  }
+  /** rows: [{date, ...}], series: [{key, label, color, fmt}], kind: 'line' | 'bar' */
+  function chartCard(title, desc, rows, series, kind, fmt = fmtInt) {
+    const card = el('div', 'card');
+    card.appendChild(el('h3', null, title));
+    if (desc) card.appendChild(el('p', 'desc', desc));
+    const box = el('div', 'chart');
+    card.appendChild(box);
+    const render = (sub) => {
+      box.replaceChildren();
+      if (!sub || sub.length === 0) { box.appendChild(el('div', 'empty', 'データがありません')); return; }
+      if (series.length > 1) {
+        const lg = el('div', 'legend');
+        for (const s of series) {
+          const it = el('span');
+          const i = el('i', kind === 'bar' ? 'rect' : '');
+          i.style.background = s.color;
+          it.append(i, s.label);
+          lg.appendChild(it);
+        }
+        box.appendChild(lg);
+      }
+      const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': title });
+      const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
+      const n = sub.length;
+      const maxRaw = Math.max(1, ...sub.flatMap((r) => series.map((s) => r[s.key] || 0)));
+      const ymax = niceMax(maxRaw);
+      const x = (i) => PAD.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw);
+      const y = (v) => PAD.t + ih - (v / ymax) * ih;
+      // gridlines + y ticks
+      const ticks = 4;
+      for (let k = 0; k <= ticks; k++) {
+        const v = (ymax / ticks) * k;
+        const yy = y(v);
+        svg.appendChild(svgEl(k === 0 ? 'line' : 'line', { x1: PAD.l, x2: W - PAD.r, y1: yy, y2: yy, class: k === 0 ? 'baseline' : 'gridline' }));
+        const t = svgEl('text', { x: PAD.l - 6, y: yy + 4, 'text-anchor': 'end', class: 'axis' });
+        t.textContent = fmt(v);
+        const g = svgEl('g', { class: 'axis' }); g.appendChild(t); svg.appendChild(g);
+      }
+      // x ticks（最大6本）
+      const step = Math.max(1, Math.ceil(n / 6));
+      for (let i = 0; i < n; i += step) {
+        const t = svgEl('text', { x: x(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : 'middle' });
+        t.textContent = fmtDate(sub[i].date);
+        const g = svgEl('g', { class: 'axis' }); g.appendChild(t); svg.appendChild(g);
+      }
+      // marks
+      if (kind === 'bar') {
+        const slot = iw / n;
+        const bw = Math.min(24, Math.max(2, slot - 2));
+        series.forEach((s) => {
+          sub.forEach((r, i) => {
+            const v = r[s.key] || 0;
+            const h = Math.max(0, y(0) - y(v));
+            if (h === 0) return;
+            const rx = Math.min(4, bw / 2);
+            const bx = x(i) - bw / 2, by = y(v);
+            const path = `M${bx},${by + h} V${by + rx} Q${bx},${by} ${bx + rx},${by} H${bx + bw - rx} Q${bx + bw},${by} ${bx + bw},${by + rx} V${by + h} Z`;
+            svg.appendChild(svgEl('path', { d: path, fill: s.color }));
+          });
+        });
+      } else {
+        series.forEach((s) => {
+          const pts = sub.map((r, i) => [x(i), y(r[s.key] || 0)]);
+          const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+          svg.appendChild(svgEl('path', { d: `${d} L${pts[n - 1][0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`, fill: s.color, 'fill-opacity': 0.1 }));
+          svg.appendChild(svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+          const last = pts[n - 1];
+          svg.appendChild(svgEl('circle', { cx: last[0], cy: last[1], r: 6, fill: 'var(--surface)' }));
+          svg.appendChild(svgEl('circle', { cx: last[0], cy: last[1], r: 4, fill: s.color }));
+        });
+        // 直接ラベル: 最新値のみ
+        const lastRow = sub[n - 1];
+        const t = svgEl('text', { x: x(n - 1), y: y(lastRow[series[0].key] || 0) - 10, 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
+        t.textContent = fmt(lastRow[series[0].key] || 0);
+        svg.appendChild(t);
+      }
+      // hover layer
+      const cross = svgEl('line', { x1: 0, x2: 0, y1: PAD.t, y2: PAD.t + ih, class: 'crosshair' });
+      svg.appendChild(cross);
+      const hoverDots = series.map((s) => {
+        const c = svgEl('circle', { r: 4, fill: s.color, stroke: 'var(--surface)', 'stroke-width': 2, style: 'display:none' });
+        svg.appendChild(c); return c;
+      });
+      const hit = svgEl('rect', { x: PAD.l, y: 0, width: iw, height: H, fill: 'transparent', style: 'cursor:crosshair' });
+      svg.appendChild(hit);
+      const tip = el('div', 'tip');
+      box.append(svg, tip);
+      const show = (i) => {
+        const r = sub[i];
+        cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.display = 'block';
+        tip.replaceChildren(el('div', 'd', r.date));
+        series.forEach((s, k) => {
+          const row = el('div', 'row');
+          const left = el('span');
+          const key = el('i'); key.style.background = s.color;
+          left.append(key, s.label);
+          row.append(left, el('b', null, (s.fmt || fmt)(r[s.key] || 0)));
+          tip.appendChild(row);
+          hoverDots[k].setAttribute('cx', x(i)); hoverDots[k].setAttribute('cy', y(r[s.key] || 0));
+          hoverDots[k].style.display = kind === 'bar' ? 'none' : 'block';
+        });
+        tip.style.display = 'block';
+        const rect = svg.getBoundingClientRect();
+        const px = (x(i) / W) * rect.width;
+        const leftSide = px > rect.width / 2;
+        tip.style.left = leftSide ? 'auto' : px + 12 + 'px';
+        tip.style.right = leftSide ? rect.width - px + 12 + 'px' : 'auto';
+        tip.style.top = (PAD.t / H) * rect.height + 'px';
+      };
+      const hide = () => { cross.style.display = 'none'; tip.style.display = 'none'; hoverDots.forEach((d) => (d.style.display = 'none')); };
+      hit.addEventListener('pointermove', (ev) => {
+        const rect = svg.getBoundingClientRect();
+        const fx = ((ev.clientX - rect.left) / rect.width) * W;
+        const i = Math.max(0, Math.min(n - 1, Math.round(((fx - PAD.l) / iw) * (n - 1))));
+        show(i);
+      });
+      hit.addEventListener('pointerleave', hide);
+      hit.setAttribute('tabindex', '0');
+      let fi = n - 1;
+      hit.addEventListener('focus', () => show(fi));
+      hit.addEventListener('blur', hide);
+      hit.addEventListener('keydown', (ev) => {
+        if (ev.key === 'ArrowLeft') { fi = Math.max(0, fi - 1); show(fi); ev.preventDefault(); }
+        if (ev.key === 'ArrowRight') { fi = Math.min(n - 1, fi + 1); show(fi); ev.preventDefault(); }
+      });
+    };
+    return { card, render: (days) => render(rows ? rows.slice(-days) : null) };
+  }
+
+  const trendCharts = [];
+  const trends = $('#trends');
+  if (ga) {
+    trendCharts.push(chartCard('サイト訪問（GA4）', '1日あたりのユーザー数とセッション数', ga.daily,
+      [{ key: 'users', label: 'ユーザー', color: 'var(--series-1)' }, { key: 'sessions', label: 'セッション', color: 'var(--series-2)' }], 'line'));
+  }
+  if (gsc) {
+    trendCharts.push(chartCard('検索からのクリック（Search Console）', '1日あたり Google 検索結果からクリックされた回数', gsc.daily,
+      [{ key: 'clicks', label: 'クリック', color: 'var(--series-1)' }], 'bar'));
+    trendCharts.push(chartCard('検索結果に表示された回数（Search Console）', '1日あたりの表示回数。クリックより先に増えるのが普通です', gsc.daily,
+      [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }], 'line'));
+  }
+  if (ads && ads.linked && ads.daily && ads.daily.some((d) => d.cost > 0 || d.clicks > 0)) {
+    trendCharts.push(chartCard('広告費（Google 広告）', '1日あたりの費用', ads.daily,
+      [{ key: 'cost', label: '費用', color: 'var(--series-2)', fmt: fmtYen }], 'bar', (v) => '¥' + fmtInt(v)));
+  }
+  for (const c of trendCharts) trends.appendChild(c.card);
+  const applyRange = (days) => {
+    for (const c of trendCharts) c.render(days);
+    document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === String(days))));
+  };
+  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => applyRange(Number(b.dataset.range))));
+  applyRange(28);
+  if (trendCharts.length === 0) trends.appendChild(el('div', 'empty', 'データがありません'));
+
+  // ---------------------------------------------------------- tables
+  function table(headers, rows, renderRow) {
+    const t = el('table');
+    const thead = el('thead'); const tr = el('tr');
+    headers.forEach((h) => tr.appendChild(el('th', h.num ? 'num' : '', h.label)));
+    thead.appendChild(tr); t.appendChild(thead);
+    const tb = el('tbody');
+    rows.forEach((r, i) => tb.appendChild(renderRow(r, i)));
+    t.appendChild(tb);
+    return t;
+  }
+  const td = (text, num) => el('td', num ? 'num' : '', text);
+  const pageCell = (title, path) => {
+    const c = el('td');
+    if (title) c.appendChild(el('span', 't', title));
+    c.appendChild(el('span', 'p', path));
+    return c;
+  };
+  const channelJa = {
+    'Organic Search': '検索（自然）', 'Direct': '直接アクセス', 'Referral': '他サイトのリンク', 'Paid Search': 'Google 広告（検索）',
+    'Organic Social': 'SNS', 'Paid Social': 'SNS 広告', 'Display': 'ディスプレイ広告', 'Email': 'メール', 'Unassigned': '不明',
+    'Cross-network': '広告（複数ネットワーク）', 'Organic Video': '動画', 'Organic Shopping': 'ショッピング', 'Paid Other': 'その他の広告',
+  };
+  function barTable(container, title, desc, rows, labelOf, valueOf, extraHeaders = [], extraCells = () => []) {
+    container.replaceChildren(el('h3', null, title), el('p', 'desc', desc));
+    if (!rows || rows.length === 0) { container.appendChild(el('div', 'empty', 'データがありません')); return; }
+    const max = Math.max(1, ...rows.map(valueOf));
+    container.appendChild(table(
+      [{ label: '' }, { label: '' }, ...extraHeaders],
+      rows,
+      (r) => {
+        const tr = el('tr');
+        tr.appendChild(td(labelOf(r)));
+        const c = el('td');
+        const b = el('div', 'bar');
+        const trk = el('div', 'trk');
+        const f = el('div', 'fill'); f.style.width = (valueOf(r) / max) * 100 + '%';
+        trk.appendChild(f);
+        b.append(trk, el('span', 'v', fmtInt(valueOf(r))));
+        c.appendChild(b);
+        tr.appendChild(c);
+        extraCells(r).forEach((x) => tr.appendChild(x));
+        return tr;
+      }
+    ));
+  }
+
+  if (ga) {
+    barTable($('#channels'), '流入チャネル', 'セッション数（直近28日）。右は前の28日。', ga.channels,
+      (r) => channelJa[r.channel] || r.channel, (r) => r.sessions,
+      [{ label: '前の28日', num: true }], (r) => [td(fmtInt(r.previousSessions), true)]);
+    const devJa = { desktop: 'パソコン', mobile: 'スマートフォン', tablet: 'タブレット' };
+    barTable($('#devices'), '端末', 'セッション数（直近28日）', ga.devices, (r) => devJa[r.device] || r.device, (r) => r.sessions);
+  } else {
+    $('#channels').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
+    $('#devices').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
+  }
+
+  if (gsc) {
+    $('#gsc-range').textContent = `${gsc.range.start} 〜 ${gsc.range.end}（検索データは2日ほど遅れて確定します）`;
+    const q = $('#queries');
+    q.replaceChildren(el('h3', null, '検索キーワード'), el('p', 'desc', 'どんな言葉で検索して見つかったか（クリック数順）'));
+    q.appendChild(gsc.queries.length ? table(
+      [{ label: 'キーワード' }, { label: 'クリック', num: true }, { label: '表示', num: true }, { label: 'CTR', num: true }, { label: '順位', num: true }],
+      gsc.queries, (r) => { const tr = el('tr'); tr.append(td(r.query), td(fmtInt(r.clicks), true), td(fmtInt(r.impressions), true), td(fmtPct(r.ctr), true), td(r.position.toFixed(1), true)); return tr; }
+    ) : el('div', 'empty', 'まだ検索データがありません'));
+    const gp = $('#gsc-pages');
+    gp.replaceChildren(el('h3', null, '検索から来られたページ'), el('p', 'desc', 'Google 検索結果に出たページ（クリック数順）'));
+    gp.appendChild(gsc.pages.length ? table(
+      [{ label: 'ページ' }, { label: 'クリック', num: true }, { label: '表示', num: true }, { label: '順位', num: true }],
+      gsc.pages, (r) => { const tr = el('tr'); tr.append(pageCell(r.title, r.page), td(fmtInt(r.clicks), true), td(fmtInt(r.impressions), true), td(r.position.toFixed(1), true)); return tr; }
+    ) : el('div', 'empty', 'まだ検索データがありません'));
+  } else {
+    $('#queries').appendChild(el('div', 'empty', 'Search Console のデータがありません'));
+    $('#gsc-pages').appendChild(el('div', 'empty', 'Search Console のデータがありません'));
+  }
+
+  const gpg = $('#ga-pages');
+  if (ga && ga.pages.length) {
+    gpg.replaceChildren(el('h3', null, 'ページ別の表示回数'), el('p', 'desc', '直近28日で見られた回数が多い順'));
+    gpg.appendChild(table(
+      [{ label: '#' }, { label: 'ページ' }, { label: '表示回数', num: true }, { label: 'ユーザー', num: true }],
+      ga.pages, (r, i) => { const tr = el('tr'); tr.append(td(String(i + 1)), pageCell(r.title, r.path), td(fmtInt(r.pageViews), true), td(fmtInt(r.users), true)); return tr; }
+    ));
+  } else {
+    gpg.appendChild(el('div', 'empty', 'データがありません'));
+  }
+
+  const adsBox = $('#ads');
+  if (!ads) {
+    adsBox.appendChild(el('div', 'empty', 'GA4 のデータがありません'));
+  } else if (!ads.linked) {
+    const p = el('p', 'desc');
+    p.textContent = '直近56日に Google 広告のデータがありません。広告を出していない期間はこの表示になります。広告を配信中なのに出ない場合は、GA4 の「管理 → サービス間のリンク → Google 広告のリンク」が設定されているか確認してください。';
+    adsBox.appendChild(p);
+    if (ads.error) adsBox.appendChild(el('p', 'dim', ads.error.slice(0, 200)));
+  } else {
+    adsBox.replaceChildren(el('h3', null, 'キャンペーン別'), el('p', 'desc', '直近28日。費用は GA4 に連携された値で、Google 広告の管理画面と数円ずれることがあります。'));
+    adsBox.appendChild(ads.campaigns.length ? table(
+      [{ label: 'キャンペーン' }, { label: '表示', num: true }, { label: 'クリック', num: true }, { label: '費用', num: true }, { label: 'クリック単価', num: true }, { label: 'セッション', num: true }, { label: 'キーイベント', num: true }],
+      ads.campaigns, (r) => { const tr = el('tr'); tr.append(td(r.campaign), td(fmtInt(r.impressions), true), td(fmtInt(r.clicks), true), td(fmtYen(r.cost), true), td(r.clicks ? fmtYen(r.cost / r.clicks) : '–', true), td(fmtInt(r.sessions), true), td(fmtInt(r.keyEvents), true)); return tr; }
+    ) : el('div', 'empty', 'キャンペーン別のデータがありません'));
+  }
+
+  const ke = $('#key-events');
+  if (ga && ga.keyEvents.length) {
+    ke.replaceChildren(el('h3', null, 'キーイベント別'), el('p', 'desc', '直近28日の件数と前の28日'));
+    ke.appendChild(table(
+      [{ label: 'イベント' }, { label: '直近28日', num: true }, { label: '前の28日', num: true }],
+      ga.keyEvents, (r) => { const tr = el('tr'); tr.append(td(r.event), td(fmtInt(r.count), true), td(fmtInt(r.previousCount), true)); return tr; }
+    ));
+  } else {
+    ke.appendChild(el('p', 'desc', 'キーイベントがまだ設定されていません。GA4 の「管理 → イベント」で電話番号のタップ（click イベント）などをキーイベントにすると、ここに「成果」として件数が出ます。'));
+  }
+})();
+</script>
+</body>
+</html>
