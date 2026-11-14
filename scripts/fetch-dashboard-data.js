@@ -222,21 +222,12 @@ async function fetchGa4() {
   }
 
   // 7) Google 広告（GA4 リンク経由）。未リンクなら全て 0 / 空になる
+  //    advertiserAd* 指標はキャンペーン系ディメンションと一緒でないと取得できないため、
+  //    常に sessionGoogleAdsCampaignName を付けて取り、こちらで合算する
   let ads = { linked: false, current: {}, previous: {}, campaigns: [], daily: [] };
   try {
-    const adMetrics = ['advertiserAdImpressions', 'advertiserAdClicks', 'advertiserAdCost'];
-    const adSummary = await ga4Report({
-      dateRanges: [current, previous],
-      metrics: adMetrics.map((name) => ({ name })),
-      dimensionFilter: {
-        filter: { fieldName: 'sessionSource', stringFilter: { value: 'google' } },
-      },
-    });
-    // dimensionFilter が metric-only レポートで効かない場合に備え、全体も取る
-    const adTotals = splitByRange(adSummary, adMetrics);
-
     const campaignReport = await ga4Report({
-      dateRanges: [current],
+      dateRanges: [current, previous],
       dimensions: [{ name: 'sessionGoogleAdsCampaignName' }],
       metrics: [
         { name: 'advertiserAdImpressions' },
@@ -245,50 +236,56 @@ async function fetchGa4() {
         { name: 'sessions' },
         { name: 'keyEvents' },
       ],
-      orderBys: [{ metric: { metricName: 'advertiserAdCost' }, desc: true }],
-      limit: 50,
+      limit: 100,
     });
-    const campaigns = rowsToObjects(campaignReport)
-      .filter((r) => r.sessionGoogleAdsCampaignName && r.sessionGoogleAdsCampaignName !== '(not set)')
-      .map((r) => ({
-        campaign: r.sessionGoogleAdsCampaignName,
-        impressions: r.advertiserAdImpressions,
-        clicks: r.advertiserAdClicks,
-        cost: Math.round(r.advertiserAdCost),
-        sessions: r.sessions,
-        keyEvents: r.keyEvents,
-      }));
+    const totals = { current: { impressions: 0, clicks: 0, cost: 0 }, previous: { impressions: 0, clicks: 0, cost: 0 } };
+    const campaignMap = new Map();
+    for (const r of rowsToObjects(campaignReport)) {
+      const key = r.dateRange === 'date_range_1' ? 'previous' : 'current';
+      totals[key].impressions += r.advertiserAdImpressions;
+      totals[key].clicks += r.advertiserAdClicks;
+      totals[key].cost += r.advertiserAdCost;
+      const name = r.sessionGoogleAdsCampaignName;
+      if (key !== 'current' || !name || name === '(not set)') continue;
+      if (!campaignMap.has(name)) {
+        campaignMap.set(name, { campaign: name, impressions: 0, clicks: 0, cost: 0, sessions: 0, keyEvents: 0 });
+      }
+      const c = campaignMap.get(name);
+      c.impressions += r.advertiserAdImpressions;
+      c.clicks += r.advertiserAdClicks;
+      c.cost += r.advertiserAdCost;
+      c.sessions += r.sessions;
+      c.keyEvents += r.keyEvents;
+    }
+    const campaigns = [...campaignMap.values()]
+      .map((c) => ({ ...c, cost: Math.round(c.cost) }))
+      .sort((a, b) => b.cost - a.cost || b.clicks - a.clicks);
 
     const adDailyReport = await ga4Report({
       dateRanges: [{ startDate: `${SERIES_DAYS - 1}daysAgo`, endDate: 'today' }],
-      dimensions: [{ name: 'date' }],
+      dimensions: [{ name: 'date' }, { name: 'sessionGoogleAdsCampaignName' }],
       metrics: [{ name: 'advertiserAdClicks' }, { name: 'advertiserAdCost' }],
-      orderBys: [{ dimension: { dimensionName: 'date' } }],
-      limit: 1000,
+      limit: 10000,
     });
-    const adDaily = rowsToObjects(adDailyReport).map((r) => ({
-      date: `${r.date.slice(0, 4)}-${r.date.slice(4, 6)}-${r.date.slice(6, 8)}`,
-      clicks: r.advertiserAdClicks,
-      cost: Math.round(r.advertiserAdCost),
-    }));
+    const dailyMap = new Map();
+    for (const r of rowsToObjects(adDailyReport)) {
+      const date = `${r.date.slice(0, 4)}-${r.date.slice(4, 6)}-${r.date.slice(6, 8)}`;
+      if (!dailyMap.has(date)) dailyMap.set(date, { date, clicks: 0, cost: 0 });
+      const d = dailyMap.get(date);
+      d.clicks += r.advertiserAdClicks;
+      d.cost += r.advertiserAdCost;
+    }
+    const adDaily = [...dailyMap.values()]
+      .map((d) => ({ ...d, cost: Math.round(d.cost) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     const linked =
-      campaigns.length > 0 ||
-      adTotals.current.advertiserAdImpressions > 0 ||
-      adTotals.previous.advertiserAdImpressions > 0;
+      campaigns.length > 0 || totals.current.impressions > 0 || totals.previous.impressions > 0;
 
     ads = {
       linked,
-      current: {
-        impressions: adTotals.current.advertiserAdImpressions,
-        clicks: adTotals.current.advertiserAdClicks,
-        cost: Math.round(adTotals.current.advertiserAdCost),
-      },
-      previous: {
-        impressions: adTotals.previous.advertiserAdImpressions,
-        clicks: adTotals.previous.advertiserAdClicks,
-        cost: Math.round(adTotals.previous.advertiserAdCost),
-      },
+      current: { ...totals.current, cost: Math.round(totals.current.cost) },
+      previous: { ...totals.previous, cost: Math.round(totals.previous.cost) },
       campaigns,
       daily: adDaily,
     };

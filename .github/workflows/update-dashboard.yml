@@ -43,7 +43,7 @@ jobs:
       - name: 変更があればコミット・プッシュ
         run: |
           git pull --rebase --autostash
-          if git diff --quiet dashboard/data.json 2>/dev/null; then
+          if [ -z "$(git status --porcelain dashboard/data.json)" ]; then
             echo "変更なし。コミットをスキップします。"
             exit 0
           fi
