@@ -242,10 +242,22 @@
 
   if (data.errors && data.errors.gsc) {
     const a = el('div', 'alert err');
-    a.append('Search Console のデータを取得できませんでした。Search Console の「設定 → ユーザーと権限」でサービスアカウント ');
-    a.appendChild(el('code', null, 'ga4-popular-posts@minoru-dental.iam.gserviceaccount.com'));
-    a.append(' を追加してください。 ');
-    a.appendChild(el('span', 'dim', data.errors.gsc.slice(0, 160)));
+    const msg = data.errors.gsc;
+    if (/has not been used in project|is disabled/.test(msg)) {
+      a.append('Search Console のデータを取得できませんでした。Google Cloud プロジェクト（minoru-dental）で Search Console API が有効になっていません。');
+      const link = el('a', null, 'この画面で「有効にする」を押してください');
+      link.href = 'https://console.developers.google.com/apis/api/searchconsole.googleapis.com/overview?project=522170574882';
+      link.target = '_blank'; link.rel = 'noopener';
+      a.append(' ', link, '。有効化後、翌朝の自動更新（または手動実行）で反映されます。');
+    } else if (/403|permission|権限/i.test(msg)) {
+      a.append('Search Console のデータを取得できませんでした。Search Console の「設定 → ユーザーと権限」でサービスアカウント ');
+      a.appendChild(el('code', null, 'ga4-popular-posts@minoru-dental.iam.gserviceaccount.com'));
+      a.append(' を追加してください。 ');
+      a.appendChild(el('span', 'dim', msg.slice(0, 160)));
+    } else {
+      a.append('Search Console のデータを取得できませんでした。 ');
+      a.appendChild(el('span', 'dim', msg.slice(0, 200)));
+    }
     $('#alerts').appendChild(a);
   }
   if (data.errors && data.errors.ga4) {
