@@ -555,14 +555,15 @@
     Shiraoka: '白岡市', Hasuda: '蓮田市', Satte: '幸手市', Toda: '戸田市', Warabi: '蕨市', Misato: '三郷市', Yashio: '八潮市',
     Chiyoda: '東京・千代田区', Chuo: '東京・中央区', Minato: '東京・港区', Shinjuku: '東京・新宿区', Shibuya: '東京・渋谷区',
     Toshima: '東京・豊島区', Nerima: '東京・練馬区', Itabashi: '東京・板橋区', Suginami: '東京・杉並区', Setagaya: '東京・世田谷区',
-    Yokohama: '横浜市', Kawasaki: '川崎市', Chiba: '千葉市', Osaka: '大阪市', Nagoya: '名古屋市', Sapporo: '札幌市', Fukuoka: '福岡市',
+    Yokohama: '横浜市', Kawasaki: '川崎市', Chiba: '千葉市', Kashiwa: '柏市', Funabashi: '船橋市', Matsudo: '松戸市', Osaka: '大阪市', Nagoya: '名古屋市', Sapporo: '札幌市', Fukuoka: '福岡市',
     '(not set)': '不明',
   };
-  const regionJa = { Saitama: '埼玉県', Tokyo: '東京都', Kanagawa: '神奈川県', Chiba: '千葉県', Gunma: '群馬県', Tochigi: '栃木県', Ibaraki: '茨城県', Osaka: '大阪府', Aichi: '愛知県', Hokkaido: '北海道', Fukuoka: '福岡県', '(not set)': '' };
+  const regionJa = { Saitama: '埼玉県', Tokyo: '東京都', Kanagawa: '神奈川県', Chiba: '千葉県', Gunma: '群馬県', Tochigi: '栃木県', Ibaraki: '茨城県', Yamaguchi: '山口県', Kyoto: '京都府', Hyogo: '兵庫県', Shizuoka: '静岡県', Miyagi: '宮城県', Hiroshima: '広島県', Osaka: '大阪府', Aichi: '愛知県', Hokkaido: '北海道', Fukuoka: '福岡県', '(not set)': '' };
   const cityLabel = (r) => {
-    const c = cityJa[r.city] || r.city;
+    const key = (r.city || '').replace(/ City$/, '');
+    const c = cityJa[key] || key;
     const reg = regionJa[r.region] !== undefined ? regionJa[r.region] : r.region;
-    return reg && !c.startsWith('東京') && r.city !== '(not set)' ? `${c}（${reg}）` : c;
+    return reg && !c.startsWith('東京') ? `${c}（${reg}）` : c;
   };
   if (ga && ga.cities) {
     barTable($('#cities'), '市区町村別', 'ユーザー数（直近28日）。右はセッション数。海外や遠方が混ざるのは、VPNや携帯回線の経路、クローラーなどが原因です。', ga.cities,
