@@ -25,7 +25,12 @@ const prUrl = `https://github.com/${REPO}/pull/${pr}`;
 const thumb = `https://raw.githubusercontent.com/${REPO}/${encodeURIComponent(branch)}/blog/uploads/${slug}.png`;
 const cms = 'https://www.minoru-dental.jp/admin/#/workflow';
 const notesPath = path.join(ROOT, 'content', '.draft-notes', `${slug}.md`);
-const notes = fs.existsSync(notesPath) ? esc(fs.readFileSync(notesPath, 'utf8')).replace(/\n/g, '<br>') : '';
+let notesHtml = '';
+if (fs.existsSync(notesPath)) {
+  // 先頭の "# <slug>" 見出しは冗長なので落とす
+  const raw = fs.readFileSync(notesPath, 'utf8').replace(/^#\s+\S+\s*\n/, '');
+  notesHtml = marked.parse(raw);
+}
 
 // Gmail 向けにインラインスタイルを付ける
 let html = marked.parse(body);
@@ -37,7 +42,12 @@ const styles = {
   a: 'color:#388e3c', blockquote: 'margin:0 0 14px;padding:8px 14px;border-left:4px solid #ddd;color:#666',
   img: 'max-width:100%;height:auto', table: 'border-collapse:collapse;margin:0 0 14px', td: 'border:1px solid #ddd;padding:6px 10px', th: 'border:1px solid #ddd;padding:6px 10px;background:#f5f5f5',
 };
-for (const [tag, st] of Object.entries(styles)) html = html.replace(new RegExp(`<${tag}(\\s|>)`, 'g'), `<${tag} style="${st}"$1`);
+const styleize = (h) => { for (const [tag, st] of Object.entries(styles)) h = h.replace(new RegExp(`<${tag}(\\s|>)`, 'g'), `<${tag} style="${st}"$1`); return h; };
+html = styleize(html);
+notesHtml = styleize(notesHtml)
+  .replace(/<h2 style="[^"]*"/g, '<h2 style="font-size:15px;margin:14px 0 6px;color:#388e3c"')
+  .replace(/<p style="[^"]*"/g, '<p style="margin:0 0 8px;line-height:1.7"')
+  .replace(/<li style="[^"]*"/g, '<li style="margin:2px 0;line-height:1.7"');
 
 const tags = (meta.tags || '').split(',').map((s) => s.trim()).filter(Boolean);
 const btn = (href, label, bg, color, border = 'none') =>
@@ -56,14 +66,18 @@ const actions = `
 process.stdout.write(`
 <div style="font-family:-apple-system,'Hiragino Sans','Hiragino Kaku Gothic ProN',Meiryo,sans-serif;max-width:640px;margin:0 auto;color:#333;font-size:16px;line-height:1.8;background:#f5f3f0;padding:12px">
   <p style="font-size:13px;color:#388e3c;margin:0 0 6px">みのる歯科ブログ　AI 下書きができました（PR #${esc(pr)}）</p>
+  <h1 style="font-size:20px;line-height:1.4;margin:0 0 12px;color:#243126">${esc(meta.title || slug)}</h1>
+  ${notesHtml ? `<div style="background:#fff;border-radius:12px;padding:14px 16px;margin:0 0 14px;font-size:14px;color:#555;border-left:4px solid #4caf50">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:bold;color:#388e3c">AI の調査メモ（選んだ理由・参考・自己確認）</p>
+    ${notesHtml}
+  </div>` : ''}
   <div style="background:#fff;border-radius:12px;padding:18px 16px">
+    <p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#388e3c">記事の下書き</p>
     <p style="font-size:13px;color:#777;margin:0 0 6px">${esc(meta.date || '')}　${tags.map((t) => `<span style="background:#e8f5e9;color:#388e3c;border-radius:999px;padding:1px 10px;font-size:12px;margin-right:6px">${esc(t)}</span>`).join('')}</p>
-    <h1 style="font-size:22px;line-height:1.4;margin:0 0 12px;color:#243126">${esc(meta.title || slug)}</h1>
     <img src="${thumb}" alt="" style="width:100%;height:auto;border-radius:10px;display:block;margin:0 0 14px;background:#eee">
     ${meta.summary ? `<p style="background:#f7faf7;border-left:4px solid #4caf50;padding:10px 14px;font-size:14px;color:#555;margin:0 0 20px">${esc(meta.summary)}</p>` : ''}
     ${html}
-    <p style="font-size:12px;color:#888;margin:16px 0 0">サムネイルは仮のものです。差し替えたい場合は CMS から。</p>
+    <p style="font-size:12px;color:#888;margin:16px 0 0">サムネイルは仮のものです。文字や画像を変えたいときはコメントで指示できます。</p>
   </div>
   ${actions}
-  <details style="font-size:12px;color:#666;background:#fff;border-radius:12px;padding:12px 16px"><summary style="cursor:pointer">AI の調査メモ（選んだ理由・参考 URL・自己確認）</summary><div style="margin-top:8px;line-height:1.6">${notes}</div></details>
 </div>`);
