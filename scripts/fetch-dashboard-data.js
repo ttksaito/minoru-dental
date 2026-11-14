@@ -212,7 +212,22 @@ async function fetchGa4() {
     .map((r) => ({ device: r.deviceCategory, sessions: r.sessions }))
     .sort((a, b) => b.sessions - a.sessions);
 
-  // 6) キーイベント（電話タップなど、GA4 側で設定されていれば入る）
+  // 6) 地域（市区町村）別（今期）
+  const cityReport = await ga4Report({
+    dateRanges: [current],
+    dimensions: [{ name: 'city' }, { name: 'region' }],
+    metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
+    orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+    limit: 15,
+  });
+  const cities = rowsToObjects(cityReport).map((r) => ({
+    city: r.city,
+    region: r.region,
+    users: r.activeUsers,
+    sessions: r.sessions,
+  }));
+
+  // 7) キーイベント（電話タップなど、GA4 側で設定されていれば入る）
   let keyEvents = [];
   try {
     const keyReport = await ga4Report({
@@ -235,7 +250,7 @@ async function fetchGa4() {
     console.warn(`キーイベントの取得をスキップ: ${e.message.slice(0, 200)}`);
   }
 
-  // 7) Google 広告（GA4 リンク経由）。未リンクなら全て 0 / 空になる
+  // 8) Google 広告（GA4 リンク経由）。未リンクなら全て 0 / 空になる
   //    advertiserAd* 指標はキャンペーン系ディメンションと一緒でないと取得できないため、
   //    常に sessionGoogleAdsCampaignName を付けて取り、こちらで合算する
   let ads = { linked: false, current: {}, previous: {}, campaigns: [], daily: [] };
@@ -332,6 +347,7 @@ async function fetchGa4() {
     channels,
     pages,
     devices,
+    cities,
     keyEvents,
     ads,
   };

@@ -171,6 +171,9 @@
     <div class="card" id="devices"></div>
   </div>
 
+  <h2>どこに住んでいる人か <span class="tag">GA4</span> <span class="sub">IPアドレスからの推定。精度は市区町村で7割ほどです</span></h2>
+  <div class="card" id="cities"></div>
+
   <h2>Google 検索での見つかり方 <span class="tag">Search Console</span> <span class="sub" id="gsc-range"></span></h2>
   <div class="grid two">
     <div class="card" id="queries"></div>
@@ -542,6 +545,32 @@
     $('#devices').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
   }
 
+  const cityJa = {
+    Higashimatsuyama: '東松山市', Saitama: 'さいたま市', Kawagoe: '川越市', Sakado: '坂戸市', Tsurugashima: '鶴ヶ島市', Kumagaya: '熊谷市',
+    Konosu: '鴻巣市', Yoshimi: '吉見町', Ranzan: '嵐山町', Namegawa: '滑川町', Ogawa: '小川町', Hatoyama: '鳩山町', Kawajima: '川島町',
+    Tokorozawa: '所沢市', Fukaya: '深谷市', Honjo: '本庄市', Gyoda: '行田市', Ageo: '上尾市', Okegawa: '桶川市', Kitamoto: '北本市',
+    Fujimino: 'ふじみ野市', Fujimi: '富士見市', Shiki: '志木市', Asaka: '朝霞市', Wako: '和光市', Niiza: '新座市', Hanno: '飯能市',
+    Hidaka: '日高市', Moroyama: '毛呂山町', Ogose: '越生町', Tokigawa: 'ときがわ町', Chichibu: '秩父市', Yorii: '寄居町',
+    Kawaguchi: '川口市', Koshigaya: '越谷市', Kasukabe: '春日部市', Soka: '草加市', Kuki: '久喜市', Iruma: '入間市', Sayama: '狭山市',
+    Shiraoka: '白岡市', Hasuda: '蓮田市', Satte: '幸手市', Toda: '戸田市', Warabi: '蕨市', Misato: '三郷市', Yashio: '八潮市',
+    Chiyoda: '東京・千代田区', Chuo: '東京・中央区', Minato: '東京・港区', Shinjuku: '東京・新宿区', Shibuya: '東京・渋谷区',
+    Toshima: '東京・豊島区', Nerima: '東京・練馬区', Itabashi: '東京・板橋区', Suginami: '東京・杉並区', Setagaya: '東京・世田谷区',
+    Yokohama: '横浜市', Kawasaki: '川崎市', Chiba: '千葉市', Osaka: '大阪市', Nagoya: '名古屋市', Sapporo: '札幌市', Fukuoka: '福岡市',
+    '(not set)': '不明',
+  };
+  const regionJa = { Saitama: '埼玉県', Tokyo: '東京都', Kanagawa: '神奈川県', Chiba: '千葉県', Gunma: '群馬県', Tochigi: '栃木県', Ibaraki: '茨城県', Osaka: '大阪府', Aichi: '愛知県', Hokkaido: '北海道', Fukuoka: '福岡県', '(not set)': '' };
+  const cityLabel = (r) => {
+    const c = cityJa[r.city] || r.city;
+    const reg = regionJa[r.region] !== undefined ? regionJa[r.region] : r.region;
+    return reg && !c.startsWith('東京') && r.city !== '(not set)' ? `${c}（${reg}）` : c;
+  };
+  if (ga && ga.cities) {
+    barTable($('#cities'), '市区町村別', 'ユーザー数（直近28日）。右はセッション数。海外や遠方が混ざるのは、VPNや携帯回線の経路、クローラーなどが原因です。', ga.cities,
+      cityLabel, (r) => r.users, [{ label: 'セッション', num: true }], (r) => [td(fmtInt(r.sessions), true)]);
+  } else {
+    $('#cities').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
+  }
+
   if (gsc) {
     $('#gsc-range').textContent = `${gsc.range.start} 〜 ${gsc.range.end}（検索データは2日ほど遅れて確定します）`;
     const q = $('#queries');
@@ -589,14 +618,15 @@
   }
 
   const ke = $('#key-events');
+  const eventJa = { tel_click: '電話番号をタップ', line_click: 'LINE ボタンを押した', map_click: '地図を開いた', form_submit: 'フォーム送信', purchase: '購入', generate_lead: '問い合わせ' };
   if (ga && ga.keyEvents.length) {
     ke.replaceChildren(el('h3', null, 'キーイベント別'), el('p', 'desc', '直近28日の件数と前の28日'));
     ke.appendChild(table(
       [{ label: 'イベント' }, { label: '直近28日', num: true }, { label: '前の28日', num: true }],
-      ga.keyEvents, (r) => { const tr = el('tr'); tr.append(td(r.event), td(fmtInt(r.count), true), td(fmtInt(r.previousCount), true)); return tr; }
+      ga.keyEvents, (r) => { const tr = el('tr'); tr.append(pageCell(eventJa[r.event] || null, r.event), td(fmtInt(r.count), true), td(fmtInt(r.previousCount), true)); return tr; }
     ));
   } else {
-    ke.appendChild(el('p', 'desc', 'キーイベントがまだ設定されていません。GA4 の「管理 → イベント」で電話番号のタップ（click イベント）などをキーイベントにすると、ここに「成果」として件数が出ます。'));
+    ke.appendChild(el('p', 'desc', 'キーイベントがまだ GA4 に登録されていません。サイト側では tel_click（電話番号タップ）・line_click（LINE）・map_click（地図）を送信しているので、GA4 の「管理 → キーイベント → 新しいキーイベント」でこの3つの名前を登録すると、ここに「成果」として件数が出ます。'));
   }
 })();
 </script>

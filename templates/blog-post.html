@@ -690,6 +690,22 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-P8PPKGZVRT');
+      // 成果計測: 電話番号・LINE・地図リンクのクリックを GA4 に送る（GA4 側でキーイベントに設定して使う）
+      document.addEventListener('click', function (e) {
+        var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a) return;
+        var href = a.getAttribute('href') || '';
+        var name = /^tel:/i.test(href) ? 'tel_click'
+          : /lin\.ee|line\.me/.test(href) ? 'line_click'
+          : /google\.[a-z.]+\/maps|maps\.app\.goo\.gl/.test(href) ? 'map_click'
+          : null;
+        if (!name) return;
+        gtag('event', name, {
+          link_url: href,
+          link_text: (a.textContent || '').trim().slice(0, 50),
+          link_class: a.className || '(none)'
+        });
+      }, true);
     </script>
     <header>
         <div class="header-container">
