@@ -47,6 +47,17 @@ function daysAgo(n) {
   return isoDate(d);
 }
 
+/** 日別データの抜け（アクセス0の日は API が行を返さない）を 0 で埋める */
+function fillDates(rows, startDate, endDate, zero) {
+  const byDate = new Map(rows.map((r) => [r.date, r]));
+  const out = [];
+  for (let d = new Date(startDate + 'T00:00:00Z'); isoDate(d) <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+    const date = isoDate(d);
+    out.push(byDate.get(date) || { date, ...zero });
+  }
+  return out;
+}
+
 async function callApi(url, body) {
   const res = await fetch(url, {
     method: body ? 'POST' : 'GET',
@@ -135,12 +146,15 @@ async function fetchGa4() {
     orderBys: [{ dimension: { dimensionName: 'date' } }],
     limit: 1000,
   });
-  const daily = rowsToObjects(dailyReport).map((r) => ({
-    date: `${r.date.slice(0, 4)}-${r.date.slice(4, 6)}-${r.date.slice(6, 8)}`,
-    users: r.activeUsers,
-    sessions: r.sessions,
-    pageViews: r.screenPageViews,
-  }));
+  const daily = fillDates(
+    rowsToObjects(dailyReport).map((r) => ({
+      date: `${r.date.slice(0, 4)}-${r.date.slice(4, 6)}-${r.date.slice(6, 8)}`,
+      users: r.activeUsers,
+      sessions: r.sessions,
+      pageViews: r.screenPageViews,
+    })),
+    daysAgo(SERIES_DAYS - 1), daysAgo(0), { users: 0, sessions: 0, pageViews: 0 }
+  );
 
   // 3) 流入チャネル（今期 vs 前期）
   const channelReport = await ga4Report({
@@ -275,9 +289,10 @@ async function fetchGa4() {
       d.clicks += r.advertiserAdClicks;
       d.cost += r.advertiserAdCost;
     }
-    const adDaily = [...dailyMap.values()]
-      .map((d) => ({ ...d, cost: Math.round(d.cost) }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    const adDaily = fillDates(
+      [...dailyMap.values()].map((d) => ({ ...d, cost: Math.round(d.cost) })),
+      daysAgo(SERIES_DAYS - 1), daysAgo(0), { clicks: 0, cost: 0 }
+    );
 
     const linked =
       campaigns.length > 0 || totals.current.impressions > 0 || totals.previous.impressions > 0;
@@ -394,7 +409,10 @@ async function fetchGsc() {
     dimensions: ['date'],
     rowLimit: 1000,
   });
-  const daily = gscRows(dailyReport, ['date']).sort((a, b) => a.date.localeCompare(b.date));
+  const daily = fillDates(
+    gscRows(dailyReport, ['date']),
+    daysAgo(LAG + SERIES_DAYS - 1), curEnd, { clicks: 0, impressions: 0, ctr: 0, position: 0 }
+  );
 
   const queriesReport = await gscQuery(siteUrl, {
     startDate: curStart,
