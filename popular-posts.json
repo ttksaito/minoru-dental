@@ -1,10 +1,10 @@
 {
-  "updated": "2026-11-13",
+  "updated": "2026-11-14",
   "rangeDays": 90,
   "posts": [
     {
       "id": "regular-checkup",
-      "views": 8
+      "views": 11
     },
     {
       "id": "denture-chewing-power",
@@ -17,6 +17,10 @@
     {
       "id": "child-dental-care",
       "views": 2
+    },
+    {
+      "id": "proper-brushing",
+      "views": 1
     }
   ]
 }
