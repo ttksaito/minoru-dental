@@ -15,10 +15,13 @@
  * 任意:
  *   GSC_SITE_URL      … Search Console のプロパティ（例: sc-domain:minoru-dental.jp）。
  *                       未指定なら権限のあるプロパティから自動で選ぶ
+ *   DASHBOARD_PASSWORD … 指定すると dashboard/data.enc に暗号化して書き出す（公開リポジトリ向け）。
+ *                        未指定なら dashboard/data.json に平文で書く（ローカル確認用）
  */
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PROPERTY_ID = process.env.GA4_PROPERTY_ID;
 const ACCESS_TOKEN = process.env.GOOGLE_ACCESS_TOKEN;
@@ -31,6 +34,27 @@ const TOP_N = 10;
 const ROOT = path.resolve(__dirname, '..');
 const BLOG_POSTS_PATH = path.join(ROOT, 'blog-posts.json');
 const OUTPUT_PATH = path.join(ROOT, 'dashboard', 'data.json');
+const ENCRYPTED_PATH = path.join(ROOT, 'dashboard', 'data.enc');
+const PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+const KDF_ITERATIONS = 300000;
+
+/** AES-256-GCM で暗号化。鍵は PBKDF2(SHA-256) でパスワードから導出。ブラウザ側は Web Crypto で復号する */
+function encryptJson(obj, password) {
+  const salt = crypto.randomBytes(16);
+  const iv = crypto.randomBytes(12);
+  const key = crypto.pbkdf2Sync(password, salt, KDF_ITERATIONS, 32, 'sha256');
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const plaintext = Buffer.from(JSON.stringify(obj), 'utf8');
+  const ct = Buffer.concat([cipher.update(plaintext), cipher.final(), cipher.getAuthTag()]);
+  return {
+    v: 1,
+    kdf: 'PBKDF2-SHA256',
+    iterations: KDF_ITERATIONS,
+    salt: salt.toString('base64'),
+    iv: iv.toString('base64'),
+    data: ct.toString('base64'),
+  };
+}
 
 function fail(message) {
   console.error(`エラー: ${message}`);
@@ -520,8 +544,14 @@ async function main() {
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2) + '\n', 'utf8');
-  console.log(`dashboard/data.json を更新しました`);
+  if (PASSWORD) {
+    fs.writeFileSync(ENCRYPTED_PATH, JSON.stringify(encryptJson(output, PASSWORD)) + '\n', 'utf8');
+    if (fs.existsSync(OUTPUT_PATH)) fs.unlinkSync(OUTPUT_PATH);
+    console.log(`dashboard/data.enc を更新しました（暗号化）`);
+  } else {
+    fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2) + '\n', 'utf8');
+    console.log(`dashboard/data.json を更新しました（平文・ローカル確認用）`);
+  }
 }
 
 main().catch((err) => fail(err.message));

@@ -137,6 +137,24 @@
   .glossary dt { font-weight: 600; color: var(--ink); margin-top: 8px; }
   .glossary dd { margin: 0; }
   .dim { color: var(--muted); }
+  .gate {
+    max-width: 380px; margin: 48px auto; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 22px;
+  }
+  .gate h2 { margin: 0 0 6px; font-size: 16px; }
+  .gate p { margin: 0 0 14px; font-size: 13px; color: var(--ink-2); }
+  .gate input[type="password"] {
+    width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--axis); border-radius: 8px;
+    background: var(--page); color: var(--ink);
+  }
+  .gate label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin: 12px 0; }
+  .gate button {
+    width: 100%; font: inherit; font-weight: 600; font-size: 15px; padding: 10px; border: 0; border-radius: 8px;
+    background: var(--brand); color: #fff; cursor: pointer;
+  }
+  .gate .err-msg { color: var(--bad); font-size: 13px; margin: 10px 0 0; min-height: 1.2em; }
+  .lock { font-size: 12px; color: var(--muted); margin-left: auto; cursor: pointer; background: none; border: 0; font-family: inherit; text-decoration: underline; }
+  body.locked .wrap > :not(header.top):not(#gate) { display: none; }
   @media (max-width: 600px) {
     .tile .value { font-size: 22px; }
     th, td { padding: 6px 4px; }
@@ -148,7 +166,18 @@
   <header class="top">
     <h1><span>みのる歯科</span>集客ダッシュボード</h1>
     <div class="meta" id="generated"></div>
+    <button type="button" class="lock" id="lock-btn" hidden>ロックする</button>
   </header>
+  <div id="gate" class="gate" hidden>
+    <h2>パスワードを入力</h2>
+    <p>このページの数値は暗号化されています。パスワードを入れると、このブラウザの中だけで復号して表示します。</p>
+    <form id="gate-form">
+      <input type="password" id="gate-pw" autocomplete="current-password" placeholder="パスワード" required>
+      <label><input type="checkbox" id="gate-remember" checked> このブラウザで記憶する</label>
+      <button type="submit">表示する</button>
+      <div class="err-msg" id="gate-err"></div>
+    </form>
+  </div>
   <p class="note">Google アナリティクス（GA4）・Search Console・Google 広告（GA4 連携）の数値を毎朝まとめています。「直近28日」とその前の28日を比べています。</p>
   <div id="alerts"></div>
 
@@ -228,15 +257,74 @@
     return e;
   };
 
+  // ---------------------------------------------------------- データ読み込み（暗号化 or 平文）
+  const b64 = (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
+  async function decrypt(pkg, password) {
+    const enc = new TextEncoder();
+    const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: b64(pkg.salt), iterations: pkg.iterations, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+    );
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(pkg.iv) }, key, b64(pkg.data));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  const PW_KEY = 'dashboard-pw';
+  const readSaved = () => { try { return localStorage.getItem(PW_KEY) || sessionStorage.getItem(PW_KEY) || ''; } catch (e) { return ''; } };
+  const savePw = (pw, remember) => { try { (remember ? localStorage : sessionStorage).setItem(PW_KEY, pw); } catch (e) {} };
+  const clearPw = () => { try { localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } catch (e) {} };
+
   let data;
+  let encrypted = null;
   try {
-    const res = await fetch('data.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error(res.status);
-    data = await res.json();
-  } catch (e) {
-    $('#alerts').appendChild(el('div', 'alert err',
-      'data.json がまだありません。GitHub Actions の「集客ダッシュボードの更新」を一度実行すると表示されます。'));
-    return;
+    const res = await fetch('data.enc', { cache: 'no-store' });
+    if (res.ok) encrypted = await res.json();
+  } catch (e) { /* 平文にフォールバック */ }
+
+  if (encrypted) {
+    const gate = $('#gate'), form = $('#gate-form'), pwInput = $('#gate-pw'), errBox = $('#gate-err');
+    const tryUnlock = async (pw, remember) => {
+      try {
+        data = await decrypt(encrypted, pw);
+        savePw(pw, remember);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    const saved = readSaved();
+    if (!saved || !(await tryUnlock(saved, true))) {
+      clearPw();
+      document.body.classList.add('locked');
+      gate.hidden = false;
+      pwInput.focus();
+      await new Promise((resolve) => {
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          errBox.textContent = '';
+          form.querySelector('button').disabled = true;
+          const ok = await tryUnlock(pwInput.value, $('#gate-remember').checked);
+          form.querySelector('button').disabled = false;
+          if (ok) resolve();
+          else { errBox.textContent = 'パスワードが違います'; pwInput.select(); }
+        });
+      });
+      gate.hidden = true;
+      document.body.classList.remove('locked');
+    }
+    const lockBtn = $('#lock-btn');
+    lockBtn.hidden = false;
+    lockBtn.addEventListener('click', () => { clearPw(); location.reload(); });
+  } else {
+    try {
+      const res = await fetch('data.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      data = await res.json();
+    } catch (e) {
+      $('#alerts').appendChild(el('div', 'alert err',
+        'データがまだありません。GitHub Actions の「集客ダッシュボードの更新」を一度実行すると表示されます。'));
+      return;
+    }
   }
 
   const ga = data.ga4, gsc = data.gsc, ads = ga && ga.ads;

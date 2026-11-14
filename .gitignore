@@ -20,3 +20,6 @@ _site/
 # ローカル設定
 **/.claude/settings.local.json
 .vercel
+
+# ダッシュボードの平文データ（本番は暗号化した data.enc を使う）
+dashboard/data.json

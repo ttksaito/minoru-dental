@@ -38,17 +38,26 @@ jobs:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
           GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
           GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
         run: node scripts/fetch-dashboard-data.js
+
+      - name: パスワード未設定なら中断（公開リポジトリに平文データを置かない）
+        if: ${{ env.DASHBOARD_PASSWORD == '' }}
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        run: |
+          echo "::error::Secrets に DASHBOARD_PASSWORD がありません。設定してから再実行してください。"
+          exit 1
 
       - name: 変更があればコミット・プッシュ
         run: |
           git pull --rebase --autostash
-          if [ -z "$(git status --porcelain dashboard/data.json)" ]; then
+          if [ -z "$(git status --porcelain dashboard/data.enc)" ]; then
             echo "変更なし。コミットをスキップします。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dashboard/data.json
+          git add dashboard/data.enc
           git commit -m "集客ダッシュボードのデータを自動更新"
           git push

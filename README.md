@@ -69,7 +69,7 @@ git push
 ├── popular-posts.json      # 人気記事ランキング（GitHub Actionsが生成）
 ├── dashboard/              # 集客ダッシュボード（/dashboard/ で開く。検索非対象）
 │   ├── index.html          # 表示ページ（data.json を読んで描画）
-│   └── data.json           # GA4・Search Console の集計データ（GitHub Actionsが生成）
+│   └── data.enc            # 暗号化した集計データ（GitHub Actionsが生成。平文の data.json はローカル確認用で git 管理外）
 ├── sitemap.xml             # サイトマップ（build-blog.jsが生成）
 ├── robots.txt
 ├── CNAME                   # GitHub Pages のカスタムドメイン設定
@@ -222,14 +222,17 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 - Search Console: 検索クリック・表示回数・CTR・平均掲載順位、検索キーワード、検索から来られたページ（データは2日遅れ）
 - Google 広告: GA4 と Google 広告のリンク経由で費用・クリック・キャンペーン別を取得（Google Ads API は使わない）
 - 手動実行: GitHubの Actions タブ → 集客ダッシュボードの更新 → Run workflow
-- ページは `noindex` と `robots.txt` で検索対象外にしているが、URLを知っていれば誰でも見られる（認証なし）
+- データは GitHub Actions 上で AES-256-GCM で暗号化して `dashboard/data.enc` に保存する（リポジトリが公開のため）。ページを開くとパスワード入力が出て、ブラウザの中だけで復号して表示する。パスワードは GitHub Secrets の `DASHBOARD_PASSWORD`
+- パスワードを変える: `gh secret set DASHBOARD_PASSWORD` で更新し、ワークフローを手動実行すると新しいパスワードで再暗号化される（古いパスワードは使えなくなる）
+- ローカルで確認するときは `DASHBOARD_PASSWORD` を付けずにスクリプトを実行すると平文の `dashboard/data.json` ができる（git 管理外）
 
 ### 初回セットアップ（要・手動作業）
 
-1. Search Console の対象プロパティ → 設定 → ユーザーと権限 → 「ユーザーを追加」で上記サービスアカウントのメールアドレスを「制限付き」以上で追加する
-2. （任意）プロパティが複数ある場合は GitHub の Settings → Secrets and variables → Actions → Variables に `GSC_SITE_URL`（例: `sc-domain:minoru-dental.jp`）を設定する。未設定なら権限のあるプロパティを自動で選ぶ
-3. Google 広告の数値を出すには GA4 の 管理 → サービス間のリンク → Google 広告のリンク が設定されていること
-4. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
+1. GitHub Secrets に `DASHBOARD_PASSWORD`（ダッシュボードの閲覧パスワード）を設定する: `gh secret set DASHBOARD_PASSWORD --body "好きなパスワード"`
+2. Search Console の対象プロパティ → 設定 → ユーザーと権限 → 「ユーザーを追加」で上記サービスアカウントのメールアドレスを「制限付き」以上で追加する
+3. （任意）プロパティが複数ある場合は GitHub の Settings → Secrets and variables → Actions → Variables に `GSC_SITE_URL`（例: `sc-domain:minoru-dental.jp`）を設定する。未設定なら権限のあるプロパティを自動で選ぶ
+4. Google 広告の数値を出すには GA4 の 管理 → サービス間のリンク → Google 広告のリンク が設定されていること
+5. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
 
 ## デプロイ方法
 
