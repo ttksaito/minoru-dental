@@ -73,8 +73,9 @@ jobs:
           git commit -m "仮サムネイルを生成: $SLUG"
           git push
 
-      - name: PR がなければ作成（Decap CMS のワークフローに載せる）
+      - name: PR がなければ作成（Decap CMS のワークフローに載せる。予備。エージェント側で作るのが基本）
         if: steps.slug.outputs.skip != 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           SLUG: ${{ steps.slug.outputs.slug }}
