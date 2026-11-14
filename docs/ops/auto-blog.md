@@ -36,7 +36,7 @@ main にマージ → build-blog.yml が記事 HTML・一覧・sitemap を生成
 ### 0. 準備
 1. `git fetch origin` し、`origin/main` を最新にする。日付は `TZ=Asia/Tokyo date +%F` で取る
 2. `docs/ops/blog-workflow.md` の「② 下書きを書く」「③ セルフチェック」を読む。ここに書き方と医療情報の線引きがある
-3. 未公開の下書きが溜まっていないか確認する: `git ls-remote --heads origin 'cms/blog/*'` で 3 本以上あれば、**新しい記事は作らず終了**する（その旨だけ出力）
+3. 未公開の下書きが溜まっていないか確認する: `gh api 'repos/ttksaito/minoru-dental/pulls?state=open&per_page=50' --jq '[.[] | select(.head.ref | startswith("cms/blog/"))] | length'` が 3 以上なら、**新しい記事は作らず終了**する（その旨だけ出力）。閉じた PR のブランチが残っていても数えない。新しい記事のテーマ重複チェックも、この「開いている PR」の一覧で行う
 
 ### 1. ネタを選ぶ（1 つ）
 まずダッシュボードの全データを読む: 環境変数 `DASHBOARD_PASSWORD` があれば `node scripts/decrypt-dashboard-data.js` を実行すると `dashboard/data.json` ができる（訪問者数・流入チャネル・検索キーワード・ページ別・地域・広告・キーイベント）。このファイルとパスワードは絶対にコミット・出力・記事や調査メモへ転記しない（data.json は .gitignore 済み）。環境変数がない・復号できないときは `dashboard/insights.json`（検索キーワード・記事別閲覧数だけの平文）で進める。
@@ -127,7 +127,7 @@ AI にダッシュボードの全データを読ませるには、定期エー�
 
 ## 運用メモ（人間向け）
 
-- 下書きが 3 本溜まるとエージェントは新規作成を止める。溜まったら CMS で公開するか、PR を閉じて（ブランチも削除）減らす
+- 未公開の下書き（開いている PR）が 3 本溜まるとエージェントは新規作成を止める。溜まったら公開するか、PR を閉じて減らす（閉じれば OK。ブランチ削除は任意）
 - 没にする = GitHub の PR ページで「Close pull request」。CMS の「ワークフロー」で削除してもよい
 - 公開には GitHub へのログインが必要（スマホのブラウザで一度ログインしておけば以後は不要）
 - 仮サムネイルを差し替えるには、CMS の記事画面の「サムネイル画像」から画像を上げ直すだけ
