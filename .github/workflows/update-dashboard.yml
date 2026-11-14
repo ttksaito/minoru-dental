@@ -1,0 +1,54 @@
+name: 集客ダッシュボードの更新
+
+# GA4 と Search Console からデータを取得して dashboard/data.json を更新する。
+# Google 広告の数値は GA4 とのリンク経由で取得する（Ads API は使わない）。
+on:
+  schedule:
+    - cron: '30 21 * * *' # 毎日 6:30 JST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Google Cloud に認証
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: 'projects/522170574882/locations/global/workloadIdentityPools/github/providers/minoru-dental'
+          service_account: 'ga4-popular-posts@minoru-dental.iam.gserviceaccount.com'
+          token_format: 'access_token'
+          access_token_scopes: 'https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/webmasters.readonly'
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: GA4・Search Console からデータを取得
+        env:
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: node scripts/fetch-dashboard-data.js
+
+      - name: 変更があればコミット・プッシュ
+        run: |
+          git pull --rebase --autostash
+          if git diff --quiet dashboard/data.json 2>/dev/null; then
+            echo "変更なし。コミットをスキップします。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/data.json
+          git commit -m "集客ダッシュボードのデータを自動更新"
+          git push

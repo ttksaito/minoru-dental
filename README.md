@@ -10,6 +10,7 @@
 - Web管理画面（Decap CMS）からブラウザだけで記事の作成・編集が可能（`/admin/`）
 - 記事Markdownのpush時にGitHub Actionsが自動ビルド（ローカルビルド不要）
 - 人気記事ランキング（GA4 + GitHub Actionsで毎日自動集計）
+- 集客ダッシュボード（GA4・Search Console・Google 広告の数値を `/dashboard/` に毎日自動集計）
 - SEO対策（構造化データ、OGP、サイトマップ自動生成）
 
 ## 開発環境のセットアップ
@@ -66,6 +67,9 @@ git push
 ├── blog.html               # ブログ一覧ページ（build-blog.jsが生成。直接編集しない）
 ├── blog-posts.json         # 記事メタデータ（build-blog.jsが生成）
 ├── popular-posts.json      # 人気記事ランキング（GitHub Actionsが生成）
+├── dashboard/              # 集客ダッシュボード（/dashboard/ で開く。検索非対象）
+│   ├── index.html          # 表示ページ（data.json を読んで描画）
+│   └── data.json           # GA4・Search Console の集計データ（GitHub Actionsが生成）
 ├── sitemap.xml             # サイトマップ（build-blog.jsが生成）
 ├── robots.txt
 ├── CNAME                   # GitHub Pages のカスタムドメイン設定
@@ -79,7 +83,8 @@ git push
 │   └── blog-list.html      # 一覧ページ（blog.html）のHTMLテンプレート
 ├── scripts/
 │   ├── build-blog.js       # ブログビルドスクリプト
-│   └── fetch-popular-posts.js  # GA4人気記事集計（GitHub Actionsから実行）
+│   ├── fetch-popular-posts.js  # GA4人気記事集計（GitHub Actionsから実行）
+│   └── fetch-dashboard-data.js # ダッシュボード用データ集計（GitHub Actionsから実行）
 ├── blog/                   # 生成された記事ページ（ビルド成果物）
 │   ├── [記事ID]/
 │   │   ├── index.html      # 記事本文（build-blog.jsが生成。直接編集しない）
@@ -95,7 +100,8 @@ git push
 │   └── callback.js         # コールバック（トークン交換）
 ├── .github/workflows/
 │   ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
-│   └── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
+│   ├── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
+│   └── update-dashboard.yml      # ダッシュボード集計の定期実行（毎日6:30 JST）
 ├── vercel.json             # Vercel設定（api/ 以外は本番ドメインへリダイレクト）
 ├── package.json
 └── TODO.md                 # サイト改善・集客施策のタスク管理
@@ -206,6 +212,24 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 - 認証: Workload Identity Federation（キーレス）
 - 集計範囲: 直近90日の `/blog/` 配下ページビュー
 - 手動実行: GitHubの Actions タブ → Update Popular Posts → Run workflow
+
+## 集客ダッシュボード
+
+`https://www.minoru-dental.jp/dashboard/` で、GA4・Search Console・Google 広告の数値を1ページで確認できます。GitHub Actions（`.github/workflows/update-dashboard.yml`）が毎日6:30 JSTに `dashboard/data.json` を更新します。
+
+- 認証: 人気記事ランキングと同じサービスアカウント（`ga4-popular-posts@minoru-dental.iam.gserviceaccount.com`）＋ Workload Identity Federation
+- GA4: 直近28日と前28日の比較、日別推移（90日）、流入チャネル、端末、ページ別、キーイベント
+- Search Console: 検索クリック・表示回数・CTR・平均掲載順位、検索キーワード、検索から来られたページ（データは2日遅れ）
+- Google 広告: GA4 と Google 広告のリンク経由で費用・クリック・キャンペーン別を取得（Google Ads API は使わない）
+- 手動実行: GitHubの Actions タブ → 集客ダッシュボードの更新 → Run workflow
+- ページは `noindex` と `robots.txt` で検索対象外にしているが、URLを知っていれば誰でも見られる（認証なし）
+
+### 初回セットアップ（要・手動作業）
+
+1. Search Console の対象プロパティ → 設定 → ユーザーと権限 → 「ユーザーを追加」で上記サービスアカウントのメールアドレスを「制限付き」以上で追加する
+2. （任意）プロパティが複数ある場合は GitHub の Settings → Secrets and variables → Actions → Variables に `GSC_SITE_URL`（例: `sc-domain:minoru-dental.jp`）を設定する。未設定なら権限のあるプロパティを自動で選ぶ
+3. Google 広告の数値を出すには GA4 の 管理 → サービス間のリンク → Google 広告のリンク が設定されていること
+4. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
 
 ## デプロイ方法
 

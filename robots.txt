@@ -10,6 +10,7 @@ Disallow: /.git/
 Disallow: /.vercel/
 Disallow: /.claude/
 Disallow: /docs/
+Disallow: /dashboard/
 
 # Sitemap
 Sitemap: https://www.minoru-dental.jp/sitemap.xml
