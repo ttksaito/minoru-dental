@@ -35,6 +35,7 @@ const ROOT = path.resolve(__dirname, '..');
 const BLOG_POSTS_PATH = path.join(ROOT, 'blog-posts.json');
 const OUTPUT_PATH = path.join(ROOT, 'dashboard', 'data.json');
 const ENCRYPTED_PATH = path.join(ROOT, 'dashboard', 'data.enc');
+const INSIGHTS_PATH = path.join(ROOT, 'dashboard', 'insights.json'); // ブログ自動作成の材料（平文。広告費や訪問者数の合計は含めない）
 const PASSWORD = process.env.DASHBOARD_PASSWORD || '';
 const KDF_ITERATIONS = 300000;
 
@@ -462,7 +463,7 @@ async function fetchGsc() {
   });
   const queries = gscRows(queriesReport, ['query'])
     .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
-    .slice(0, TOP_N * 2);
+    .slice(0, 50);
 
   const pagesReport = await gscQuery(siteUrl, {
     startDate: curStart,
@@ -544,6 +545,18 @@ async function main() {
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
+
+  // ブログのネタ選び用に、検索キーワードと記事ごとの閲覧数だけを平文で書き出す
+  const insights = {
+    generatedAt: output.generatedAt,
+    note: 'ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）',
+    gscRange: output.gsc ? output.gsc.range : null,
+    searchQueries: output.gsc ? output.gsc.queries.map((q) => ({ query: q.query, clicks: q.clicks, impressions: q.impressions, position: Math.round(q.position * 10) / 10 })) : [],
+    searchPages: output.gsc ? output.gsc.pages.map((p) => ({ page: p.page, title: p.title || null, clicks: p.clicks, impressions: p.impressions, position: Math.round(p.position * 10) / 10 })) : [],
+    blogPageViews: output.ga4 ? output.ga4.pages.filter((p) => p.path.startsWith('/blog/')).map((p) => ({ path: p.path, title: p.title, pageViews: p.pageViews })) : [],
+  };
+  fs.writeFileSync(INSIGHTS_PATH, JSON.stringify(insights, null, 2) + '\n', 'utf8');
+
   if (PASSWORD) {
     fs.writeFileSync(ENCRYPTED_PATH, JSON.stringify(encryptJson(output, PASSWORD)) + '\n', 'utf8');
     if (fs.existsSync(OUTPUT_PATH)) fs.unlinkSync(OUTPUT_PATH);

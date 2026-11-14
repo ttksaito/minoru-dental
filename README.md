@@ -11,6 +11,7 @@
 - 記事Markdownのpush時にGitHub Actionsが自動ビルド（ローカルビルド不要）
 - 人気記事ランキング（GA4 + GitHub Actionsで毎日自動集計）
 - 集客ダッシュボード（GA4・Search Console・Google 広告の数値を `/dashboard/` に毎日自動集計）
+- ブログ記事の自動作成（3 日ごとに AI が下書きを作って CMS のワークフローに登録。人間は確認して公開するだけ。`docs/ops/auto-blog.md`）
 - SEO対策（構造化データ、OGP、サイトマップ自動生成）
 
 ## 開発環境のセットアップ
@@ -84,7 +85,9 @@ git push
 ├── scripts/
 │   ├── build-blog.js       # ブログビルドスクリプト
 │   ├── fetch-popular-posts.js  # GA4人気記事集計（GitHub Actionsから実行）
-│   └── fetch-dashboard-data.js # ダッシュボード用データ集計（GitHub Actionsから実行）
+│   ├── fetch-dashboard-data.js # ダッシュボード用データ集計（GitHub Actionsから実行）
+│   ├── decrypt-dashboard-data.js # ダッシュボードデータのローカル復号
+│   └── make-thumbnail.js       # 記事の仮サムネイル生成（Chrome が必要）
 ├── blog/                   # 生成された記事ページ（ビルド成果物）
 │   ├── [記事ID]/
 │   │   ├── index.html      # 記事本文（build-blog.jsが生成。直接編集しない）
@@ -101,6 +104,7 @@ git push
 ├── .github/workflows/
 │   ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
 │   ├── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
+│   ├── draft-article.yml         # cms/blog/* ブランチの下書きに仮サムネ生成・PR作成
 │   └── update-dashboard.yml      # ダッシュボード集計の定期実行（毎日6:30 JST）
 ├── vercel.json             # Vercel設定（api/ 以外は本番ドメインへリダイレクト）
 ├── package.json
