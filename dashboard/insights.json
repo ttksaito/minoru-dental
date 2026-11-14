@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2026-11-14T14:35:32.293Z",
+  "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
+  "gscRange": {
+    "start": "2026-10-16",
+    "end": "2026-11-12"
+  },
+  "searchQueries": [
+    {
+      "query": "みのる歯科",
+      "clicks": 1,
+      "impressions": 26,
+      "position": 5.1
+    },
+    {
+      "query": "みのるしか",
+      "clicks": 1,
+      "impressions": 3,
+      "position": 3
+    },
+    {
+      "query": "みのる歯科医院",
+      "clicks": 1,
+      "impressions": 2,
+      "position": 1.5
+    },
+    {
+      "query": "東松山市 歯医者",
+      "clicks": 0,
+      "impressions": 18,
+      "position": 21.7
+    },
+    {
+      "query": "東松山 歯医者",
+      "clicks": 0,
+      "impressions": 13,
+      "position": 17.5
+    },
+    {
+      "query": "東松山市 一般歯科",
+      "clicks": 0,
+      "impressions": 9,
+      "position": 24.8
+    },
+    {
+      "query": "東松山市 歯科",
+      "clicks": 0,
+      "impressions": 8,
+      "position": 22.6
+    },
+    {
+      "query": "東松山市 口腔外科",
+      "clicks": 0,
+      "impressions": 5,
+      "position": 25.6
+    },
+    {
+      "query": "東松山市 歯科医院",
+      "clicks": 0,
+      "impressions": 5,
+      "position": 15.6
+    },
+    {
+      "query": "明日歯医者",
+      "clicks": 0,
+      "impressions": 3,
+      "position": 10
+    },
+    {
+      "query": "歯医者近く",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 2
+    },
+    {
+      "query": "みのり歯科",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 4
+    },
+    {
+      "query": "みのる歯科 予約",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 8
+    },
+    {
+      "query": "みのる歯科 浮間舟渡",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 45
+    },
+    {
+      "query": "東松山 歯医者 ランキング 高 評価",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 4
+    },
+    {
+      "query": "東松山 歯医者 日曜日",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 3
+    },
+    {
+      "query": "東松山 歯科",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 34
+    },
+    {
+      "query": "歯 磨く",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 55
+    },
+    {
+      "query": "歯を磨く",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 61
+    },
+    {
+      "query": "歯医者",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 1
+    },
+    {
+      "query": "歯医者 はじめて",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 85
+    },
+    {
+      "query": "滑川町 歯科医院",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 2
+    }
+  ],
+  "searchPages": [
+    {
+      "page": "/",
+      "title": null,
+      "clicks": 8,
+      "impressions": 149,
+      "position": 12.5
+    },
+    {
+      "page": "/blog/denture-chewing-power/",
+      "title": "入れ歯になると、どのくらい噛めなくなる？",
+      "clicks": 1,
+      "impressions": 5,
+      "position": 5.6
+    },
+    {
+      "page": "/blog.html",
+      "title": null,
+      "clicks": 0,
+      "impressions": 7,
+      "position": 4.1
+    },
+    {
+      "page": "/blog/proper-brushing/",
+      "title": "正しい歯磨きの方法と注意点",
+      "clicks": 0,
+      "impressions": 5,
+      "position": 55.6
+    },
+    {
+      "page": "/blog/best-brushing-timing/",
+      "title": "歯を磨くベストなタイミングはいつ？",
+      "clicks": 0,
+      "impressions": 3,
+      "position": 4.7
+    },
+    {
+      "page": "/blog/first-visit-questions/",
+      "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 44.5
+    },
+    {
+      "page": "/blog/child-dental-care/",
+      "title": "お子様の歯を守るために知っておきたいこと",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 7
+    }
+  ],
+  "blogPageViews": [
+    {
+      "path": "/blog/regular-checkup/",
+      "title": "定期検診の重要性について",
+      "pageViews": 4
+    },
+    {
+      "path": "/blog/denture-chewing-power/",
+      "title": "入れ歯になると、どのくらい噛めなくなる？",
+      "pageViews": 3
+    },
+    {
+      "path": "/blog/best-brushing-timing/",
+      "title": "歯を磨くベストなタイミングはいつ？",
+      "pageViews": 2
+    },
+    {
+      "path": "/blog/proper-brushing/",
+      "title": "正しい歯磨きの方法と注意点",
+      "pageViews": 1
+    }
+  ]
+}
