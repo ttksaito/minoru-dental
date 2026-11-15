@@ -715,7 +715,7 @@
       ga.keyEvents, (r) => { const tr = el('tr'); tr.append(pageCell(eventJa[r.event] || null, r.event), td(fmtInt(r.count), true), td(fmtInt(r.previousCount), true)); return tr; }
     ));
   } else {
-    ke.appendChild(el('p', 'desc', 'キーイベントがまだ GA4 に登録されていません。サイト側では tel_click（電話番号タップ）・line_click（LINE）・map_click（地図）を送信しているので、GA4 の「管理 → キーイベント → 新しいキーイベント」でこの3つの名前を登録すると、ここに「成果」として件数が出ます。'));
+    ke.appendChild(el('p', 'desc', 'まだキーイベントの件数がありません。GA4 で tel_click（電話番号タップ）・line_click（LINE）・map_click（地図）に星を付けて登録済みなら、登録後に起きた分から数えられ、反映まで 1〜2 日かかります。未登録なら GA4 の「管理 → データの表示 → イベント → 最近のイベント」で星を付けてください。'));
   }
 })();
 </script>
