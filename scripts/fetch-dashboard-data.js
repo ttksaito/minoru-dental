@@ -564,10 +564,40 @@ function ymd(iso) {
   return { year: y, month: m, day: d };
 }
 
+/** サービスアカウント宛ての保留中の招待（ビジネスプロフィールの管理者招待）を承諾する。
+ *  サービスアカウントは画面で「承諾」を押せないため、API で承諾する */
+async function acceptPendingGbpInvitations(accounts) {
+  let accepted = 0;
+  for (const a of accounts) {
+    let inv;
+    try {
+      inv = await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations?filter=target_type=ACCOUNTS_AND_LOCATIONS`);
+    } catch (e) {
+      try { inv = await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations`); } catch (e2) { continue; }
+    }
+    for (const i of inv.invitations || []) {
+      try {
+        await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${i.name}:accept`, {});
+        accepted++;
+        const target = (i.targetLocation && i.targetLocation.locationName) || (i.targetAccount && i.targetAccount.accountName) || i.name;
+        console.log(`ビジネスプロフィールの招待を承諾しました: ${target}（役割 ${i.role || '-'}）`);
+      } catch (e) {
+        console.warn(`招待の承諾に失敗: ${i.name}: ${e.message.slice(0, 200)}`);
+      }
+    }
+  }
+  return accepted;
+}
+
 async function resolveGbpLocation() {
   if (GBP_LOCATION_ID) return GBP_LOCATION_ID.replace(/^locations\//, '');
   const acc = await callApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
-  const accounts = acc.accounts || [];
+  let accounts = acc.accounts || [];
+  // 保留中の招待があれば承諾してから、アカウント一覧を取り直す
+  if (await acceptPendingGbpInvitations(accounts)) {
+    const again = await callApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
+    accounts = again.accounts || accounts;
+  }
   if (accounts.length === 0) throw new Error('ビジネスプロフィールのアカウントが見つかりません（サービスアカウントを店舗の管理者に追加してください）');
   for (const a of accounts) {
     const loc = await callApi(
