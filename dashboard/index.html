@@ -540,6 +540,12 @@ window.HELP = {
     const [y, m, d] = iso.split('-').map(Number);
     return `${m}/${d}`;
   };
+  // 'YYYY-MM-DD' → '2026-11-10（火）'。UTC で日付を作りタイムゾーンのずれを避ける
+  const fmtDateWd = (iso) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    const wd = '日月火水木金土'[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+    return `${iso}（${wd}）`;
+  };
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -878,7 +884,7 @@ window.HELP = {
       const show = (i) => {
         const r = sub[i];
         cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.display = 'block';
-        tip.replaceChildren(el('div', 'd', r.date));
+        tip.replaceChildren(el('div', 'd', fmtDateWd(r.date)));
         if (markerAt.has(i)) { const mk = el('div', 'd'); mk.style.color = 'var(--marker)'; mk.textContent = '記事公開: ' + markerAt.get(i).join(' / '); tip.appendChild(mk); }
         series.forEach((s, k) => {
           const row = el('div', 'row');
