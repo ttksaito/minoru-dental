@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>はみがきブレイカー｜みのる歯科の歯みがきブロック崩し</title>
+<meta name="description" content="歯ブラシで泡を打ち返して歯垢と虫歯をきれいにする、みのる歯科（埼玉県東松山市）のお子さま向けブロック崩しゲーム。スマホでもパソコンでも無料で遊べます。">
+<link rel="canonical" href="https://www.minoru-dental.jp/hamigaki.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.minoru-dental.jp/hamigaki.html">
+<meta property="og:title" content="はみがきブレイカー｜みのる歯科の歯みがきブロック崩し">
+<meta property="og:description" content="歯ブラシで泡を打ち返して歯垢と虫歯をきれいにする、お子さま向けブロック崩しゲーム。スマホでもパソコンでも無料で遊べます。">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:site_name" content="みのる歯科">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: one 9:16 stage centred on a pale washroom-blue page; every control lives on the stage */
+  --sky:#9fdcf0;
+  --paper:#eef9fc;
+  --ink:#24406b;
+  --gum:#f59ab0;
+  --mint:#19b5a5;
+  --plaque:#9a7fe0;
+  --font:"DotGothic16","Hiragino Kaku Gothic ProN","Yu Gothic",monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--font);
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{position:relative;aspect-ratio:9/16;height:min(100%,calc(100vw * 16 / 9));max-width:100vw;
+  container-type:size;touch-action:none;user-select:none;-webkit-user-select:none;background:var(--sky)}
+canvas{display:block;width:100%;height:100%}
+#sound{position:absolute;top:1%;right:1.6%;width:8.4cqw;height:8.4cqw;border:0.5cqw solid var(--mint);
+  background:#fff;color:var(--mint);font:inherit;font-size:4.6cqw;line-height:1;cursor:pointer;border-radius:1.4cqw}
+#sound[aria-pressed="true"]{color:#9ab3c4;border-color:#9ab3c4;text-decoration:line-through}
+#screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2.8cqw;padding:5cqw 7cqw;background:rgba(238,249,252,.95);text-align:center}
+#screen[hidden]{display:none}
+#screen h1{font-size:11cqw;line-height:1.12;font-weight:400;letter-spacing:.04em;color:var(--ink);
+  text-shadow:0.9cqw 0.9cqw 0 var(--gum);text-wrap:balance}
+#screen h1 small{display:block;font-size:4.2cqw;color:var(--mint);text-shadow:none;letter-spacing:.3em;margin-bottom:1.5cqw}
+#screen p{font-size:4.3cqw;line-height:1.6;max-width:78cqw;text-wrap:balance}
+#screen ul{list-style:none;display:grid;gap:1.6cqw;font-size:3.8cqw;line-height:1.45;text-align:left;
+  border-top:0.5cqw dashed #8fbfd3;border-bottom:0.5cqw dashed #8fbfd3;padding:3cqw 0;width:78cqw}
+#screen li{display:grid;grid-template-columns:8cqw 1fr;gap:2.4cqw;align-items:center}
+.chip{display:inline-flex;align-items:center;justify-content:center;width:7cqw;height:7cqw;border-radius:50%;
+  font-size:3.8cqw;color:var(--ink);background:#5fe0cf;border:0.4cqw solid var(--ink)}
+.chip.x{background:#eafff0}.chip.s{background:#bcd7ff}.chip.a{background:#ff5d7a;color:#fff}
+.chip.g{background:var(--gum);color:#fff}
+.chip.d{background:#1c1216;color:#fff}
+.chip.q{background:#ffb347}.chip.l{background:#ffe08a}.chip.h{background:#ffc9a3}.chip.w{background:#d6c4ff}.chip.m{background:#a8f0ff}
+#screen ul.items{grid-template-columns:1fr 1fr;column-gap:3cqw;border-top:0;padding-top:0;font-size:3.5cqw}
+.chip.k{background:none;border:0;color:var(--plaque);font-size:5cqw}
+#go{font:inherit;font-size:5.4cqw;color:#fff;background:var(--mint);border:0;border-radius:2cqw;
+  padding:2.6cqw 7cqw;cursor:pointer;box-shadow:0 1.2cqw 0 #0f8277}
+#reset{font:inherit;font-size:3.8cqw;color:var(--ink);background:none;border:0;text-decoration:underline;cursor:pointer;padding:1cqw}
+#go:active{transform:translateY(0.8cqw);box-shadow:0 0.4cqw 0 #0f8277}
+#home{position:absolute;top:1%;left:1.6%;height:8.4cqw;display:flex;align-items:center;padding:0 2.6cqw;border:0.5cqw solid var(--mint);
+  background:#fff;color:var(--mint);font-size:3.6cqw;line-height:1;text-decoration:none;border-radius:1.4cqw;white-space:nowrap}
+#screen[hidden]+#home{display:none}
+#go:focus-visible,#reset:focus-visible,#sound:focus-visible,#home:focus-visible{outline:0.8cqw solid var(--ink);outline-offset:0.8cqw}
+</style>
+</head>
+<body>
+<!-- Google Analytics（サイト共通） -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-P8PPKGZVRT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-P8PPKGZVRT');
+</script>
+<div id="stage">
+  <canvas id="cv" width="720" height="1280" aria-label="はみがきブレイカーのゲーム画面"></canvas>
+  <button id="sound" type="button" aria-pressed="false" aria-label="音を切る">♪</button>
+  <div id="screen"></div>
+  <a id="home" href="/" aria-label="みのる歯科のトップページへ戻る">← みのる歯科</a>
+</div>
+<script>
+(function(){
+"use strict";
+const W=360,H=640,CS=4,GW=90,GH=104,GY=40,PADY=594,FLOSS_Y=620,FLOSS_SEC=10;
+const EMPTY=0,TOOTH=1,GUM=2,PLAQUE=3,DEBRIS=4,DECAY=5;
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const stageEl=document.getElementById('stage'),screenEl=document.getElementById('screen'),soundBtn=document.getElementById('sound');
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+
+/* ---------- stages ---------- */
+function tunnel(c,pts,lw){c.lineWidth=lw;c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.stroke();}
+function blob(c,x,y,r){c.beginPath();c.arc(x,y,r,0,7);c.fill();}
+function gumBase(c){c.fillRect(0,0,GW,9);for(let x=5;x<GW;x+=10)blob(c,x,9,6);}
+const STAGES=[
+ {name:'前歯',thick:6,grow:1.4,rot:0.0175,speed:265,chunks:8,face:{x:45,y:30,rot:0,ex:28},
+  tooth(c){c.beginPath();c.moveTo(28,0);c.lineTo(62,0);c.quadraticCurveTo(68,40,65,66);c.quadraticCurveTo(64,78,52,78);
+    c.lineTo(38,78);c.quadraticCurveTo(26,78,25,66);c.quadraticCurveTo(22,40,28,0);c.fill();},
+  cav(c){tunnel(c,[[56,84],[56,58]],4);blob(c,54,53,7);blob(c,56,78,3);},
+  gum:gumBase},
+ {name:'犬歯',thick:6,grow:1.3,rot:0.0142,speed:270,chunks:8,face:{x:45,y:28,rot:0,ex:28},
+  tooth(c){c.beginPath();c.moveTo(26,0);c.lineTo(64,0);c.quadraticCurveTo(69,36,62,58);c.quadraticCurveTo(56,72,45,84);
+    c.quadraticCurveTo(34,72,28,58);c.quadraticCurveTo(21,36,26,0);c.fill();},
+  cav(c){tunnel(c,[[16,46.5],[34,46.5]],3);blob(c,37,47,6);blob(c,26,46.5,3);
+    tunnel(c,[[55.5,86],[55.5,62]],3);blob(c,55,58,5);blob(c,55.5,69,3);},
+  gum:gumBase},
+ {name:'小臼歯',thick:6,grow:1.2,rot:0.016,speed:275,chunks:9,face:{x:45,y:27,rot:0,ex:30},
+  tooth(c){c.beginPath();c.moveTo(22,0);c.lineTo(68,0);c.quadraticCurveTo(72,40,69,60);c.quadraticCurveTo(68,76,58,76);
+    c.quadraticCurveTo(50,76,45,68);c.quadraticCurveTo(40,76,32,76);c.quadraticCurveTo(22,76,21,60);c.quadraticCurveTo(18,40,22,0);c.fill();},
+  cav(c){tunnel(c,[[45.5,80],[45.5,56]],3);blob(c,45,52,6);blob(c,45.5,69,3);
+    tunnel(c,[[78,46.5],[62,46.5]],3);blob(c,60,47,5);blob(c,68.5,46.5,3);},
+  gum:gumBase},
+ {name:'奥歯',thick:6,grow:1.0,rot:0.0158,speed:280,chunks:10,face:{x:45,y:28,rot:0,ex:36},
+  tooth(c){c.beginPath();c.moveTo(14,0);c.lineTo(76,0);c.quadraticCurveTo(80,40,77,62);c.quadraticCurveTo(76,78,66,78);
+    c.quadraticCurveTo(58,78,56,69);c.quadraticCurveTo(54,80,45,80);c.quadraticCurveTo(36,80,34,69);
+    c.quadraticCurveTo(32,78,24,78);c.quadraticCurveTo(14,78,13,62);c.quadraticCurveTo(10,40,14,0);c.fill();},
+  cav(c){tunnel(c,[[84,58.5],[64,58.5]],3);blob(c,61,57,6);blob(c,77,58.5,3.2);
+    tunnel(c,[[29.5,84],[29.5,62]],3);blob(c,29,58,5);blob(c,29.5,77,2.6);
+    tunnel(c,[[4,44.5],[19,44.5]],3);blob(c,22,45,5);blob(c,12,44.5,3.2);},
+  gum:gumBase},
+ {name:'歯のすきま',thick:5,grow:0.9,rot:0.016,speed:290,chunks:11,
+  faces:[{x:24,y:26,rot:0,ex:24},{x:66,y:26,rot:0,ex:24}],
+  tooth(c){for(const m of [0,1]){const X=v=>m?90-v:v;c.beginPath();c.moveTo(X(10),0);c.lineTo(X(39),0);c.quadraticCurveTo(X(40),40,X(39),62);
+    c.quadraticCurveTo(X(38),76,X(30),76);c.lineTo(X(20),76);c.quadraticCurveTo(X(9),76,X(8),62);c.quadraticCurveTo(X(6),40,X(10),0);c.fill();}},
+  cav(c){tunnel(c,[[44,44.5],[31,44.5]],3);blob(c,28,45,5);blob(c,39,44.5,2.6);
+    tunnel(c,[[46,58.5],[59,58.5]],3);blob(c,62,58,5);blob(c,51,58.5,2.6);
+    tunnel(c,[[20.5,84],[20.5,64]],3);blob(c,20,60,5);blob(c,20.5,76,2.6);},
+  gum:gumBase},
+ {name:'親知らず',thick:7,grow:0.75,rot:0.0112,speed:300,chunks:12,face:{x:47.7,y:29,rot:-0.22,ex:34},
+  frame(c){c.translate(45,40);c.rotate(-0.22);c.translate(-45,-40);},
+  tooth(c){c.save();this.frame(c);c.beginPath();c.moveTo(16,-14);c.lineTo(72,-14);c.quadraticCurveTo(77,40,74,60);
+    c.quadraticCurveTo(73,76,60,76);c.quadraticCurveTo(50,76,46,66);c.quadraticCurveTo(42,78,30,78);
+    c.quadraticCurveTo(17,78,16,62);c.quadraticCurveTo(12,40,16,-14);c.fill();c.restore();},
+  cav(c){c.save();this.frame(c);
+    tunnel(c,[[46,74],[46,52]],3.4);blob(c,44,49,6);blob(c,46,67,2.8);
+    tunnel(c,[[84,57],[68,57]],3.6);blob(c,65,57,5);blob(c,75,57,3.2);
+    tunnel(c,[[6,32],[21,32]],3.6);blob(c,24,32,5);blob(c,13.5,32,3.2);c.restore();},
+  gum(c){gumBase(c);blob(c,82,18,15);}}
+];
+function mask(fn,S){const c=document.createElement('canvas');c.width=GW;c.height=GH;
+  const x=c.getContext('2d',{willReadFrequently:true});x.fillStyle=x.strokeStyle='#fff';x.lineCap=x.lineJoin='round';
+  fn.call(S,x);return x.getImageData(0,0,GW,GH).data;}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- grid ---------- */
+const N=GW*GH;
+const type=new Uint8Array(N),hp=new Uint8Array(N),chunk=new Uint8Array(N),cavf=new Uint8Array(N),
+      edge=new Uint8Array(N),filled=new Uint8Array(N),noise=new Float32Array(N);
+const gridC=document.createElement('canvas');gridC.width=GW;gridC.height=GH;
+const gctx=gridC.getContext('2d'),gimg=gctx.createImageData(GW,GH);
+let dirty=true,remaining=0,total0=1,cav0=0,S=STAGES[0],chunkInfo=[];
+const FOODS=[
+ {name:'米粒',col:[255,255,250],pal:{w:[255,255,250],s:[150,160,200]},
+  px:['.ww.','wwws','wwws','swws','.ss.']},
+ {name:'唐揚げ',col:[196,120,48],pal:{B:[200,124,50],b:[150,84,30],o:[236,170,90]},
+  px:['.bBb..','bBoBb.','BBBBBb','bBBoBb','.bbBb.']},
+ {name:'イチゴ',col:[232,60,70],pal:{g:[80,180,90],G:[48,140,62],R:[236,62,74],r:[198,40,58],y:[255,226,130]},
+  px:['.gGg.','rGgGr','RyRRR','RRRyR','.RyR.','..r..']},
+ {name:'ブロッコリー',col:[70,160,80],pal:{G:[62,150,72],g:[104,190,96],s:[168,208,120]},
+  px:['.gGg.','gGgGg','GgGGg','..s..','..s..']},
+ {name:'コーン',col:[250,206,60],pal:{Y:[250,206,60],y:[255,232,130],o:[226,160,40]},
+  px:['yYY.','YYYo','YYYo','.oo.']}
+];
+const dcol=new Uint32Array(N);
+
+let dist0=new Int16Array(N);const gumDist=new Int16Array(N);
+function stampFood(f,cx,cy,id){
+  const h=f.px.length,w=f.px[0].length;
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const ch=f.px[j][i];if(ch==='.')continue;
+    const x=cx+i-(w>>1),y=cy+j-(h>>1);if(x<0||x>=GW||y<0||y>=GH-7)continue;const k=y*GW+x;
+    if(type[k]===PLAQUE||type[k]===EMPTY){if(type[k]===EMPTY)remaining++;
+      const c=f.pal[ch];type[k]=DEBRIS;chunk[k]=id;dcol[k]=c[0]<<16|c[1]<<8|c[2];}}
+  dirty=true;
+}
+function spawnFood(n){
+  for(let a=0;a<n;a++){
+    let id=0;for(let i=1;i<chunkInfo.length;i++)if(!chunkInfo[i].alive){id=i;break;}
+    if(!id){if(chunkInfo.length>=250)return;id=chunkInfo.length;chunkInfo.push({alive:false});}
+    for(let tries=0;tries<300;tries++){const k=(Math.random()*N)|0;
+      if(dist0[k]<3||dist0[k]>4||(type[k]!==EMPTY&&type[k]!==PLAQUE)||cavf[k])continue;
+      const x=k%GW,y=(k/GW)|0;if(y>GH-12)continue;let ok=true;
+      for(let j=-6;j<=6&&ok;j++)for(let i=-6;i<=6;i++){const gx=x+i,gy=y+j;
+        if(gx>=0&&gx<GW&&gy>=0&&gy<GH&&type[gy*GW+gx]===DEBRIS){ok=false;break;}}
+      if(!ok)continue;
+      const f=FOODS[(Math.random()*FOODS.length)|0];chunkInfo[id]={col:f.col,alive:true};stampFood(f,x,y,id);break;}
+  }
+  if(remaining>total0)total0=remaining;
+}
+function buildStage(i){
+  S=STAGES[i];const r=rng(4242+i*97);
+  const tm=mask(S.tooth,S),cm=mask(S.cav,S),gm=mask(S.gum,S);
+  type.fill(0);hp.fill(0);chunk.fill(0);cavf.fill(0);edge.fill(0);filled.fill(0);
+  for(let k=0;k<N;k++){
+    noise[k]=r();
+    if(gm[k*4+3]>128)type[k]=GUM;
+    else if(tm[k*4+3]>128){if(cm[k*4+3]>128){type[k]=DECAY;hp[k]=1;cavf[k]=1;}else type[k]=TOOTH;}
+  }
+  // distance from the tooth through open space
+  const dist=new Int16Array(N).fill(-1),q=[];
+  for(let k=0;k<N;k++)if(type[k]===TOOTH||type[k]===DECAY){dist[k]=0;q.push(k);}
+  for(let h=0;h<q.length;h++){const k=q[h],x=k%GW,y=(k/GW)|0;
+    const nb=[x>0?k-1:-1,x<GW-1?k+1:-1,y>0?k-GW:-1,y<GH-1?k+GW:-1];
+    for(const n of nb)if(n>=0&&dist[n]<0&&type[n]===EMPTY){dist[n]=dist[k]+1;q.push(n);}}
+  const s1=r()*6,s2=r()*6;
+  for(let k=0;k<N;k++){
+    if(type[k]!==EMPTY||dist[k]<1)continue;const x=k%GW,y=(k/GW)|0;if(y>GH-7)continue;
+    const t=S.thick+2.2*Math.sin(x*0.37+s1)+1.8*Math.sin(y*0.31+s2)+(noise[k]-0.5)*1.6;
+    if(dist[k]<=t)type[k]=PLAQUE;
+  }
+  for(let k=0;k<N;k++)if(type[k]===TOOTH){const x=k%GW,y=(k/GW)|0;
+    if((x>0&&type[k-1]!==TOOTH&&type[k-1]!==GUM)||(x<GW-1&&type[k+1]!==TOOTH&&type[k+1]!==GUM)||
+       (y>0&&type[k-GW]!==TOOTH&&type[k-GW]!==GUM)||(y<GH-1&&type[k+GW]!==TOOTH&&type[k+GW]!==GUM))edge[k]=1;}
+  // food scraps wedged into the plaque
+  chunkInfo=[null];const cand=[];
+  for(let k=0;k<N;k++)if(type[k]===PLAQUE&&dist[k]>=3&&dist[k]<=4)cand.push(k);
+  const picked=[];let guard=0;
+  while(picked.length<S.chunks&&guard++<6000&&cand.length){
+    const k=cand[(r()*cand.length)|0],x=k%GW,y=(k/GW)|0;
+    if(picked.every(p=>Math.max(Math.abs(p[0]-x),Math.abs(p[1]-y))>8))picked.push([x,y]);}
+  picked.forEach((p,idx)=>{const id=idx+1,f=FOODS[idx%FOODS.length];chunkInfo[id]={col:f.col,alive:true};stampFood(f,p[0],p[1],id);});
+  dist0=dist;
+  // distance of every cell from the gum, used to tell how close decay has crept
+  gumDist.fill(999);const gq=[];
+  for(let k=0;k<N;k++)if(type[k]===GUM){gumDist[k]=0;gq.push(k);}
+  for(let h=0;h<gq.length;h++){const k=gq[h],x=k%GW,y=(k/GW)|0;
+    const nb=[x>0?k-1:-1,x<GW-1?k+1:-1,y>0?k-GW:-1,y<GH-1?k+GW:-1];
+    for(const n of nb)if(n>=0&&gumDist[n]>gumDist[k]+1){gumDist[n]=gumDist[k]+1;gq.push(n);}}
+  remaining=0;for(let k=0;k<N;k++)if(type[k]>=PLAQUE)remaining++;
+  total0=remaining;cav0=0;for(let k=0;k<N;k++)cav0+=cavf[k];dirty=true;
+}
+function paintGrid(){
+  const d=gimg.data;
+  for(let k=0;k<N;k++){const t=type[k],n=noise[k],o=k*4;let r=0,g=0,b=0,a=255;
+    if(t===TOOTH){const x=k%GW,solid=q=>q===TOOTH||q===GUM;
+      const rim=(x>0&&!solid(type[k-1]))||(x<GW-1&&!solid(type[k+1]))||(k>=GW&&!solid(type[k-GW]))||(k<N-GW&&!solid(type[k+GW]));
+      if(filled[k]&&!rim){r=255;g=255;b=255;}else if(rim){r=186;g=194;b=206;}else{r=250-n*7;g=246-n*8;b=236-n*10;}}
+    else if(t===GUM){const f=gumHurt/GUM_MAX;r=246-n*6-f*14;g=154+n*14-f*96;b=176+n*12-f*100;}
+    else if(t===PLAQUE){const x=k%GW;const out=(x>0&&!type[k-1])||(x<GW-1&&!type[k+1])||(k>=GW&&!type[k-GW])||(k<N-GW&&!type[k+GW]);
+      if(out){r=158;g=134;b=226;}else{r=208-n*8;g=190-n*8;b=248-n*4;}}
+    else if(t===DEBRIS){const c=dcol[k];r=c>>16;g=c>>8&255;b=c&255;}
+    else if(t===DECAY){r=18+n*14;g=12+n*8;b=16+n*10;}
+    else if(cavf[k]){r=226-n*8;g=196-n*8;b=168-n*8;}
+    else a=0;
+    d[o]=r;d[o+1]=g;d[o+2]=b;d[o+3]=a;}
+  gctx.putImageData(gimg,0,0);dirty=false;
+}
+
+/* ---------- state ---------- */
+const st={stage:0,lives:3,mode:'title',time:0,total:0};
+const GUM_MAX=8;let gumHurt=0,gumHit=false,gumTold=false,gumRest=0;
+const pad={x:W/2,w:64};
+let balls=[],items=[],parts=[],bigT=0,aimT=0,growT=0,candyT=25,winceT=0,shake=0,flossT=0,fastT=0,slowT=0,holdT=0,wideT=0,freezeT=0,rotT=0,dangerD=99,dangerTold=false,dangerT=0,falling=false,fallT=0,
+    msg={text:'',t:0},growTold=false,clearT=0,fillList=[],keys={};
+function say(t){msg.text=t;msg.t=2.6;}
+function newBall(){balls=[{x:pad.x,y:PADY-4,vx:0,vy:-1,r:3,stuck:true,idle:0}];}
+function startStage(i,keepLives){
+  st.stage=i;if(!keepLives)st.lives=3;st.time=0;buildStage(i);
+  try{localStorage.setItem('hamigaki-stage',String(i));}catch(e){}
+  items=[];parts=[];bigT=0;growT=0;candyT=25;flossT=0;fastT=0;slowT=0;holdT=0;wideT=0;freezeT=0;rotT=0;dangerD=99;dangerTold=false;dangerT=0;falling=false;fallT=0;pad.w=64;fizzQ.length=0;fizzBudget=0;growTold=false;msg.t=0;gumHurt=0;gumRest=0;
+  pad.x=W/2;newBall();st.mode='ready';aimT=0;
+}
+function pct(){return clamp(Math.floor((1-remaining/total0)*100),0,99);}
+function fmt(t){t=Math.round(t);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');}
+
+/* ---------- sound ---------- */
+let AC=null,muted=false,lastTick=0,lastFizz=0;
+function wake(){if(AC||muted)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;}}
+function tone(f,d,kind,v,slide){
+  if(muted||!AC)return;
+  try{const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=kind||'square';o.frequency.setValueAtTime(f,t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,f+slide),t+d);
+    g.gain.setValueAtTime(v||0.04,t);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);}catch(e){}
+}
+function tick(){const n=performance.now();if(n-lastTick<45)return;lastTick=n;tone(900+Math.random()*500,0.03,'triangle',0.025);}
+soundBtn.addEventListener('click',()=>{muted=!muted;soundBtn.setAttribute('aria-pressed',String(muted));
+  soundBtn.setAttribute('aria-label',muted?'音を出す':'音を切る');if(!muted){wake();tone(880,0.08,'triangle',0.05);}});
+
+/* ---------- effects ---------- */
+function puff(x,y,col,n,spd){
+  if(RM)n=Math.ceil(n/3);if(parts.length>420)return;
+  for(let i=0;i<n;i++){const a=Math.random()*6.283,s=(spd||60)*(0.3+Math.random());
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,life:0.35+Math.random()*0.35,col,sz:2+Math.random()*2});}
+}
+function cellXY(k){return [(k%GW)*CS+2,GY+((k/GW)|0)*CS+2];}
+function removeCell(k,fx){
+  const t=type[k];if(t<PLAQUE)return;type[k]=EMPTY;hp[k]=0;remaining--;dirty=true;
+  if(fx&&Math.random()<0.3){const p=cellXY(k);puff(p[0],p[1],t===PLAQUE?'#c9b6f5':t===DECAY?'#1c1216':'#fff',1,50);}
+}
+const ITEMS={
+  F:{label:'F',bg:'#5fe0cf',fg:'#3b2438',say:'フッ素！ 泡が大きくなった'},
+  X:{label:'キ',bg:'#eafff0',fg:'#3b2438',say:'キシリトール！ 泡が増えた'},
+  S:{label:'糸',bg:'#bcd7ff',fg:'#3b2438',say:'フロス！ しばらく泡が落ちない'},
+  Q:{label:'速',bg:'#ffb347',fg:'#3b2438',say:'スピード！ 泡が速くなった'},
+  L:{label:'遅',bg:'#ffe08a',fg:'#3b2438',say:'スロー！ 泡がゆっくりになった'},
+  H:{label:'持',bg:'#ffc9a3',fg:'#3b2438',say:'ホールド！ 泡をキャッチ、タップで発射'},
+  W:{label:'広',bg:'#d6c4ff',fg:'#3b2438',say:'ワイド！ 歯ブラシが広がった'},
+  M:{label:'う',bg:'#a8f0ff',fg:'#3b2438',say:'うがい！ 虫歯の進行が止まった'},
+  A:{label:'ア',bg:'#ff5d7a',fg:'#fff',say:'アメを取った。歯垢と食べかすが増えた'}
+};
+const DROP=[['F',15],['X',15],['S',13],['L',11],['H',11],['W',11],['M',8],['Q',8],['A',8]];
+function pickDrop(){let r=Math.random()*100;for(const d of DROP){if((r-=d[1])<0)return d[0];}return 'F';}
+function burst(id){
+  const info=chunkInfo[id];if(!info||!info.alive)return;info.alive=false;
+  let sx=0,sy=0,c=0;const col='rgb('+info.col.join(',')+')';
+  for(let k=0;k<N;k++)if(chunk[k]===id&&type[k]===DEBRIS){const p=cellXY(k);sx+=p[0];sy+=p[1];c++;
+    type[k]=EMPTY;remaining--;if(Math.random()<0.5)puff(p[0],p[1],col,1,110);}
+  dirty=true;if(!c)return;
+  const kind=pickDrop();
+  items.push({x:sx/c,y:sy/c,kind,vy:95});
+  tone(520,0.12,'square',0.05,400);
+}
+let fizzQ=[],fizzBudget=0,fizzId=0,fizzCd=0;const fizzSeen=new Uint16Array(N);
+// foam that touches a cavity seeps through the cleaned part and dissolves the decay behind it
+function fizzStart(k){
+  if(!fizzQ.length){if(fizzCd>0)return;fizzId=fizzId%65000+1;fizzCd=0.3;fizzBudget=0;}
+  if(fizzSeen[k]===fizzId)return;
+  fizzSeen[k]=fizzId;fizzQ.push(k);fizzBudget=Math.min(44,fizzBudget+26);
+}
+function fizzStep(dt){
+  if(fizzCd>0)fizzCd-=dt;let n=10;
+  while(n-->0&&fizzQ.length&&fizzBudget>0){const k=fizzQ.shift(),x=k%GW,y=(k/GW)|0;
+    for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){const gx=x+i,gy=y+j;if(gx<0||gx>=GW||gy<0||gy>=GH)continue;
+      const q=gy*GW+gx;if(fizzSeen[q]===fizzId)continue;const t=type[q];
+      if(t===DECAY){if(fizzBudget<=0)continue;removeCell(q,true);fizzSeen[q]=fizzId;fizzQ.push(q);fizzBudget--;winceT=0.3;}
+      else if(t===EMPTY&&cavf[q]){fizzSeen[q]=fizzId;fizzQ.push(q);
+        if(!RM&&Math.random()<0.12&&parts.length<420){const p=cellXY(q);parts.push({x:p[0],y:p[1],vx:0,vy:-20,life:0.3,col:'#ffffff',sz:3});}}}}
+  if(fizzBudget<=0)fizzQ.length=0;
+}
+function addPlaque(n){
+  for(let pass=0;pass<3;pass++){const c=[];
+    for(let k=GW;k<N-GW*8;k++){if(type[k]!==EMPTY||cavf[k])continue;const x=k%GW;
+      const a=x>0?type[k-1]:0,b=x<GW-1?type[k+1]:0,u=type[k-GW],d=type[k+GW];
+      if((a&&a!==GUM)||(b&&b!==GUM)||(u&&u!==GUM)||(d&&d!==GUM))c.push(k);}
+    for(let i=0;i<n/3&&c.length&&remaining<total0;i++){const j=(Math.random()*c.length)|0,k=c[j];c[j]=c[c.length-1];c.pop();
+      type[k]=PLAQUE;remaining++;}}
+  dirty=true;
+}
+function growDecay(){
+  for(let i=0;i<80;i++){const k=(Math.random()*N)|0;if(type[k]!==PLAQUE)continue;const x=k%GW,y=(k/GW)|0;
+    const near=t=>t===TOOTH||t===DECAY;
+    if((x>0&&near(type[k-1]))||(x<GW-1&&near(type[k+1]))||(y>0&&near(type[k-GW]))||(y<GH-1&&near(type[k+GW]))){
+      type[k]=DECAY;hp[k]=1;dirty=true;
+      if(!growTold){growTold=true;say('歯垢が黒い虫歯に変わりはじめた');}
+      return;}}
+}
+function useItem(kind){
+  say(ITEMS[kind].say);
+  if(kind==='F'){bigT=12;tone(660,0.25,'triangle',0.06,500);}
+  else if(kind==='X'){const add=[];
+    for(const b of balls){if(b.stuck||balls.length+add.length>=12)continue;
+      for(const da of [-0.5,0.5]){const a=Math.atan2(b.vy,b.vx)+da;add.push({x:b.x,y:b.y,vx:Math.cos(a),vy:Math.sin(a),r:b.r,stuck:false,idle:0});}}
+    if(!add.length&&balls[0]&&balls[0].stuck)add.push({x:pad.x+10,y:PADY-4,vx:0.3,vy:-0.95,r:3,stuck:false,idle:0});
+    balls=balls.concat(add);tone(700,0.2,'square',0.05,700);}
+  else if(kind==='S'){flossT=FLOSS_SEC;tone(1400,0.3,'triangle',0.05,-600);}
+  else if(kind==='Q'){fastT=10;slowT=0;tone(700,0.25,'square',0.045,700);}
+  else if(kind==='L'){slowT=10;fastT=0;tone(500,0.3,'triangle',0.05,-250);}
+  else if(kind==='H'){holdT=14;tone(520,0.2,'square',0.045,260);}
+  else if(kind==='W'){wideT=14;tone(440,0.25,'triangle',0.05,440);}
+  else if(kind==='M'){freezeT=10;gumHurt=0;dirty=true;tone(880,0.35,'triangle',0.05,400);}
+  else{addPlaque(80);spawnFood(2);if(!RM)shake=0.35;tone(200,0.3,'sawtooth',0.06,-120);}
+}
+
+/* ---------- physics ---------- */
+function solidAt(x,y,r){
+  const x0=Math.floor((x-r)/CS),x1=Math.floor((x+r)/CS),y0=Math.floor((y-r-GY)/CS),y1=Math.floor((y+r-GY)/CS);
+  for(let gy=y0;gy<=y1;gy++){if(gy<0||gy>=GH)continue;for(let gx=x0;gx<=x1;gx++){if(gx<0||gx>=GW)continue;
+    const t=type[gy*GW+gx];if(t!==TOOTH&&t!==GUM)continue;const cx=gx*CS,cy=GY+gy*CS;
+    const nx=clamp(x,cx,cx+CS),ny=clamp(y,cy,cy+CS);if((x-nx)*(x-nx)+(y-ny)*(y-ny)<r*r)return true;}}
+  return false;
+}
+function hitCells(b,x,y){
+  const r=b.r,R=r+4.5,x0=Math.floor((x-R)/CS),x1=Math.floor((x+R)/CS),y0=Math.floor((y-R-GY)/CS),y1=Math.floor((y+R-GY)/CS);
+  let bounce=false,dx=-1,dy=-1;
+  for(let gy=y0;gy<=y1;gy++){if(gy<0||gy>=GH)continue;for(let gx=x0;gx<=x1;gx++){if(gx<0||gx>=GW)continue;
+    const k=gy*GW+gx,t=type[k];if(!t&&!cavf[k])continue;const cx=gx*CS,cy=GY+gy*CS;
+    const nx=clamp(x,cx,cx+CS),ny=clamp(y,cy,cy+CS),d2=(x-nx)*(x-nx)+(y-ny)*(y-ny);
+    if(!t){if(d2<R*R)fizzStart(k);continue;}
+    if(t===PLAQUE){if(d2<R*R){removeCell(k,true);b.idle=0;tick();}continue;}
+    if(d2>=r*r)continue;
+    if(t===TOOTH||t===GUM){bounce=true;if(t===GUM)gumHit=true;}
+    else if(t===DEBRIS){burst(chunk[k]);bounce=true;b.idle=0;}
+    else if(t===DECAY){b.idle=0;if(dx<0){dx=gx;dy=gy;}}}}
+  if(dx>=0){
+    for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){const gx=dx+i,gy=dy+j;if(gx<0||gx>=GW||gy<0||gy>=GH)continue;
+      const k=gy*GW+gx;if(type[k]!==DECAY)continue;removeCell(k,true);}
+    fizzStart(dy*GW+dx);
+    winceT=0.3;b.slow=0.09;const n=performance.now();if(n-lastFizz>70){lastFizz=n;tone(170+Math.random()*60,0.07,'sawtooth',0.035,-50);}}
+  return bounce;
+}
+function moveBall(b,dt){
+  if(b.slow>0)b.slow-=dt;if(b.gumCd>0)b.gumCd-=dt;
+  let rem=S.speed*dt*(b.slow>0?0.5:1)*(slowT>0?0.6:fastT>0?1.4:1);
+  while(rem>0){const s=Math.min(rem,2);rem-=s;const free=solidAt(b.x,b.y,b.r);
+    let nx=b.x+b.vx*s;
+    if(nx<b.r){nx=b.r;b.vx=Math.abs(b.vx);}else if(nx>W-b.r){nx=W-b.r;b.vx=-Math.abs(b.vx);}
+    gumHit=false;
+    if(hitCells(b,nx,b.y)&&!free)b.vx=-b.vx;else b.x=nx;
+    let ny=b.y+b.vy*s;
+    if(ny<GY+b.r){ny=GY+b.r;b.vy=Math.abs(b.vy);}
+    if(hitCells(b,b.x,ny)&&!free)b.vy=-b.vy;else b.y=ny;
+    if(gumHit&&!free&&!(b.gumCd>0)){b.gumCd=1;hurtGum();}
+    if(b.vy>0&&b.y+b.r>=PADY&&b.y+b.r<=PADY+12&&Math.abs(b.x-pad.x)<=pad.w/2+b.r){
+      if(holdT>0){b.stuck=true;b.off=clamp(b.x-pad.x,-pad.w/2,pad.w/2);b.idle=0;tone(360,0.06,'triangle',0.05);return;}
+      const o=clamp((b.x-pad.x)/(pad.w/2),-1,1),a=-Math.PI/2+o*1.1;
+      b.vx=Math.cos(a);b.vy=Math.sin(a);b.y=PADY-b.r;b.idle=0;tone(440,0.05,'triangle',0.05);}
+    if(flossT>0&&b.vy>0&&b.y+b.r>=FLOSS_Y&&b.y+b.r<=FLOSS_Y+10){b.vy=-b.vy;b.y=FLOSS_Y-b.r;b.idle=0;tone(980,0.05,'triangle',0.05);}
+    if(b.y>H+12){b.dead=true;return;}
+  }
+  if(Math.abs(b.vy)<0.2){b.vy=(b.vy<0?-0.2:0.2);const l=Math.hypot(b.vx,b.vy);b.vx/=l;b.vy/=l;}
+  b.idle+=dt;
+  if(b.idle>7){const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*0.9;b.vx=Math.cos(a);b.vy=Math.sin(a);b.idle=0;}
+}
+function hurtGum(){
+  gumHurt++;dirty=true;tone(150,0.09,'sawtooth',0.05,-40);
+  if(gumHurt>=GUM_MAX){gumHurt=0;addPlaque(90);if(!RM)shake=0.35;winceT=0.6;say('歯ぐきがはれた… 歯垢が増えた');tone(120,0.35,'sawtooth',0.06,-60);}
+  else if(!gumTold){gumTold=true;say('歯ぐきに当てすぎると、はれてしまう');}
+}
+function launch(){
+  const a=aimAngle();let any=false;
+  for(const b of balls)if(b.stuck){b.vx=Math.cos(a);b.vy=Math.sin(a);b.stuck=false;any=true;}
+  if(!any)return;st.mode='play';tone(600,0.08,'triangle',0.05,300);
+}
+function canLaunch(){return st.mode==='ready'||(st.mode==='play'&&balls.some(b=>b.stuck));}
+// decay left alone eats further into the tooth; reaching the gum pulls the tooth out
+function growCavity(sec){
+  const fr=[];
+  for(let k=0;k<N;k++){if(type[k]!==DECAY||!cavf[k])continue;const x=k%GW,y=(k/GW)|0;
+    if(y>0&&type[k-GW]===TOOTH)fr.push(k-GW,k-GW,k-GW,k-GW);
+    if(x>0&&type[k-1]===TOOTH)fr.push(k-1,k-1);
+    if(x<GW-1&&type[k+1]===TOOTH)fr.push(k+1,k+1);
+    if(y<GH-1&&type[k+GW]===TOOTH)fr.push(k+GW);}
+  if(!fr.length)return;
+  // every exposed edge spreads at its own pace, so a nearly clean cavity grows slowly
+  const want=fr.length*S.rot*sec;let n=Math.floor(want)+(Math.random()<want%1?1:0);
+  while(n-->0){const q=fr[(Math.random()*fr.length)|0];if(type[q]!==TOOTH)continue;
+    type[q]=DECAY;hp[q]=1;cavf[q]=1;remaining++;dirty=true;
+    if(gumDist[q]<=1){toothLost();return;}}
+  if(remaining>total0)total0=remaining;
+}
+function crumble(){
+  const open=t=>t!==TOOTH&&t!==GUM;
+  for(let pass=0;pass<2;pass++){let any=false;
+    for(let k=0;k<N;k++){if(type[k]!==TOOTH)continue;const x=k%GW,y=(k/GW)|0;
+      let near=false;
+      for(let j=-1;j<=1&&!near;j++)for(let i=-1;i<=1;i++){const gx=x+i,gy=y+j;
+        if(gx>=0&&gx<GW&&gy>=0&&gy<GH&&cavf[gy*GW+gx]){near=true;break;}}
+      if(!near)continue;
+      // length of the run of tooth through this cell, across and down
+      let l=x,r=x;while(l>0&&type[k-(x-l)-1]===TOOTH&&x-l<4)l--;while(r<GW-1&&type[k+(r-x)+1]===TOOTH&&r-x<4)r++;
+      let u=y,d=y;while(u>0&&type[k-(y-u+1)*GW]===TOOTH&&y-u<4)u--;while(d<GH-1&&type[k+(d-y+1)*GW]===TOOTH&&d-y<4)d++;
+      const thinX=r-l+1<=3&&l>0&&r<GW-1&&open(type[y*GW+l-1])&&open(type[y*GW+r+1]);
+      const thinY=d-u+1<=3&&u>0&&d<GH-1&&open(type[(u-1)*GW+x])&&open(type[(d+1)*GW+x]);
+      if(thinX||thinY){type[k]=EMPTY;cavf[k]=1;any=true;if(Math.random()<0.4){const p=cellXY(k);puff(p[0],p[1],'#ffffff',1,40);}}}
+    if(!any)break;dirty=true;}
+}
+const fallC=document.createElement('canvas');fallC.width=GW;fallC.height=GH;const fctx=fallC.getContext('2d');
+function toothLost(){
+  if(falling)return;paintGrid();
+  const d=fctx.createImageData(GW,GH);d.data.set(gimg.data);
+  for(let k=0;k<N;k++){if(type[k]===GUM)d.data[k*4+3]=0;else{type[k]=EMPTY;cavf[k]=0;}}
+  fctx.putImageData(d,0,0);dirty=true;
+  falling=true;fallT=0;st.mode='fall';balls=[];items=[];winceT=9;msg.t=0;
+  tone(260,0.7,'sawtooth',0.07,-200);
+}
+function aimAngle(){return -Math.PI/2+Math.sin(aimT*1.7)*0.95;}
+function cavLeft(){let c=0;for(let k=0;k<N;k++)if(cavf[k]&&type[k]===DECAY)c++;return c;}
+function win(){
+  st.mode='clear';clearT=0;balls=[];items=[];
+  for(let k=0;k<N;k++)if(type[k]>=PLAQUE){const p=cellXY(k);puff(p[0],p[1],'#fff',1,90);type[k]=EMPTY;}
+  remaining=0;dirty=true;fillList=[];
+  for(let k=N-1;k>=0;k--)if(cavf[k]&&type[k]===EMPTY)fillList.push(k);
+  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.18,'triangle',0.06),i*110));
+}
+
+/* ---------- update ---------- */
+function update(dt){
+  if(st.mode==='title'||st.mode==='over'||st.mode==='done')return;
+  const dir=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
+  if(dir)pad.x+=dir*430*dt;pad.x=clamp(pad.x,pad.w/2,W-pad.w/2);
+  for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt;p.life-=dt;}
+  parts=parts.filter(p=>p.life>0);
+  if(msg.t>0)msg.t-=dt;if(winceT>0)winceT-=dt;if(shake>0)shake-=dt;
+  if(st.mode==='fall'){fallT+=dt;if(fallT>1.5){st.mode='over';show('lost');}return;}
+  if(st.mode==='clear'){
+    clearT+=dt;
+    for(let i=0;i<5&&fillList.length;i++){const k=fillList.pop();type[k]=TOOTH;filled[k]=1;dirty=true;}
+    if(Math.random()<0.5){const a=Math.random()*6.283;puff(180+Math.cos(a)*120,GY+180+Math.sin(a)*150,'#ffd23f',1,20);}
+    if(!fillList.length&&clearT>1.6){
+      st.total+=st.time;
+      if(st.stage<STAGES.length-1){st.mode='over';show('clear');}else{st.mode='done';show('done');}}
+    return;
+  }
+  pad.w=wideT>0?96:64;pad.x=clamp(pad.x,pad.w/2,W-pad.w/2);aimT+=dt;
+  if(st.mode==='ready'){const b=balls[0];if(b){b.x=pad.x;b.y=PADY-b.r-1;}return;}
+  // play
+  st.time+=dt;
+  if(bigT>0)bigT-=dt;if(flossT>0)flossT-=dt;if(slowT>0)slowT-=dt;if(fastT>0)fastT-=dt;if(holdT>0)holdT-=dt;if(wideT>0)wideT-=dt;if(freezeT>0)freezeT-=dt;
+  const r=bigT>0?5.5:3;
+  for(const b of balls){b.r=r;
+    if(b.stuck){b.x=clamp(pad.x+(b.off||0),r,W-r);b.y=PADY-r-1;}else moveBall(b,dt);}
+  balls=balls.filter(b=>!b.dead);
+  for(const it of items){it.y+=it.vy*dt;
+    if(it.y+8>=PADY&&it.y-8<=PADY+12&&Math.abs(it.x-pad.x)<pad.w/2+8){it.dead=true;useItem(it.kind);}
+    else if(it.y>H+12)it.dead=true;}
+  items=items.filter(i=>!i.dead);
+  fizzStep(dt);
+  if(freezeT<=0){
+    growT+=dt;if(growT>=S.grow){growT=0;growDecay();}
+    rotT+=dt;if(rotT>=0.25){rotT-=0.25;growCavity(0.25);if(st.mode==='play')crumble();}
+    if(st.mode!=='play')return;
+  }
+  dangerT+=dt;if(dangerT>=0.5){dangerT=0;if(freezeT>0)crumble();dangerD=999;
+    for(let k=0;k<N;k++)if(type[k]===DECAY&&cavf[k]&&gumDist[k]<dangerD)dangerD=gumDist[k];
+    if(dangerD<=12&&!dangerTold){dangerTold=true;say('虫歯が歯ぐきに近づいている');}
+    if(dangerD>16)dangerTold=false;}
+  if(gumHurt>0){gumRest+=dt;if(gumRest>=5){gumRest=0;gumHurt--;dirty=true;}}else gumRest=0;
+  candyT-=dt;if(candyT<=0){candyT=22+Math.random()*12;items.push({x:24+Math.random()*(W-48),y:GY+4,kind:'A',vy:80});}
+  if(remaining<=Math.max(12,total0*0.07)&&cavLeft()<=Math.max(6,cav0*0.06)){win();return;}
+  if(!balls.length){
+    st.lives--;bigT=0;flossT=0;tone(300,0.4,'sawtooth',0.06,-220);if(!RM)shake=0.3;
+    if(st.lives<=0){st.mode='over';show('over');}
+    else{newBall();st.mode='ready';aimT=0;say('泡を落とした。のこり '+st.lives);}
+  }
+}
+
+/* ---------- draw ---------- */
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function drawFace(){for(const f of (S.faces||[S.face]))drawOneFace(f);}
+function drawOneFace(f){
+  const dirt=remaining/total0,happy=st.mode==='clear'||st.mode==='done'||remaining===0;
+  ctx.save();ctx.translate(f.x*CS,GY+f.y*CS);ctx.rotate(f.rot);
+  ctx.strokeStyle=ctx.fillStyle='#3b2438';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';
+  const ex=f.ex;
+  if(happy){for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*ex-6,2);ctx.lineTo(s*ex,-4);ctx.lineTo(s*ex+6,2);ctx.stroke();}}
+  else if(winceT>0){for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*ex-s*5,-5);ctx.lineTo(s*ex+s*3,0);ctx.lineTo(s*ex-s*5,5);ctx.stroke();}}
+  else{ctx.fillRect(-ex-3,-4,6,9);ctx.fillRect(ex-3,-4,6,9);
+    if(dirt>0.55){ctx.beginPath();ctx.moveTo(-ex-8,-12);ctx.lineTo(-ex+5,-9);ctx.moveTo(ex+8,-12);ctx.lineTo(ex-5,-9);ctx.stroke();}}
+  ctx.beginPath();
+  if(happy){ctx.arc(0,20,11,0,Math.PI);ctx.closePath();ctx.fill();ctx.fillStyle='#ff8ea3';ctx.beginPath();ctx.arc(0,27,5,0,Math.PI);ctx.fill();}
+  else if(winceT>0){ctx.arc(0,26,4,0,7);ctx.stroke();}
+  else if(dirt>0.55){ctx.arc(0,36,10,Math.PI*1.2,Math.PI*1.8);ctx.stroke();}
+  else if(dirt>0.2){ctx.moveTo(-7,27);ctx.lineTo(7,27);ctx.stroke();}
+  else{ctx.arc(0,19,10,Math.PI*0.2,Math.PI*0.8);ctx.stroke();}
+  if(happy||dirt<=0.2){ctx.fillStyle='rgba(255,120,150,.45)';for(const s of [-1,1]){ctx.beginPath();ctx.ellipse(s*(ex+9),13,7,4,0,0,7);ctx.fill();}}
+  if(!happy&&dirt>0.55){ctx.fillStyle='#8fd3ff';ctx.beginPath();ctx.moveTo(ex+14,-16);ctx.quadraticCurveTo(ex+20,-6,ex+14,-4);
+    ctx.quadraticCurveTo(ex+8,-6,ex+14,-16);ctx.fill();}
+  ctx.restore();
+}
+function drawBrush(){
+  const x=pad.x-pad.w/2;
+  for(let i=0;i<pad.w/4;i++){ctx.fillStyle=i%2?'#ffffff':'#d3e4ff';ctx.fillRect(x+i*4,PADY+(i%2?0:1),4,8);}
+  ctx.fillStyle='#3567c9';rr(x-4,PADY+7,pad.w+8,7,3);ctx.fill();
+  ctx.fillStyle='#27509e';ctx.fillRect(x-1,PADY+12,pad.w+2,2);
+}
+function drawItem(it){
+  const d=ITEMS[it.kind];ctx.save();ctx.translate(it.x,it.y);
+  if(it.kind==='A'){ctx.fillStyle='#ffb3c1';ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(-15,-6);ctx.lineTo(-15,6);ctx.closePath();
+    ctx.moveTo(8,0);ctx.lineTo(15,-6);ctx.lineTo(15,6);ctx.closePath();ctx.fill();}
+  ctx.fillStyle=d.bg;ctx.beginPath();ctx.arc(0,0,9,0,7);ctx.fill();ctx.strokeStyle='#24406b';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle=d.fg;ctx.font='12px DotGothic16, monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(d.label,0,1);
+  ctx.restore();
+}
+function draw(){
+  ctx.setTransform(2,0,0,2,0,0);
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9fdcf0');g.addColorStop(1,'#bdeee0');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<11;i++){ctx.beginPath();ctx.arc((i*97+40)%W,472+(i*53)%160,4+(i*7)%9,0,7);ctx.fill();}
+  ctx.save();
+  if(shake>0)ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6);
+  if(dirty)paintGrid();
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(gridC,0,GY,GW*CS,GH*CS);ctx.imageSmoothingEnabled=true;
+  if(falling){ctx.save();ctx.translate(W/2,GY+200+700*fallT*fallT);ctx.rotate(fallT*0.5);ctx.translate(-W/2,-(GY+200));
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(fallC,0,GY,GW*CS,GH*CS);ctx.imageSmoothingEnabled=true;drawFace();ctx.restore();}
+  else drawFace();
+  if(flossT>0&&(flossT>3||Math.floor(flossT*6)%2===0)){
+    ctx.strokeStyle='#3567c9';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,FLOSS_Y+2);ctx.lineTo(W,FLOSS_Y+2);ctx.stroke();
+    ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(0,FLOSS_Y+2);ctx.lineTo(W,FLOSS_Y+2);ctx.stroke();ctx.setLineDash([]);
+}
+  for(const p of parts){ctx.globalAlpha=clamp(p.life*3,0,1);ctx.fillStyle=p.col;ctx.fillRect(p.x-p.sz/2,p.y-p.sz/2,p.sz,p.sz);}
+  ctx.globalAlpha=1;
+  for(const it of items)drawItem(it);
+  drawBrush();
+  if(canLaunch()){const a=aimAngle();ctx.fillStyle='#24406b';
+    for(const b of balls){if(!b.stuck)continue;
+      for(let i=1;i<=11;i++){ctx.globalAlpha=1-i/13;ctx.fillRect(b.x+Math.cos(a)*i*13-1.5,b.y+Math.sin(a)*i*13-1.5,3,3);}}
+    ctx.globalAlpha=1;}
+  // active item timers
+  {const act=[['F',bigT],['S',flossT],['L',slowT],['Q',fastT],['H',holdT],['W',wideT],['M',freezeT]].filter(e=>e[1]>0);
+    ctx.textBaseline='middle';ctx.font='10px DotGothic16, monospace';
+    act.forEach((e,i)=>{const d=ITEMS[e[0]],x=12+i*38,y=632;ctx.fillStyle=d.bg;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();
+      ctx.strokeStyle='#24406b';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle=d.fg;ctx.textAlign='center';ctx.fillText(d.label,x,y+1);
+      ctx.fillStyle='#24406b';ctx.textAlign='left';ctx.fillText(Math.ceil(e[1]),x+10,y+1);});}
+  for(const b of balls){
+    if(bigT>0){ctx.fillStyle='rgba(22,143,134,.25)';ctx.beginPath();ctx.arc(b.x,b.y,b.r+3,0,7);ctx.fill();}
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,7);ctx.fill();
+    ctx.strokeStyle='#168f86';ctx.lineWidth=1.5;ctx.stroke();}
+  ctx.restore();
+  // HUD
+  ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(0,0,W,GY-4);
+  ctx.textBaseline='middle';ctx.textAlign='left';ctx.font='13px DotGothic16, monospace';ctx.fillStyle='#24406b';
+  ctx.fillText((st.stage+1)+' '+S.name,8,19);
+  ctx.fillStyle='#cfe6f2';ctx.fillRect(100,12,104,12);
+  const p=st.mode==='clear'||st.mode==='done'||remaining===0?100:pct();
+  ctx.fillStyle='#19b5a5';ctx.fillRect(100,12,104*p/100,12);
+  ctx.fillStyle='#24406b';ctx.font='13px DotGothic16, monospace';ctx.fillText(p+'%',210,19);
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(262+i*17,18,5.5,0,7);
+    if(i<st.lives){ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#168f86';ctx.lineWidth=2;ctx.stroke();}
+    else{ctx.strokeStyle='#a9c6d6';ctx.lineWidth=1.5;ctx.stroke();}}
+  ctx.textAlign='center';
+  if(st.mode==='play'&&dangerD<=6){ctx.font='12px DotGothic16, monospace';
+    const t='虫歯が歯ぐきに届きそう',w=ctx.measureText(t).width+16;
+    ctx.globalAlpha=RM?1:0.85+0.15*Math.sin(performance.now()/380);
+    ctx.fillStyle='#d6344e';rr(W/2-w/2,GY+3,w,20,5);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(t,W/2,GY+14);ctx.globalAlpha=1;}
+  if(canLaunch()){ctx.fillStyle='#24406b';ctx.font='15px DotGothic16, monospace';
+    ctx.fillText('タップ／スペースで泡を打つ',W/2,508);}
+  if(msg.t>0&&st.mode!=='title'){ctx.globalAlpha=clamp(msg.t,0,1);ctx.font='14px DotGothic16, monospace';
+    const w=ctx.measureText(msg.text).width+20;ctx.fillStyle='rgba(36,64,107,.92)';rr(W/2-w/2,468,w,24,6);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.fillText(msg.text,W/2,481);ctx.globalAlpha=1;}
+}
+
+/* ---------- screens ---------- */
+function show(kind){
+  let html='',label='',extra='';
+  if(kind==='title'){
+    html='<h1><small>虫歯ブロック崩し</small>はみがき<br>ブレイカー</h1>'+
+      '<p>歯ブラシで泡を打ち、歯垢と虫歯を掃除しよう。食べかすを崩すとアイテムが出る。</p>'+
+      '<ul><li><span class="chip k">◀▶</span>歯ブラシ：指・マウス・← →</li>'+
+      '<li><span class="chip k">■</span>歯垢は放っておくと虫歯に変わる</li>'+
+      '<li><span class="chip d">!</span>虫歯が歯ぐきまで広がると歯が抜ける</li>'+
+      '<li><span class="chip g">!</span>歯ぐきに当てすぎると歯垢が増える</li></ul>'+
+      '<ul class="items"><li><span class="chip">F</span>泡が大きく</li>'+
+      '<li><span class="chip x">キ</span>泡が増える</li>'+
+      '<li><span class="chip s">糸</span>泡が落ちない</li>'+
+      '<li><span class="chip l">遅</span>泡がゆっくり</li>'+
+      '<li><span class="chip q">速</span>泡が速くなる</li>'+
+      '<li><span class="chip h">持</span>泡をキャッチ</li>'+
+      '<li><span class="chip w">広</span>ブラシが広く</li>'+
+      '<li><span class="chip m">う</span>虫歯が止まる</li>'+
+      '<li><span class="chip a">ア</span>汚れが増える</li></ul>';
+    label=st.stage>0?((st.stage+1)+' '+STAGES[st.stage].name+'からつづける'):'みがきはじめる';
+    if(st.stage>0)extra='<button id="reset" type="button">最初のコースからあそぶ</button>';
+  }else if(kind==='clear'){
+    html='<h1><small>'+S.name+'クリア</small>ピカピカ！</h1><p>'+S.name+'を '+fmt(st.time)+' でみがき終えた。虫歯の穴も白く埋まった。</p>';
+    label='つぎは'+STAGES[st.stage+1].name;
+  }else if(kind==='over'){
+    html='<h1><small>'+S.name+'</small>泡が<br>なくなった</h1><p>きれい度 '+pct()+'% まで進んだ。</p>';
+    label='もう一度みがく';
+  }else if(kind==='lost'){
+    html='<h1><small>'+S.name+'</small>歯が<br>抜けた</h1><p>虫歯が歯ぐきまで広がってしまった。虫歯の穴は早めに泡を当てて掃除しよう。</p>';
+    label='もう一度みがく';
+  }else{
+    html='<h1><small>全ステージクリア</small>ぜんぶ<br>ピカピカ！</h1><p>全'+STAGES.length+'コースの合計タイムは '+fmt(st.total)+'。</p>';
+    label='最初からあそぶ';
+  }
+  screenEl.innerHTML=html+'<button id="go" type="button">'+label+'</button>'+extra;
+  const rs=document.getElementById('reset');
+  if(rs)rs.addEventListener('click',()=>{wake();screenEl.hidden=true;st.total=0;startStage(0,false);});
+  screenEl.hidden=false;
+  const go=document.getElementById('go');
+  go.addEventListener('click',()=>{
+    wake();screenEl.hidden=true;
+    if(kind==='title')startStage(st.stage,false);
+    else if(kind==='clear')startStage(st.stage+1,true);
+    else if(kind==='over'||kind==='lost')startStage(st.stage,false);
+    else{st.total=0;startStage(0,false);}
+  });
+  try{go.focus({preventScroll:true});}catch(e){}
+}
+
+/* ---------- input ---------- */
+let downX=null;
+function setPad(e){const r=stageEl.getBoundingClientRect();pad.x=clamp((e.clientX-r.left)/r.width*W,pad.w/2,W-pad.w/2);}
+cv.addEventListener('pointermove',e=>{if(st.mode==='ready'||st.mode==='play'||st.mode==='clear')setPad(e);});
+cv.addEventListener('pointerdown',e=>{wake();downX=e.clientX;if(st.mode==='ready'||st.mode==='play')setPad(e);
+  try{cv.setPointerCapture(e.pointerId);}catch(err){}});
+cv.addEventListener('pointerup',e=>{if(canLaunch()&&downX!==null&&Math.abs(e.clientX-downX)<12)launch();downX=null;});
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){keys[e.key]=true;e.preventDefault();}
+  if((e.key===' '||e.code==='Space')&&canLaunch()&&screenEl.hidden){wake();launch();e.preventDefault();}
+});
+window.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+/* ---------- boot ---------- */
+let last=0;
+function frame(t){const dt=Math.min(0.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(frame);}
+function start(data){
+  let saved=0;try{saved=parseInt(localStorage.getItem('hamigaki-stage'),10)||0;}catch(e){}
+  const s=clamp(data&&Number.isInteger(data.stage)?data.stage:saved,0,STAGES.length-1);
+  st.stage=s;st.total=data&&data.total||0;buildStage(s);newBall();st.mode='title';show('title');
+  requestAnimationFrame(frame);
+}
+try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({stage:st.stage,total:st.total}));}catch(e){}
+window.__game={type,cavf,st,STAGES,useItem,startStage,growCavity,get danger(){return dangerD;},get gum(){return gumHurt;},get remaining(){return remaining;},get total(){return total0;},get balls(){return balls;},pad,launch,update};
+if(window.claude&&window.claude.hot&&window.claude.hot.ready)window.claude.hot.ready(start);
+else start((window.claude&&window.claude.hot&&window.claude.hot.data)||{});
+})();
+</script>
+</body>
+</html>

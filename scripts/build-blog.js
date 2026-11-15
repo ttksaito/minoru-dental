@@ -462,6 +462,7 @@ function buildSitemap(allPosts) {
   const staticPages = [
     { loc: `${SITE_URL}/`, lastmod: today, changefreq: 'weekly', priority: '1.0' },
     { loc: `${SITE_URL}/blog.html`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
+    { loc: `${SITE_URL}/hamigaki.html`, lastmod: today, changefreq: 'monthly', priority: '0.5' },
   ];
 
   const entries = [];

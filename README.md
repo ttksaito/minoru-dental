@@ -65,6 +65,7 @@ git push
 ```
 /minoru-dental/
 ├── index.html              # トップページ
+├── hamigaki.html           # お子さま向けミニゲーム「はみがきブレイカー」（歯みがきブロック崩し、単一HTML）
 ├── blog.html               # ブログ一覧ページ（build-blog.jsが生成。直接編集しない）
 ├── blog-posts.json         # 記事メタデータ（build-blog.jsが生成）
 ├── popular-posts.json      # 人気記事ランキング（GitHub Actionsが生成）

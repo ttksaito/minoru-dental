@@ -886,6 +886,97 @@
             margin-top: 30px;
         }
         
+        /* はみがきブレイカー（お子さま向けミニゲーム）の紹介 */
+        .game-promo-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            align-items: center;
+            background: linear-gradient(135deg, #eef9fc 0%, #d9f1f9 100%);
+            border: 2px solid #9fdcf0;
+            border-radius: 16px;
+            padding: 30px 24px;
+        }
+        
+        .game-promo-label {
+            display: inline-block;
+            background: #19b5a5;
+            color: var(--white);
+            font-size: 13px;
+            font-weight: bold;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+        
+        .game-promo-text h2 {
+            font-size: 26px;
+            color: #24406b;
+            margin-bottom: 14px;
+        }
+        
+        .game-promo-text p {
+            font-size: 15px;
+            line-height: 1.9;
+            margin-bottom: 16px;
+        }
+        
+        .game-promo-points {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px;
+            display: grid;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .game-promo-points li::before {
+            content: '✓';
+            color: #19b5a5;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .game-promo-note {
+            font-size: 12px;
+            color: #777;
+            margin-top: 12px;
+        }
+        
+        .game-promo-visual {
+            display: block;
+            width: 180px;
+            margin: 0 auto;
+            order: -1;
+        }
+        
+        .game-promo-visual svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(36, 64, 107, 0.2);
+            transition: transform 0.3s;
+        }
+        
+        .game-promo-visual:hover svg {
+            transform: translateY(-4px);
+        }
+        
+        @media (min-width: 768px) {
+            .game-promo-inner {
+                grid-template-columns: 1fr 220px;
+                padding: 40px;
+            }
+            
+            .game-promo-visual {
+                width: 220px;
+                order: 0;
+            }
+        }
+        
         /* ブログページのためのスタイルも追加 */
         .blog {
             background-color: var(--light-gray);
@@ -1330,6 +1421,7 @@
         var name = /^tel:/i.test(href) ? 'tel_click'
           : /lin\.ee|line\.me/.test(href) ? 'line_click'
           : /google\.[a-z.]+\/maps|maps\.app\.goo\.gl/.test(href) ? 'map_click'
+          : /hamigaki\.html/.test(href) ? 'game_click'
           : null;
         if (!name) return;
         gtag('event', name, {
@@ -1670,6 +1762,42 @@
         </div>
     </section>
 
+    <section id="game" class="game-promo">
+        <div class="game-promo-inner">
+            <div class="game-promo-text">
+                <p class="game-promo-label">お子さま向けミニゲーム</p>
+                <h2>はみがきブレイカー</h2>
+                <p>歯ブラシで泡を打ち返して、歯垢と虫歯をきれいにするブロック崩しゲームです。歯垢を放っておくと虫歯に変わり、歯ぐきまで広がると歯が抜けてしまいます。歯みがきの大切さを、遊びながら体験してみてください。</p>
+                <ul class="game-promo-points">
+                    <li>スマホ・タブレット・パソコンで遊べます</li>
+                    <li>インストール不要・無料</li>
+                    <li>前歯から親知らずまで全6コース</li>
+                </ul>
+                <a href="hamigaki.html" class="cta-button">ゲームであそぶ</a>
+                <p class="game-promo-note">※ 待ち時間やおうちでの歯みがき習慣づくりにお使いください。</p>
+            </div>
+            <a href="hamigaki.html" class="game-promo-visual" aria-hidden="true" tabindex="-1">
+                <svg viewBox="0 0 180 320" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                    <rect width="180" height="320" fill="#9fdcf0"/>
+                    <rect width="180" height="22" fill="#eef9fc"/>
+                    <rect x="20" y="28" width="140" height="22" rx="10" fill="#f59ab0"/>
+                    <path d="M40 40 H140 Q150 110 142 160 Q140 180 118 180 Q100 180 90 162 Q80 180 62 180 Q40 180 38 160 Q30 110 40 40Z" fill="#ffffff"/>
+                    <g fill="#9a7fe0">
+                        <rect x="60" y="90" width="12" height="12"/><rect x="72" y="90" width="12" height="12"/>
+                        <rect x="84" y="102" width="12" height="12"/><rect x="108" y="78" width="12" height="12"/>
+                        <rect x="120" y="90" width="12" height="12"/><rect x="50" y="130" width="12" height="12"/>
+                    </g>
+                    <circle cx="112" cy="130" r="9" fill="#1c1216"/>
+                    <rect x="70" y="200" width="14" height="10" rx="2" fill="#c47830"/>
+                    <circle cx="110" cy="215" r="6" fill="#e83c46"/>
+                    <circle cx="90" cy="262" r="7" fill="#ffffff" stroke="#24406b" stroke-width="2"/>
+                    <rect x="60" y="280" width="60" height="7" rx="2" fill="#ffffff"/>
+                    <rect x="55" y="286" width="70" height="10" rx="5" fill="#19b5a5"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
     <section id="contact" class="contact">
         <div class="section-title">
             <h2>ご予約・お問い合わせ</h2>
@@ -1729,6 +1857,7 @@
                     <li><a href="#info">診療案内</a></li>
                     <li><a href="#services">診療内容</a></li>
                     <li><a href="blog.html">ブログ</a></li>
+                    <li><a href="hamigaki.html">はみがきブレイカー（ゲーム）</a></li>
                     <li><a href="#contact">アクセス</a></li>
                     <li><a href="https://lin.ee/zFdXAeb" target="_blank" rel="noopener noreferrer">公式LINE</a></li>
                 </ul>
