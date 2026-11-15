@@ -143,6 +143,21 @@
   h2 .sub { font-size: 12px; font-weight: 400; color: var(--muted); }
   .grid { display: grid; gap: 12px; }
   .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  /* サマリー: 4 列のグループを縦に並べ、画面の高さいっぱいに広げる */
+  .summary { display: flex; flex-direction: column; gap: 14px; min-height: calc(100vh - 96px); }
+  .sgroup { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .sgroup h3 { font-size: 13px; font-weight: 600; margin: 0 0 8px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+  .sgroup .tiles { flex: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; }
+  .summary .tile { display: flex; flex-direction: column; justify-content: center; padding: 16px 22px; }
+  .summary .tile .label { font-size: 13px; }
+  .summary .tile .value { font-size: clamp(28px, 3vw, 46px); margin: 6px 0 4px; }
+  .summary .tile .delta { font-size: 13px; }
+  @media (max-width: 820px) {
+    .summary { min-height: 0; }
+    .sgroup .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .summary .tile { padding: 12px 14px; }
+    .summary .tile .value { font-size: 26px; }
+  }
   .two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   #trends { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 820px) { #trends { grid-template-columns: minmax(0, 1fr); } }
@@ -311,7 +326,12 @@
 
   <section class="page" data-page="summary">
   <h2>サマリー <span class="sub">直近28日 と 前の28日の比較</span></h2>
-  <div class="grid tiles" id="tiles"></div>
+  <div class="summary" id="summary-groups">
+    <section class="sgroup" data-group="ga"><h3>サイトへの訪問 <span class="tag">GA4</span></h3><div class="grid tiles" id="tiles-ga"></div></section>
+    <section class="sgroup" data-group="gsc"><h3>Google 検索 <span class="tag">Search Console</span></h3><div class="grid tiles" id="tiles-gsc"></div></section>
+    <section class="sgroup" data-group="gbp"><h3>Google マップ <span class="tag">ビジネスプロフィール</span></h3><div class="grid tiles" id="tiles-gbp"></div></section>
+    <section class="sgroup" data-group="ads"><h3>Google 広告 <span class="tag">GA4 連携</span></h3><div class="grid tiles" id="tiles-ads"></div></section>
+  </div>
   </section>
 
   <section class="page" data-page="daily" hidden>
@@ -359,7 +379,8 @@
 
   <section class="page" data-page="pages" hidden>
   <h2>よく見られたページ <span class="tag">GA4</span></h2>
-  <div class="card" id="ga-pages"></div>
+  <div class="card" id="page-map"></div>
+  <div class="card" id="ga-pages" style="margin-top:12px"></div>
 
   <h2>ページの使われ方 <span class="tag">Microsoft Clarity</span> <span class="sub" id="clarity-range"></span></h2>
   <div id="clarity-alert"></div>
@@ -372,7 +393,7 @@
 
   <section class="page" data-page="ads" hidden>
   <h2>Google 広告 <span class="tag">GA4 連携</span></h2>
-  <div class="card" id="ads"></div>
+  <div class="card" id="ads-table"></div>
   </section>
 
   <section class="page" data-page="action" hidden>
@@ -638,10 +659,9 @@ window.HELP = {
     t.appendChild(d);
     return t;
   }
-  const tiles = $('#tiles');
   if (ga) {
     const c = ga.summary.current, p = ga.summary.previous;
-    tiles.append(
+    $('#tiles-ga').append(
       tile('ユーザー数', fmtInt(c.users), '人', c.users, p.users, { help: 'users' }),
       tile('セッション（訪問回数）', fmtInt(c.sessions), '回', c.sessions, p.sessions, { help: 'sessions' }),
       tile('ページ表示回数', fmtInt(c.pageViews), '回', c.pageViews, p.pageViews, { help: 'pageViews' }),
@@ -650,7 +670,7 @@ window.HELP = {
   }
   if (gsc) {
     const c = gsc.current, p = gsc.previous;
-    tiles.append(
+    $('#tiles-gsc').append(
       tile('検索クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'gscClicks' }),
       tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions' }),
       tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr' }),
@@ -659,11 +679,17 @@ window.HELP = {
   }
   if (ads && ads.linked) {
     const c = ads.current, p = ads.previous;
-    tiles.append(
+    const camp = ads.campaigns || [];
+    const sumK = (k) => camp.reduce((a, r) => a + (r[k] || 0), 0);
+    $('#tiles-ads').append(
       tile('広告費', fmtYen(c.cost), '', c.cost, p.cost, { fmtPrev: fmtYen, help: 'adCost' }),
-      tile('広告クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'adClicks' })
+      tile('広告クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'adClicks' }),
+      tile('クリック単価', c.clicks ? fmtYen(c.cost / c.clicks) : '–', '', c.clicks ? c.cost / c.clicks : null, p.clicks ? p.cost / p.clicks : null, { lowerIsBetter: true, fmtPrev: fmtYen, help: 'cpc' }),
+      tile('広告からのキーイベント', fmtInt(sumK('keyEvents')), '件', null, null, { na: '直近28日の合計', help: 'keyEvent' })
     );
   }
+  // データのないグループは外す（マップはあとで renderGbp が入れる）
+  const pruneSummary = () => document.querySelectorAll('.sgroup').forEach((g) => { if (!g.querySelector('.tile')) g.remove(); });
 
   // ---------------------------------------------------------- charts
   const W = 520, H0 = 200, PAD = { t: 10, r: 14, b: 26, l: 40 };
@@ -1017,6 +1043,12 @@ window.HELP = {
       return;
     }
     const c = gbp.current, p = gbp.previous;
+    $('#tiles-gbp').append(
+      tile('マップから電話', fmtInt(c.calls), '件', c.calls, p.calls, { help: 'gbpCalls' }),
+      tile('経路を検索', fmtInt(c.directions), '件', c.directions, p.directions, { help: 'directions' }),
+      tile('マップからサイトへ', fmtInt(c.websiteClicks), '件', c.websiteClicks, p.websiteClicks, { help: 'gbpWebsite' }),
+      tile('マップでの表示', fmtInt(c.impressionsMaps), '回', c.impressionsMaps, p.impressionsMaps, { help: 'gbpMaps' })
+    );
     $('#gbp-range').textContent = `${gbp.range.start} 〜 ${gbp.range.end}（マップのデータは3日ほど遅れて確定します）`;
     tilesBox.append(
       tile('マップから電話', fmtInt(c.calls), '件', c.calls, p.calls, { help: 'gbpCalls' }),
@@ -1043,6 +1075,7 @@ window.HELP = {
       kwBox.appendChild(el('div', 'empty', 'キーワードのデータがありません'));
     }
   })();
+  pruneSummary();
 
   // ---------------------------------------------------------- サンキー図（チャネル → 着地ページ → 成果）
   (function renderFlow() {
@@ -1216,19 +1249,15 @@ window.HELP = {
     box.appendChild(det);
   }
 
-  // ---------------------------------------------------------- 検索キーワードのツリーマップ
-  (function renderQueryMap() {
-    const card = $('#query-map');
-    if (!gsc || !gsc.queries || !gsc.queries.length) { card.remove(); return; }
-    const groups = [
-      { key: 'brand', label: '医院名で検索（指名）', test: /みのる|minoru|ミノル/i, color: '#388e3c' },
-      { key: 'area', label: '地域名入り', test: /東松山|ひがしまつやま|比企|滑川|吉見|嵐山|小川町|川島|鳩山|ときがわ|坂戸|川越|熊谷|森林公園|高坂|埼玉/, color: '#2a78d6' },
-      { key: 'general', label: '症状・疑問など一般', test: /./, color: '#eb6834' },
-    ];
-    const groupOf = (q) => groups.find((g) => g.test.test(q)) || groups[2];
-    // CTR が高いほど濃く。「表示は多いのにクリックされない」語が薄く見える
-    const alpha = (ctr) => (ctr <= 0 ? 0.14 : ctr < 0.02 ? 0.3 : ctr < 0.05 ? 0.48 : ctr < 0.1 ? 0.66 : 0.86);
+  // ---------------------------------------------------------- ツリーマップ（検索キーワード・ページで共用）
+  // cfg: title, help, desc, items, groups[{key,label,color,test(item)}], modes[[key,label]], alpha(item), name(item), sub(item),
+  //      tipRows(item) → [[label, value]], ramp {label, samples:[alpha…]}, fold(rest) → まとめ item, note(shown, folded, mode)
+  function renderTreemap(card, cfg) {
     const hex2rgba = (hex, a) => `rgba(${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)},${a})`;
+    // groups を省略すると分類なし（1 つの平らな地図）
+    const flat = !cfg.groups;
+    if (flat) cfg.groups = [{ key: 'all', label: '', color: cfg.color || '#2a78d6', test: () => true }];
+    const groupOf = (it) => cfg.groups.find((g) => g.test(it)) || cfg.groups[cfg.groups.length - 1];
 
     // squarified treemap: items は value 降順。rect {x,y,w,h} に敷き詰めて各 item に x,y,w,h を付ける
     const squarify = (items, rect) => {
@@ -1265,45 +1294,48 @@ window.HELP = {
       if (row.length) layoutRow();
     };
 
-    card.replaceChildren(h3('検索キーワードの地図', 'gscImpressions'), el('p', 'desc', '面積は、その言葉で検索されたときに当院のサイトが検索結果に表示された回数。色が濃いほどクリックされている（CTR が高い）。大きいのに薄い言葉は「見つかっているのに選ばれていない」ので、タイトルや記事の見直し候補です。'));
-    const f = el('div', 'filters');
-    f.appendChild(el('span', 'lbl', '面積'));
-    const seg = el('div', 'seg'); seg.setAttribute('role', 'group');
-    const modes = [['impressions', '表示回数'], ['clicks', 'クリック数']];
-    let mode = 'impressions';
-    for (const [k, lbl] of modes) {
-      const b = el('button', null, lbl); b.type = 'button'; b.setAttribute('aria-pressed', String(k === mode));
-      b.addEventListener('click', () => { mode = k; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); });
-      seg.appendChild(b);
+    card.replaceChildren(h3(cfg.title, cfg.help), el('p', 'desc', cfg.desc));
+    let mode = cfg.modes[0][0];
+    if (cfg.modes.length > 1) {
+      const f = el('div', 'filters');
+      f.appendChild(el('span', 'lbl', '面積'));
+      const seg = el('div', 'seg'); seg.setAttribute('role', 'group');
+      for (const [k, lbl] of cfg.modes) {
+        const b = el('button', null, lbl); b.type = 'button'; b.setAttribute('aria-pressed', String(k === mode));
+        b.addEventListener('click', () => { mode = k; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+        seg.appendChild(b);
+      }
+      f.appendChild(seg); card.appendChild(f);
     }
-    f.appendChild(seg); card.appendChild(f);
     const box = el('div', 'tm'); card.appendChild(box);
     const tip = el('div', 'tip'); box.appendChild(tip);
     const legend = el('div', 'tm-legend');
-    for (const g of groups) { const sp = el('span'); const sw = el('i', 'sw'); sw.style.background = hex2rgba(g.color, 0.6); sp.append(sw, g.label); legend.appendChild(sp); }
-    const ramp = el('span'); ramp.append('CTR 低'); const r = el('span', 'ramp'); [0, 0.01, 0.03, 0.07, 0.12].forEach((c) => { const i = el('i'); i.style.background = hex2rgba('#2a78d6', alpha(c)); r.appendChild(i); }); ramp.append(r, '高'); legend.appendChild(ramp);
+    if (!flat) for (const g of cfg.groups) { const sp = el('span'); const sw = el('i', 'sw'); sw.style.background = hex2rgba(g.color, 0.6); sp.append(sw, g.label); legend.appendChild(sp); }
+    if (cfg.ramp) {
+      const ramp = el('span'); ramp.append(cfg.ramp.label + ' ' + (cfg.ramp.low || '少')); const r = el('span', 'ramp');
+      cfg.ramp.samples.forEach((a) => { const i = el('i'); i.style.background = hex2rgba('#2a78d6', a); r.appendChild(i); });
+      ramp.append(r, cfg.ramp.high || '多'); legend.appendChild(ramp);
+    }
     card.appendChild(legend);
     const note = el('p', 'desc'); note.style.marginTop = '6px'; card.appendChild(note);
 
-    const MAX_PER_GROUP = 40;
+    const MAX_PER_GROUP = cfg.maxPerGroup || 40;
     const draw = () => {
       box.querySelectorAll('.g').forEach((e) => e.remove());
       const W = box.clientWidth, H = box.clientHeight;
       if (!W) return;
-      const gs = groups.map((g) => ({ g, items: [] }));
-      for (const q of gsc.queries) {
+      const gs = cfg.groups.map((g) => ({ g, items: [] }));
+      for (const q of cfg.items) {
         const v = q[mode] || 0;
         if (v <= 0) continue;
-        gs.find((x) => x.g === groupOf(q.query)).items.push({ q, value: v });
+        gs.find((x) => x.g === groupOf(q)).items.push({ q, value: v });
       }
       let folded = 0;
       for (const x of gs) {
         x.items.sort((a, b) => b.value - a.value);
-        if (x.items.length > MAX_PER_GROUP) {
-          const rest = x.items.splice(MAX_PER_GROUP);
-          const sum = (k) => rest.reduce((a, i) => a + (i.q[k] || 0), 0);
-          const clicks = sum('clicks'), imps = sum('impressions');
-          x.items.push({ value: rest.reduce((a, i) => a + i.value, 0), q: { query: `その他 ${rest.length} 語`, clicks, impressions: imps, ctr: imps ? clicks / imps : 0, position: null }, rest: true });
+        if (cfg.fold && x.items.length > MAX_PER_GROUP) {
+          const rest = x.items.splice(MAX_PER_GROUP).map((i) => i.q);
+          x.items.push({ value: rest.reduce((a, q) => a + (q[mode] || 0), 0), q: cfg.fold(rest), rest: true });
           folded += rest.length;
         }
         x.value = x.items.reduce((a, i) => a + i.value, 0);
@@ -1313,25 +1345,23 @@ window.HELP = {
       squarify(live, { x: 0, y: 0, w: W, h: H });
       for (const x of live) {
         const gEl = el('div', 'g');
-        gEl.style.cssText = `left:${x.x}px;top:${x.y}px;width:${x.w}px;height:${x.h}px;background:${hex2rgba(x.g.color, 0.08)}`;
-        const showHead = x.h > 40 && x.w > 60;
+        gEl.style.cssText = `left:${x.x}px;top:${x.y}px;width:${x.w}px;height:${x.h}px;background:${hex2rgba(x.g.color, 0.08)}` + (flat ? ';border:0;border-radius:0' : '');
+        const showHead = !flat && x.h > 40 && x.w > 60;
         if (showHead) gEl.appendChild(el('div', 'gh', `${x.g.label}（${fmtInt(x.value)}）`));
         const top = showHead ? 22 : 0;
-        squarify(x.items, { x: 0, y: top, w: x.w - 4, h: x.h - top - 4 });
+        squarify(x.items, { x: 0, y: top, w: x.w - (flat ? 0 : 4), h: x.h - top - (flat ? 0 : 4) });
         for (const it of x.items) {
           const n = el('div', 'n');
-          const al = alpha(it.q.ctr || 0);
+          const al = cfg.alpha(it.q);
           n.style.cssText = `left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;background:${hex2rgba(x.g.color, al)}`;
           if (al >= 0.66) n.classList.add('dk'); // 濃い色の上は白文字
           if (it.w > 44 && it.h > 18) {
-            n.appendChild(el('b', null, it.q.query));
-            if (it.h > 34 && it.w > 70) n.appendChild(el('small', null, `${fmtInt(it.q.clicks)} クリック / ${fmtInt(it.q.impressions)} 表示`));
+            n.appendChild(el('b', null, cfg.name(it.q)));
+            if (it.h > 34 && it.w > 70) n.appendChild(el('small', null, cfg.sub(it.q)));
           }
           n.addEventListener('pointerenter', () => {
-            tip.replaceChildren(el('div', 'd', it.q.query));
-            const row = (k, v) => { const r = el('div', 'row'); r.append(el('span', null, k), el('b', null, v)); tip.appendChild(r); };
-            row('クリック', fmtInt(it.q.clicks)); row('表示回数', fmtInt(it.q.impressions)); row('CTR', fmtPct(it.q.ctr || 0));
-            if (it.q.position != null) row('平均順位', it.q.position.toFixed(1) + ' 位');
+            tip.replaceChildren(el('div', 'd', cfg.name(it.q)));
+            for (const [k, v] of cfg.tipRows(it.q)) { const r = el('div', 'row'); r.append(el('span', null, k), el('b', null, v)); tip.appendChild(r); }
             tip.style.display = 'block';
           });
           n.addEventListener('pointermove', (ev) => {
@@ -1347,11 +1377,61 @@ window.HELP = {
         box.appendChild(gEl);
       }
       const shown = live.reduce((a, x) => a + x.items.filter((i) => !i.rest).length, 0);
-      note.textContent = `${mode === 'clicks' ? 'クリックがあった' : '表示があった'}キーワード ${shown + folded} 語${folded ? `（各グループ上位 ${MAX_PER_GROUP} 語まで表示、残りは「その他」にまとめています）` : ''}。分類はキーワードに含まれる言葉で自動的に分けています。`;
+      note.textContent = cfg.note(shown, folded, mode, MAX_PER_GROUP);
     };
     draw();
     let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(draw, 150); });
-    window.addEventListener('hashchange', () => { if (location.hash === '#search') setTimeout(draw, 30); });
+    window.addEventListener('hashchange', () => { if (location.hash === cfg.hash) setTimeout(draw, 30); });
+  }
+
+  // 検索キーワードの地図
+  (function () {
+    const card = $('#query-map');
+    if (!gsc || !gsc.queries || !gsc.queries.length) { card.remove(); return; }
+    // CTR が高いほど濃く。「表示は多いのにクリックされない」語が薄く見える
+    const alpha = (ctr) => (ctr <= 0 ? 0.14 : ctr < 0.02 ? 0.3 : ctr < 0.05 ? 0.48 : ctr < 0.1 ? 0.66 : 0.86);
+    renderTreemap(card, {
+      hash: '#search', title: '検索キーワードの地図', help: 'gscImpressions',
+      desc: '面積は、その言葉で検索されたときに当院のサイトが検索結果に表示された回数。色が濃いほどクリックされている（CTR が高い）。大きいのに薄い言葉は「見つかっているのに選ばれていない」ので、タイトルや記事の見直し候補です。',
+      items: gsc.queries,
+      modes: [['impressions', '表示回数'], ['clicks', 'クリック数']],
+      alpha: (q) => alpha(q.ctr || 0),
+      name: (q) => q.query,
+      sub: (q) => `${fmtInt(q.clicks)} クリック / ${fmtInt(q.impressions)} 表示`,
+      tipRows: (q) => [['クリック', fmtInt(q.clicks)], ['表示回数', fmtInt(q.impressions)], ['CTR', fmtPct(q.ctr || 0)], ...(q.position != null ? [['平均順位', q.position.toFixed(1) + ' 位']] : [])],
+      ramp: { label: 'CTR', low: '低', high: '高', samples: [0, 0.01, 0.03, 0.07, 0.12].map(alpha) },
+      fold: (rest) => { const clicks = rest.reduce((a, q) => a + q.clicks, 0), imps = rest.reduce((a, q) => a + q.impressions, 0); return { query: `その他 ${rest.length} 語`, clicks, impressions: imps, ctr: imps ? clicks / imps : 0, position: null }; },
+      maxPerGroup: 80,
+      note: (shown, folded, mode, max) => `${mode === 'clicks' ? 'クリックがあった' : '表示があった'}キーワード ${shown + folded} 語${folded ? `（上位 ${max} 語まで表示、残りは「その他」にまとめています）` : ''}。`,
+    });
+  })();
+
+  // ページの地図（よく見られたページ）
+  (function () {
+    const card = $('#page-map');
+    if (!ga || !ga.pages || !ga.pages.length) { card.remove(); return; }
+    const norm = (p) => (p || '').replace(/[?#].*$/, '').replace(/\/index\.html$/, '/').replace(/\/$/, '') || '/';
+    const gscByPath = new Map();
+    if (gsc && gsc.pages) for (const r of gsc.pages) gscByPath.set(norm(r.page), r);
+    const search = (p) => gscByPath.get(norm(p.path));
+    const hasGsc = gscByPath.size > 0;
+    // 検索からのクリックが多いほど濃く
+    const alpha = (clicks) => (!hasGsc ? 0.5 : clicks <= 0 ? 0.14 : clicks < 3 ? 0.3 : clicks < 10 ? 0.48 : clicks < 30 ? 0.66 : 0.86);
+    const clean = (t) => (t || '').replace(/\s*[|｜-]\s*みのる歯科.*$/, '').trim();
+    renderTreemap(card, {
+      hash: '#pages', title: 'ページの地図', help: 'pageViews',
+      desc: '面積はページが見られた回数（直近28日）。' + (hasGsc ? '色が濃いほど Google 検索からクリックされて来た回数が多いページ。大きいのに薄いページは、検索以外（広告・直接・リンク）で見られています。' : ''),
+      items: ga.pages,
+      modes: [['pageViews', '表示回数'], ['users', 'ユーザー数']],
+      alpha: (p) => alpha((search(p) || {}).clicks || 0),
+      name: (p) => clean(p.title) || p.path,
+      sub: (p) => `${fmtInt(p.pageViews)} 表示 / ${fmtInt(p.users)} 人`,
+      tipRows: (p) => { const g = search(p) || {}; return [['パス', p.path], ['表示回数', fmtInt(p.pageViews)], ['ユーザー', fmtInt(p.users)], ...(hasGsc ? [['検索クリック', fmtInt(g.clicks || 0)], ['検索表示', fmtInt(g.impressions || 0)], ...(g.position != null ? [['平均順位', g.position.toFixed(1) + ' 位']] : [])] : [])]; },
+      ramp: hasGsc ? { label: '検索クリック', samples: [0, 1, 5, 15, 40].map(alpha) } : null,
+      fold: (rest) => ({ path: '', title: `その他 ${rest.length} ページ`, pageViews: rest.reduce((a, p) => a + p.pageViews, 0), users: rest.reduce((a, p) => a + p.users, 0) }),
+      maxPerGroup: 60,
+      note: (shown, folded, mode, max) => `${mode === 'users' ? 'ユーザー' : '表示'}があったページ ${shown + folded} ページ${folded ? `（上位 ${max} ページまで表示、残りは「その他」にまとめています）` : ''}。`,
+    });
   })();
 
   if (gsc) {
@@ -1475,7 +1555,7 @@ window.HELP = {
     box.appendChild(lg);
   })();
 
-  const adsBox = $('#ads');
+  const adsBox = $('#ads-table');
   if (!ads) {
     adsBox.appendChild(el('div', 'empty', 'GA4 のデータがありません'));
   } else if (!ads.linked) {
