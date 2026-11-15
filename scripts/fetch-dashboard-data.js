@@ -171,6 +171,7 @@ async function fetchGa4() {
       { name: 'activeUsers' },
       { name: 'sessions' },
       { name: 'screenPageViews' },
+      { name: 'engagementRate' },
     ],
     orderBys: [{ dimension: { dimensionName: 'date' } }],
     limit: 1000,
@@ -181,8 +182,9 @@ async function fetchGa4() {
       users: r.activeUsers,
       sessions: r.sessions,
       pageViews: r.screenPageViews,
+      engagementRate: r.engagementRate,
     })),
-    daysAgo(SERIES_DAYS - 1), daysAgo(0), { users: 0, sessions: 0, pageViews: 0 }
+    daysAgo(SERIES_DAYS - 1), daysAgo(0), { users: 0, sessions: 0, pageViews: 0, engagementRate: 0 }
   );
 
   // 3) 流入チャネル（今期 vs 前期）
