@@ -87,7 +87,8 @@ git push
 │   ├── fetch-popular-posts.js  # GA4人気記事集計（GitHub Actionsから実行）
 │   ├── fetch-dashboard-data.js # ダッシュボード用データ集計（GitHub Actionsから実行）
 │   ├── decrypt-dashboard-data.js # ダッシュボードデータのローカル復号
-│   └── make-thumbnail.js       # 記事の仮サムネイル生成（Chrome が必要）
+│   ├── make-thumbnail.js       # 記事の仮サムネイル生成（Chrome が必要）
+│   └── patch-hamigaki.js       # ゲーム差し替え後にサイト連携分（meta・GA4・戻るリンク等）を再適用
 ├── blog/                   # 生成された記事ページ（ビルド成果物）
 │   ├── [記事ID]/
 │   │   ├── index.html      # 記事本文（build-blog.jsが生成。直接編集しない）
@@ -111,6 +112,16 @@ git push
 ├── package.json
 └── TODO.md                 # サイト改善・集客施策のタスク管理
 ```
+
+## ミニゲーム「はみがきブレイカー」の更新
+
+`hamigaki.html` はゲーム本体を外部（AI のアーティファクトなど）で編集して丸ごと貼り替える運用です。貼り替えると、サイト連携のために追記してある部分（meta・OGP・GA4 タグ・左上の「← みのる歯科」リンク・タッチ端末での全画面化・iPhone 向け案内）が消えるので、差し替えたら必ず次を実行してください（何度実行しても安全です）。
+
+```bash
+npm run patch:game
+```
+
+実行結果に出るコース数が変わっていたら、`index.html` のゲーム紹介にある「全Nコース」の表記も合わせて直します。
 
 ## ブログの管理
 

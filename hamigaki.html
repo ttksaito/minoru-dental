@@ -339,7 +339,7 @@ const st={stage:0,lives:3,mode:'title',time:0,total:0,score:0,scoreStart:0,best:
 try{st.best=parseInt(localStorage.getItem('hamigaki-best'),10)||0;}catch(e){}
 function addScore(n){st.score+=n;}
 function saveBest(){if(st.score>st.best){st.best=st.score;try{localStorage.setItem('hamigaki-best',String(st.best));}catch(e){}}}
-const GUM_MAX=16;let gumHurt=0,gumHit=false,gumTold=false,gumRest=0,gumKick=0,wobT=9,wobDir=1,gumDropT=30,fakeT=38,lostWhy='decay';
+const GUM_MAX=8;let gumHurt=0,gumHit=false,gumTold=false,gumRest=0,gumKick=0,gumCool=0,wobT=9,wobDir=1,gumDropT=30,fakeT=38,lostWhy='decay';
 const pad={x:W/2,w:64};
 let balls=[],items=[],parts=[],bigT=0,aimT=0,growT=0,candyT=25,winceT=0,shake=0,flossT=0,fastT=0,slowT=0,holdT=0,wideT=0,freezeT=0,rotT=0,dangerD=99,dangerTold=false,dangerT=0,falling=false,fallT=0,
     msg={text:'',t:0},growTold=false,clearT=0,fillList=[],keys={};
@@ -348,7 +348,7 @@ function newBall(){balls=[{x:pad.x,y:PADY-4,vx:0,vy:-1,r:3,stuck:true,idle:0}];}
 function startStage(i,keepLives){
   st.stage=i;if(!keepLives)st.lives=3;st.time=0;st.scoreStart=st.score;buildStage(i);
   try{localStorage.setItem('hamigaki-stage',String(i));}catch(e){}
-  items=[];parts=[];bigT=0;growT=0;gumKick=0;wobT=9;gumDropT=22;fakeT=38;candyT=25;flossT=0;fastT=0;slowT=0;holdT=0;wideT=0;freezeT=0;rotT=0;dangerD=99;dangerTold=false;dangerT=0;falling=false;fallT=0;pad.w=64;fillQ.length=0;sealTold=false;fizzQ.length=0;fizzBudget=0;growTold=false;msg.t=0;gumHurt=0;gumRest=0;
+  items=[];parts=[];bigT=0;growT=0;gumKick=0;gumCool=0;wobT=9;gumDropT=10;fakeT=38;candyT=25;flossT=0;fastT=0;slowT=0;holdT=0;wideT=0;freezeT=0;rotT=0;dangerD=99;dangerTold=false;dangerT=0;falling=false;fallT=0;pad.w=64;fillQ.length=0;sealTold=false;fizzQ.length=0;fizzBudget=0;growTold=false;msg.t=0;gumHurt=0;gumRest=0;
   pad.x=W/2;newBall();st.mode='ready';aimT=0;
 }
 function pct(){return clamp(Math.floor((1-remaining/total0)*100),0,99);}
@@ -486,7 +486,7 @@ function useItem(kind){
   else if(kind==='W'){wideT+=14;tone(440,0.25,'triangle',0.05,440);}
   else if(kind==='M'){freezeT+=10;tone(880,0.35,'triangle',0.05,400);}
   else if(kind==='B'){drillTooth();if(!RM)shake=0.35;winceT=0.8;tone(140,0.4,'sawtooth',0.06,-70);}
-  else if(kind==='G'){if(gumHurt>0){gumHurt=Math.max(0,gumHurt-8);applyGum();}else addScore(50);tone(620,0.3,'triangle',0.05,300);}
+  else if(kind==='G'){if(gumHurt>0){gumHurt=Math.max(0,gumHurt-4);applyGum();}else addScore(50);tone(620,0.3,'triangle',0.05,300);}
   else{addPlaque(80);spawnFood(2);if(!RM)shake=0.35;tone(200,0.3,'sawtooth',0.06,-120);}
 }
 
@@ -534,7 +534,7 @@ function moveBall(b,dt){
     let ny=b.y+b.vy*s;
     if(ny<GY+b.r){ny=GY+b.r;b.vy=Math.abs(b.vy);}
     if(hitCells(b,b.x,ny)&&!free){b.vy=-b.vy;wobT=0;}else b.y=ny;
-    if(gumHit&&!free&&!(b.gumCd>0)){b.gumCd=1;hurtGum();}
+    if(gumHit&&!free&&gumCool<=0){gumCool=3;hurtGum();}
     if(b.vy>0&&b.y+b.r>=PADY&&b.y+b.r<=PADY+12&&Math.abs(b.x-pad.x)<=pad.w/2+b.r){
       if(holdT>0){b.stuck=true;b.off=clamp(b.x-pad.x,-pad.w/2,pad.w/2);b.idle=0;tone(360,0.06,'triangle',0.05);return;}
       const o=clamp((b.x-pad.x)/(pad.w/2),-1,1),a=-Math.PI/2+o*1.1;
@@ -548,13 +548,13 @@ function moveBall(b,dt){
 }
 // sway angle in degrees for the number of gum hits so far
 function wobbleDeg(){const h=gumHurt;
-  return h<3?0:h<=5?0.7+(h-3)*0.25:h<=10?1.2+(h-5)*0.12:1.8+(h-10)*0.12;}
+  return h<3?0:h<=5?0.7:h<=7?1.2:1.8;}
 function hurtGum(){
   gumHurt++;gumRest=0;applyGum();winceT=0.4;tone(150,0.09,'sawtooth',0.05,-40);
   if(gumHurt>=GUM_MAX){lostWhy='gum';toothLost();}
   else if(!gumTold){gumTold=true;say('歯ぐきに当てるとやせて、歯がぐらつく');}
   else if(gumHurt===3)say('歯がぐらつきはじめた');
-  else if(gumHurt===GUM_MAX-4)say('歯ぐきがやせて、歯が抜けそう');
+  else if(gumHurt===GUM_MAX-2)say('歯ぐきがやせて、歯が抜けそう');
 }
 function launch(){
   const a=aimAngle();let any=false;
@@ -680,11 +680,11 @@ function update(dt){
     for(let k=0;k<N;k++)if(type[k]===DECAY&&cavf[k]&&gumDist[k]<dangerD)dangerD=gumDist[k];
     if(dangerD<=12&&!dangerTold){dangerTold=true;say('虫歯が歯ぐきに近づいている');}
     if(dangerD>16)dangerTold=false;}
-  wobT+=dt;
+  wobT+=dt;if(gumCool>0)gumCool-=dt;
   fakeT-=dt;if(fakeT<=0){fakeT=30+Math.random()*16;items.push({x:24+Math.random()*(W-48),y:GY+4,kind:'B',vy:80});}
-  gumDropT-=dt;if(gumDropT<=0){if(gumHurt>0){gumDropT=20+Math.random()*10;items.push({x:24+Math.random()*(W-48),y:GY+4,kind:'G',vy:80});}else gumDropT=5;}
+  gumDropT-=dt;if(gumDropT<=0){if(gumHurt>0){gumDropT=12+Math.random()*6;items.push({x:24+Math.random()*(W-48),y:GY+4,kind:'G',vy:80});}else gumDropT=5;}
   candyT-=dt;if(candyT<=0){candyT=22+Math.random()*12;items.push({x:24+Math.random()*(W-48),y:GY+4,kind:'A',vy:80});}
-  if(remaining<=Math.max(12,total0*0.07)&&cavLeft()<=Math.max(6,cav0*0.06)){win();return;}
+  if(remaining<=Math.max(12,total0*0.10)&&cavLeft()<=Math.max(6,cav0*0.06)){win();return;}
   if(!balls.length){
     st.lives--;bigT=0;flossT=0;tone(300,0.4,'sawtooth',0.06,-220);if(!RM)shake=0.3;
     if(st.lives<=0){st.mode='over';show('over');}
@@ -799,8 +799,8 @@ function draw(){
   // gum gauge on the gum itself: one block per hit left; a gap sits wherever the sway angle steps up
   {const left=GUM_MAX-gumHurt;let x=8;const y=GY+6;
     for(let i=0;i<GUM_MAX;i++){const hitNo=GUM_MAX-i; // the hit that removes this block
-      ctx.fillStyle=i<left?'#ffffff':'rgba(110,24,56,.3)';ctx.fillRect(x,y,8,12);
-      x+=10;if(hitNo===15||hitNo===10||hitNo===5||hitNo===3)x+=6;}}
+      ctx.fillStyle=i<left?'#ffffff':'rgba(110,24,56,.3)';ctx.fillRect(x,y,13,12);
+      x+=15;if(hitNo===8||hitNo===6||hitNo===3)x+=7;}}
   for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(262+i*17,18,5.5,0,7);
     if(i<st.lives){ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#168f86';ctx.lineWidth=2;ctx.stroke();}
     else{ctx.strokeStyle='#a9c6d6';ctx.lineWidth=1.5;ctx.stroke();}}
