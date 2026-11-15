@@ -19,6 +19,8 @@
  *                       （トークンに business.manage スコープが必要。サービスアカウントを店舗の管理者に追加しておく）
  *   DASHBOARD_PASSWORD … 指定すると dashboard/data.enc に暗号化して書き出す（公開リポジトリ向け）。
  *                        未指定なら dashboard/data.json に平文で書く（ローカル確認用）
+ *   CLARITY_API_TOKEN … Microsoft Clarity の Data Export API トークン。指定すると前日分の
+ *                        使われ方（スクロール深度・怒りクリック等）を取得し、履歴として蓄積する
  */
 
 const fs = require('fs');
@@ -664,6 +666,72 @@ async function fetchGbp() {
   return { locationId, range: { start: curStart, end }, previousRange: { start: prevStart, end: prevEnd }, current, previous, daily, keywords };
 }
 
+// ---------------------------------------------------------------- Microsoft Clarity（使われ方）
+
+const CLARITY_TOKEN = process.env.CLARITY_API_TOKEN || '';
+const CLARITY_HISTORY_DAYS = 90;
+
+/** 前回の出力（暗号化済み）から Clarity の履歴を取り出す。Data Export API は直近 1〜3 日分しか返さないため */
+function loadPreviousClarityHistory() {
+  try {
+    if (PASSWORD && fs.existsSync(ENCRYPTED_PATH)) {
+      const pkg = JSON.parse(fs.readFileSync(ENCRYPTED_PATH, 'utf8'));
+      const key = crypto.pbkdf2Sync(PASSWORD, Buffer.from(pkg.salt, 'base64'), pkg.iterations, 32, 'sha256');
+      const buf = Buffer.from(pkg.data, 'base64');
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(pkg.iv, 'base64'));
+      decipher.setAuthTag(buf.subarray(buf.length - 16));
+      const prev = JSON.parse(Buffer.concat([decipher.update(buf.subarray(0, buf.length - 16)), decipher.final()]).toString('utf8'));
+      return (prev.clarity && prev.clarity.history) || [];
+    }
+    if (!PASSWORD && fs.existsSync(OUTPUT_PATH)) {
+      const prev = JSON.parse(fs.readFileSync(OUTPUT_PATH, 'utf8'));
+      return (prev.clarity && prev.clarity.history) || [];
+    }
+  } catch (e) {
+    console.warn(`Clarity の履歴を読めませんでした（新規に開始）: ${e.message.slice(0, 120)}`);
+  }
+  return [];
+}
+
+async function fetchClarity() {
+  // 前日 1 日分のスナップショット（API の上限は 1 日 10 回・最大 3 日分）
+  const res = await fetch('https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=1', {
+    headers: { Authorization: `Bearer ${CLARITY_TOKEN}`, Accept: 'application/json' },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Clarity API ${res.status}: ${text.slice(0, 300)}`);
+  const arr = JSON.parse(text);
+  const get = (name) => (arr.find((m) => m.metricName === name) || {}).information || [];
+  const first = (name) => get(name)[0] || {};
+  const num = (v) => (v == null || v === '' ? 0 : Number(v));
+  const traffic = first('Traffic');
+  const snapshot = {
+    date: daysAgo(1),
+    sessions: num(traffic.totalSessionCount),
+    botSessions: num(traffic.totalBotSessionCount),
+    users: num(traffic.distinctUserCount),
+    pagesPerSession: num(traffic.PagesPerSessionPercentage),
+    scrollDepth: num(first('ScrollDepth').averageScrollDepth),
+    engagementActiveSec: num(first('EngagementTime').activeTime),
+    engagementTotalSec: num(first('EngagementTime').totalTime),
+    deadClicks: num(first('DeadClickCount').subTotal),
+    rageClicks: num(first('RageClickCount').subTotal),
+    quickBacks: num(first('QuickbackClick').subTotal),
+    excessiveScroll: num(first('ExcessiveScroll').subTotal),
+    scriptErrors: num(first('ScriptErrorCount').subTotal),
+    errorClicks: num(first('ErrorClickCount').subTotal),
+  };
+  // 人気ページ・流入元・端末などの内訳（ある分だけ）
+  const breakdown = {
+    pages: get('PopularPages').slice(0, 10).map((x) => ({ url: x.Url, visits: num(x.visitsCount) })),
+    devices: get('Device').map((x) => ({ device: x.Device, sessions: num(x.sessionsCount) })),
+    referrers: get('ReferrerUrl').slice(0, 10).map((x) => ({ referrer: x.ReferrerURL, sessions: num(x.sessionsCount) })),
+  };
+  const prev = loadPreviousClarityHistory().filter((h) => h.date !== snapshot.date);
+  const history = [...prev, snapshot].sort((a, b) => a.date.localeCompare(b.date)).slice(-CLARITY_HISTORY_DAYS);
+  return { latest: snapshot, breakdown, history };
+}
+
 // ---------------------------------------------------------------- main
 
 async function main() {
@@ -679,6 +747,7 @@ async function main() {
     ga4: null,
     gsc: null,
     gbp: null,
+    clarity: null,
     errors: {},
   };
 
@@ -726,6 +795,20 @@ async function main() {
   } catch (e) {
     console.error(`ビジネスプロフィールの取得に失敗: ${e.message}`);
     output.errors.gbp = e.message.slice(0, 500);
+  }
+
+  if (CLARITY_TOKEN) {
+    console.log('Microsoft Clarity からデータを取得中...');
+    try {
+      output.clarity = await fetchClarity();
+      console.log(`  前日: セッション ${output.clarity.latest.sessions} / スクロール深度 ${output.clarity.latest.scrollDepth}% / 怒りクリック ${output.clarity.latest.rageClicks}（履歴 ${output.clarity.history.length} 日分）`);
+    } catch (e) {
+      console.error(`Clarity の取得に失敗: ${e.message}`);
+      output.errors.clarity = e.message.slice(0, 500);
+      // 失敗しても履歴は失わない
+      const history = loadPreviousClarityHistory();
+      if (history.length) output.clarity = { latest: history[history.length - 1], breakdown: null, history };
+    }
   }
 
   if (!output.ga4 && !output.gsc) {

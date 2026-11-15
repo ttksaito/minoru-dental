@@ -24,6 +24,7 @@
     --good: #006300;
     --bad: #d03b3b;
     --tip-bg: #ffffff;
+    --marker: #8a5cf6;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -44,6 +45,7 @@
       --good: #0ca30c;
       --bad: #e66767;
       --tip-bg: #262624;
+      --marker: #a78bfa;
     }
   }
   * { box-sizing: border-box; }
@@ -107,6 +109,7 @@
   .chart .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin: 0 0 6px; flex-wrap: wrap; }
   .chart .legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
   .chart .legend i.rect { height: 10px; border-radius: 2px; }
+  .chart .legend i.mk { width: 8px; height: 8px; border-radius: 50%; background: var(--marker); }
   .tip {
     position: absolute; pointer-events: none; background: var(--tip-bg); border: 1px solid var(--border);
     border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.10);
@@ -233,6 +236,14 @@
   <h2>よく見られたページ <span class="tag">GA4</span></h2>
   <div class="card" id="ga-pages"></div>
 
+  <h2>ページの使われ方 <span class="tag">Microsoft Clarity</span> <span class="sub" id="clarity-range"></span></h2>
+  <div id="clarity-alert"></div>
+  <div class="grid tiles" id="clarity-tiles"></div>
+  <div class="grid two" id="clarity-charts" style="margin-top:12px"></div>
+
+  <h2>記事の公開と数字の関係 <span class="tag">GA4 + Search Console</span> <span class="sub">公開前後 7 日の比較と、記事ごとの現在値</span></h2>
+  <div class="card" id="post-impact"></div>
+
   <h2>Google 広告 <span class="tag">GA4 連携</span></h2>
   <div class="card" id="ads"></div>
 
@@ -349,6 +360,10 @@
   }
 
   const ga = data.ga4, gsc = data.gsc, ads = ga && ga.ads;
+  // 記事一覧（公開日マーカーと相関表に使う）
+  let posts = [];
+  try { const r = await fetch('/blog-posts.json', { cache: 'no-store' }); if (r.ok) posts = (await r.json()).posts || []; } catch (e) { /* 任意 */ }
+  const postMarkers = posts.map((p) => ({ date: p.date, label: p.title })).sort((a, b) => a.date.localeCompare(b.date));
   const gen = new Date(data.generatedAt);
   $('#generated').textContent = `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`;
 
@@ -443,7 +458,7 @@
     return m * p;
   }
   /** rows: [{date, ...}], series: [{key, label, color, fmt}], kind: 'line' | 'bar' */
-  function chartCard(title, desc, rows, series, kind, fmt = fmtInt) {
+  function chartCard(title, desc, rows, series, kind, fmt = fmtInt, markers = []) {
     const card = el('div', 'card');
     card.appendChild(el('h3', null, title));
     if (desc) card.appendChild(el('p', 'desc', desc));
@@ -518,6 +533,23 @@
         t.textContent = fmt(lastRow[series[0].key] || 0);
         svg.appendChild(t);
       }
+      // 記事公開日のマーカー（縦の細線＋上部の点）
+      const markerAt = new Map();
+      for (const m of markers || []) {
+        let i = sub.findIndex((r) => r.date >= m.date);
+        if (i < 0 || sub[i].date > sub[n - 1].date) continue;
+        if (!markerAt.has(i)) markerAt.set(i, []);
+        markerAt.get(i).push(m.label);
+      }
+      for (const [i, labels] of markerAt.entries()) {
+        const mx = x(i);
+        const g = svgEl('g', { class: 'marker' });
+        g.appendChild(svgEl('line', { x1: mx, x2: mx, y1: PAD.t, y2: PAD.t + ih, stroke: 'var(--marker)', 'stroke-width': 1 }));
+        const dot = svgEl('circle', { cx: mx, cy: PAD.t, r: 4, fill: 'var(--marker)', stroke: 'var(--surface)', 'stroke-width': 2 });
+        dot.appendChild(svgEl('title')).textContent = `記事公開: ${labels.join(' / ')}`;
+        g.appendChild(dot);
+        svg.appendChild(g);
+      }
       // hover layer
       const cross = svgEl('line', { x1: 0, x2: 0, y1: PAD.t, y2: PAD.t + ih, class: 'crosshair' });
       svg.appendChild(cross);
@@ -533,6 +565,7 @@
         const r = sub[i];
         cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.display = 'block';
         tip.replaceChildren(el('div', 'd', r.date));
+        if (markerAt.has(i)) { const mk = el('div', 'd'); mk.style.color = 'var(--marker)'; mk.textContent = '記事公開: ' + markerAt.get(i).join(' / '); tip.appendChild(mk); }
         series.forEach((s, k) => {
           const row = el('div', 'row');
           const left = el('span');
@@ -574,14 +607,14 @@
   const trendCharts = [];
   const trends = $('#trends');
   if (ga) {
-    trendCharts.push(chartCard('サイト訪問（GA4）', '1日あたりのユーザー数とセッション数', ga.daily,
-      [{ key: 'users', label: 'ユーザー', color: 'var(--series-1)' }, { key: 'sessions', label: 'セッション', color: 'var(--series-2)' }], 'line'));
+    trendCharts.push(chartCard('サイト訪問（GA4）', '1日あたりのユーザー数とセッション数。縦線は記事の公開日', ga.daily,
+      [{ key: 'users', label: 'ユーザー', color: 'var(--series-1)' }, { key: 'sessions', label: 'セッション', color: 'var(--series-2)' }], 'line', fmtInt, postMarkers));
   }
   if (gsc) {
-    trendCharts.push(chartCard('検索からのクリック（Search Console）', '1日あたり Google 検索結果からクリックされた回数', gsc.daily,
-      [{ key: 'clicks', label: 'クリック', color: 'var(--series-1)' }], 'bar'));
-    trendCharts.push(chartCard('検索結果に表示された回数（Search Console）', '1日あたりの表示回数。クリックより先に増えるのが普通です', gsc.daily,
-      [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }], 'line'));
+    trendCharts.push(chartCard('検索からのクリック（Search Console）', '1日あたり Google 検索結果からクリックされた回数。縦線は記事の公開日', gsc.daily,
+      [{ key: 'clicks', label: 'クリック', color: 'var(--series-1)' }], 'bar', fmtInt, postMarkers));
+    trendCharts.push(chartCard('検索結果に表示された回数（Search Console）', '1日あたりの表示回数。クリックより先に増えるのが普通です。縦線は記事の公開日', gsc.daily,
+      [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }], 'line', fmtInt, postMarkers));
   }
   if (ads && ads.linked && ads.daily && ads.daily.some((d) => d.cost > 0 || d.clicks > 0)) {
     trendCharts.push(chartCard('広告費（Google 広告）', '1日あたりの費用', ads.daily,
@@ -885,6 +918,95 @@
   } else {
     gpg.appendChild(el('div', 'empty', 'データがありません'));
   }
+
+  // ---------------------------------------------------------- Microsoft Clarity（ページの使われ方）
+  (function renderClarity() {
+    const cl = data.clarity;
+    const tilesBox = $('#clarity-tiles'), chartsBox = $('#clarity-charts'), alertBox = $('#clarity-alert');
+    if (!cl) {
+      const a = el('div', 'alert');
+      a.append('Microsoft Clarity はまだ連携していません。連携すると、ページのどこまで読まれたか（スクロール深度）、押しても反応しない場所を連打した「怒りクリック」、すぐ戻った訪問などが見えます。ヒートマップと録画は Clarity の画面で確認します。 ');
+      if (data.errors && data.errors.clarity) a.appendChild(el('span', 'dim', data.errors.clarity.slice(0, 160)));
+      alertBox.appendChild(a);
+      tilesBox.remove(); chartsBox.remove();
+      return;
+    }
+    const L = cl.latest;
+    const hist = cl.history || [];
+    const last7 = hist.slice(-7), prev7 = hist.slice(-14, -7);
+    const avg = (rows, k) => rows.length ? rows.reduce((a, r) => a + (r[k] || 0), 0) / rows.length : null;
+    const sum = (rows, k) => rows.length ? rows.reduce((a, r) => a + (r[k] || 0), 0) : null;
+    $('#clarity-range').textContent = `前日（${L.date}）の値と、直近 7 日の平均 vs その前 7 日`;
+    if (data.errors && data.errors.clarity) alertBox.appendChild(el('div', 'alert err', 'Clarity の最新データを取得できなかったため、前回までの履歴を表示しています。 ' + data.errors.clarity.slice(0, 120)));
+    const pct = (v) => (v == null ? '–' : Math.round(v) + '%');
+    tilesBox.append(
+      tile('セッション（前日）', fmtInt(L.sessions), '', sum(last7, 'sessions'), sum(prev7, 'sessions'), { fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' }),
+      tile('平均スクロール深度', pct(L.scrollDepth), '', avg(last7, 'scrollDepth'), avg(prev7, 'scrollDepth'), { fmtPrev: pct, na: '前週比は履歴 14 日でできます' }),
+      tile('実際に操作していた時間', fmtDur(L.engagementActiveSec), '', avg(last7, 'engagementActiveSec'), avg(prev7, 'engagementActiveSec'), { fmtPrev: fmtDur, na: '前週比は履歴 14 日でできます' }),
+      tile('怒りクリック', fmtInt(L.rageClicks), '件', sum(last7, 'rageClicks'), sum(prev7, 'rageClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' }),
+      tile('反応しない場所のクリック', fmtInt(L.deadClicks), '件', sum(last7, 'deadClicks'), sum(prev7, 'deadClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' }),
+      tile('すぐ戻った訪問', fmtInt(L.quickBacks), '件', sum(last7, 'quickBacks'), sum(prev7, 'quickBacks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' })
+    );
+    if (hist.length >= 2) {
+      const c1 = chartCard('読まれた深さと操作時間', '日別。スクロール深度（%）', hist, [{ key: 'scrollDepth', label: 'スクロール深度 %', color: 'var(--series-1)' }], 'line', (v) => Math.round(v) + '%', postMarkers);
+      const c2 = chartCard('つまずきのサイン', '日別。怒りクリック・反応しないクリック・すぐ戻った訪問', hist,
+        [{ key: 'rageClicks', label: '怒りクリック', color: 'var(--series-2)' }, { key: 'deadClicks', label: '反応しない', color: 'var(--series-3)' }, { key: 'quickBacks', label: 'すぐ戻る', color: 'var(--series-1)' }], 'line', fmtInt, postMarkers);
+      chartsBox.append(c1.card, c2.card);
+      trendCharts.push(c1, c2);
+      const days = Number(document.querySelector('.seg button[aria-pressed="true"]')?.dataset.range || 28);
+      c1.render(days); c2.render(days);
+    } else {
+      chartsBox.appendChild(el('div', 'empty', '日別のグラフは履歴が 2 日分以上たまると表示されます'));
+    }
+    const note = el('p', 'desc'); note.style.marginTop = '8px';
+    const a = el('a', null, 'Clarity の画面（ヒートマップ・録画）'); a.href = 'https://clarity.microsoft.com/'; a.target = '_blank'; a.rel = 'noopener';
+    note.append('どのページのどこで迷っているかは ', a, ' で見られます。');
+    chartsBox.appendChild(note);
+  })();
+
+  // ---------------------------------------------------------- 記事公開と指標の相関
+  (function renderPostImpact() {
+    const box = $('#post-impact');
+    if (!posts.length) { box.appendChild(el('div', 'empty', '記事データを読み込めませんでした')); return; }
+    const sumWindow = (rows, key, from, to) => rows.filter((r) => r.date >= from && r.date <= to).reduce((a, r) => a + (r[key] || 0), 0);
+    const shift = (iso, d) => { const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + d); return t.toISOString().slice(0, 10); };
+    const gaFirst = ga && ga.daily.length ? ga.daily[0].date : null, gaLast = ga && ga.daily.length ? ga.daily[ga.daily.length - 1].date : null;
+    const gsFirst = gsc && gsc.daily.length ? gsc.daily[0].date : null, gsLast = gsc && gsc.daily.length ? gsc.daily[gsc.daily.length - 1].date : null;
+    const inRange = (d, a, b) => a && b && d >= a && d <= b;
+    const rows = [...posts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12).map((p) => {
+      const before = shift(p.date, -7), after = shift(p.date, 7);
+      const canGa = inRange(before, gaFirst, gaLast) && inRange(after, gaFirst, gaLast);
+      const canGs = inRange(before, gsFirst, gsLast) && inRange(after, gsFirst, gsLast);
+      const usersBefore = canGa ? sumWindow(ga.daily, 'users', before, shift(p.date, -1)) : null;
+      const usersAfter = canGa ? sumWindow(ga.daily, 'users', p.date, shift(p.date, 6)) : null;
+      const impBefore = canGs ? sumWindow(gsc.daily, 'impressions', before, shift(p.date, -1)) : null;
+      const impAfter = canGs ? sumWindow(gsc.daily, 'impressions', p.date, shift(p.date, 6)) : null;
+      const path = `/blog/${p.id}/`;
+      const pv = ga ? (ga.pages.find((x) => x.path === path) || {}).pageViews : null;
+      const gp = gsc ? (gsc.pages.find((x) => x.page === path || x.page === path.replace(/\/$/, '')) || {}) : {};
+      return { p, usersBefore, usersAfter, impBefore, impAfter, pv, clicks: gp.clicks, imps: gp.impressions };
+    });
+    const delta = (a, b) => (a == null || b == null) ? el('span', 'dim', '–') : (() => { const sp = el('span'); const diff = b - a; sp.textContent = `${fmtInt(a)} → ${fmtInt(b)}`; const d = el('b', null, ` (${diff >= 0 ? '+' : ''}${diff})`); d.style.color = diff > 0 ? 'var(--good)' : diff < 0 ? 'var(--bad)' : 'inherit'; d.style.fontWeight = '600'; sp.appendChild(d); return sp; })();
+    box.replaceChildren(
+      el('h3', null, '記事ごとの前後比較'),
+      el('p', 'desc', '「前後 7 日」はサイト全体の数字を公開日の前 7 日と後 7 日で比べたもの。「–」はダッシュボードの保持期間（90 日）より前の公開。記事そのものの数字は右 3 列（直近 28 日）。訪問者が少ないうちは日ごとの偶然に左右されるので、傾向を見る程度に。')
+    );
+    box.appendChild(table(
+      [{ label: '公開日' }, { label: '記事' }, { label: '前後7日: サイト訪問者' }, { label: '前後7日: 検索表示' }, { label: '記事の表示', num: true }, { label: '検索クリック', num: true }, { label: '検索表示', num: true }],
+      rows, (r) => {
+        const tr = el('tr');
+        tr.append(td(r.p.date), pageCell(r.p.title, `/blog/${r.p.id}/`));
+        const c1 = el('td'); c1.appendChild(delta(r.usersBefore, r.usersAfter)); tr.appendChild(c1);
+        const c2 = el('td'); c2.appendChild(delta(r.impBefore, r.impAfter)); tr.appendChild(c2);
+        tr.append(td(r.pv != null ? fmtInt(r.pv) : '–', true), td(r.clicks != null ? fmtInt(r.clicks) : '–', true), td(r.imps != null ? fmtInt(r.imps) : '–', true));
+        return tr;
+      }
+    ));
+    const lg = el('p', 'desc'); lg.style.marginTop = '10px';
+    const i = el('i', 'mk'); i.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--marker);margin-right:6px;vertical-align:middle';
+    lg.append(i, '上の「日別の推移」の縦線が記事の公開日です。線の上の点に触れると記事名が出ます。');
+    box.appendChild(lg);
+  })();
 
   const adsBox = $('#ads');
   if (!ads) {
