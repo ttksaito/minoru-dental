@@ -201,15 +201,12 @@
 - First Contentful Paint: 1.8秒以下
 - Largest Contentful Paint: 2.5秒以下
 
-#### 8. Google Search Consoleの設定
-**期限**: 2025-08-20まで
+#### 8. Google Search Consoleの設定 ✅ 完了（2026-11-14 確認）
+本番ドメインのプロパティ `sc-domain:minoru-dental.jp`（ドメイン単位。www あり・なし、http・https をまとめて計測）で設定済み。
+集客ダッシュボードが毎朝この プロパティから検索キーワード・表示回数・クリック・順位を取得している（2026-11-14 21:04 以降、毎回成功）。
+Vercel URL（`minoru-dental.vercel.app`）向けの手順は不要になったため削除。
 
-**手順**:
-1. [ ] https://search.google.com/search-console にアクセス
-2. [ ] プロパティを追加: `https://minoru-dental.vercel.app`
-3. [ ] 所有権の確認（HTMLタグまたはDNS）
-4. [ ] サイトマップを送信: `https://minoru-dental.vercel.app/sitemap.xml`
-5. [ ] インデックス登録状況を確認
+- [ ] 未確認: プロパティの作成日（Search Console の「検索パフォーマンス」で期間を「過去16か月」にして、グラフの始まりを見る）。作成が最近なら、それ以前の比較データは存在しない
 
 #### 9. レビュー構造化データの追加
 **期限**: 2025-08-20まで

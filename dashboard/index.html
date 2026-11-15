@@ -214,6 +214,20 @@
   details.tbl { margin-top: 10px; font-size: 13px; }
   details.tbl summary { cursor: pointer; color: var(--ink-2); }
   .dim { color: var(--muted); }
+  /* ツリーマップ（検索キーワード） */
+  .tm { position: relative; height: 460px; border-radius: 8px; overflow: hidden; }
+  .tm .g { position: absolute; border: 2px solid var(--surface); border-radius: 4px; overflow: hidden; }
+  .tm .g > .gh { position: absolute; left: 0; right: 0; top: 0; height: 22px; line-height: 22px; font-size: 12px; font-weight: 600; text-align: center; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+  .tm .n { position: absolute; border: 1px solid var(--surface); overflow: hidden; padding: 3px 5px; font-size: 12px; line-height: 1.3; color: var(--ink); cursor: default; }
+  .tm .n b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tm .n small { display: block; font-size: 11px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tm .n:hover { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 1; }
+  .tm .n.dk, .tm .n.dk small { color: #fff; }
+  .tm-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--ink-2); margin: 10px 0 0; }
+  .tm-legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+  .tm-legend .ramp { display: inline-flex; gap: 2px; margin: 0 6px; vertical-align: middle; }
+  .tm-legend .ramp i { width: 16px; height: 12px; display: inline-block; border-radius: 2px; }
+  @media (max-width: 600px) { .tm { height: 380px; } }
   #city-map { height: 440px; border-radius: 8px; background: var(--page); z-index: 0; }
   #city-map .leaflet-popup-content { font-size: 13px; margin: 10px 14px; line-height: 1.5; }
   .map-legend { display: flex; gap: 14px; align-items: center; font-size: 12px; color: var(--muted); margin: 8px 0 0; flex-wrap: wrap; }
@@ -330,7 +344,8 @@
 
   <section class="page" data-page="search" hidden>
   <h2>Google 検索での見つかり方 <span class="tag">Search Console</span> <span class="sub" id="gsc-range"></span></h2>
-  <div class="grid two">
+  <div class="card" id="query-map"></div>
+  <div class="grid two" style="margin-top:12px">
     <div class="card" id="queries"></div>
     <div class="card" id="gsc-pages"></div>
   </div>
@@ -1200,6 +1215,144 @@ window.HELP = {
       (r) => { const tr = el('tr'); tr.append(td(r.a), td(r.b), td(fmtInt(r.v), true)); return tr; }));
     box.appendChild(det);
   }
+
+  // ---------------------------------------------------------- 検索キーワードのツリーマップ
+  (function renderQueryMap() {
+    const card = $('#query-map');
+    if (!gsc || !gsc.queries || !gsc.queries.length) { card.remove(); return; }
+    const groups = [
+      { key: 'brand', label: '医院名で検索（指名）', test: /みのる|minoru|ミノル/i, color: '#388e3c' },
+      { key: 'area', label: '地域名入り', test: /東松山|ひがしまつやま|比企|滑川|吉見|嵐山|小川町|川島|鳩山|ときがわ|坂戸|川越|熊谷|森林公園|高坂|埼玉/, color: '#2a78d6' },
+      { key: 'general', label: '症状・疑問など一般', test: /./, color: '#eb6834' },
+    ];
+    const groupOf = (q) => groups.find((g) => g.test.test(q)) || groups[2];
+    // CTR が高いほど濃く。「表示は多いのにクリックされない」語が薄く見える
+    const alpha = (ctr) => (ctr <= 0 ? 0.14 : ctr < 0.02 ? 0.3 : ctr < 0.05 ? 0.48 : ctr < 0.1 ? 0.66 : 0.86);
+    const hex2rgba = (hex, a) => `rgba(${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)},${a})`;
+
+    // squarified treemap: items は value 降順。rect {x,y,w,h} に敷き詰めて各 item に x,y,w,h を付ける
+    const squarify = (items, rect) => {
+      const total = items.reduce((a, i) => a + i.value, 0);
+      if (total <= 0 || rect.w <= 0 || rect.h <= 0) return;
+      const scale = (rect.w * rect.h) / total;
+      let x = rect.x, y = rect.y, w = rect.w, h = rect.h;
+      let row = [], rowSum = 0;
+      const worst = (sum, side, mn, mx) => Math.max((side * side * mx) / (sum * sum), (sum * sum) / (side * side * mn));
+      const layoutRow = () => {
+        const side = Math.min(w, h);
+        const thick = rowSum / side; // 行の厚み
+        let off = 0;
+        for (const it of row) {
+          const len = it.value * scale / thick;
+          if (w >= h) { it.x = x; it.y = y + off; it.w = thick; it.h = len; }
+          else { it.x = x + off; it.y = y; it.w = len; it.h = thick; }
+          off += len;
+        }
+        if (w >= h) { x += thick; w -= thick; } else { y += thick; h -= thick; }
+        row = []; rowSum = 0;
+      };
+      for (const it of items) {
+        const a = it.value * scale;
+        const side = Math.min(w, h);
+        if (row.length) {
+          const areas = row.map((r) => r.value * scale);
+          const cur = worst(rowSum, side, Math.min(...areas), Math.max(...areas));
+          const nxt = worst(rowSum + a, side, Math.min(...areas, a), Math.max(...areas, a));
+          if (nxt > cur) layoutRow();
+        }
+        row.push(it); rowSum += a;
+      }
+      if (row.length) layoutRow();
+    };
+
+    card.replaceChildren(h3('検索キーワードの地図', 'gscImpressions'), el('p', 'desc', '面積は、その言葉で検索されたときに当院のサイトが検索結果に表示された回数。色が濃いほどクリックされている（CTR が高い）。大きいのに薄い言葉は「見つかっているのに選ばれていない」ので、タイトルや記事の見直し候補です。'));
+    const f = el('div', 'filters');
+    f.appendChild(el('span', 'lbl', '面積'));
+    const seg = el('div', 'seg'); seg.setAttribute('role', 'group');
+    const modes = [['impressions', '表示回数'], ['clicks', 'クリック数']];
+    let mode = 'impressions';
+    for (const [k, lbl] of modes) {
+      const b = el('button', null, lbl); b.type = 'button'; b.setAttribute('aria-pressed', String(k === mode));
+      b.addEventListener('click', () => { mode = k; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+      seg.appendChild(b);
+    }
+    f.appendChild(seg); card.appendChild(f);
+    const box = el('div', 'tm'); card.appendChild(box);
+    const tip = el('div', 'tip'); box.appendChild(tip);
+    const legend = el('div', 'tm-legend');
+    for (const g of groups) { const sp = el('span'); const sw = el('i', 'sw'); sw.style.background = hex2rgba(g.color, 0.6); sp.append(sw, g.label); legend.appendChild(sp); }
+    const ramp = el('span'); ramp.append('CTR 低'); const r = el('span', 'ramp'); [0, 0.01, 0.03, 0.07, 0.12].forEach((c) => { const i = el('i'); i.style.background = hex2rgba('#2a78d6', alpha(c)); r.appendChild(i); }); ramp.append(r, '高'); legend.appendChild(ramp);
+    card.appendChild(legend);
+    const note = el('p', 'desc'); note.style.marginTop = '6px'; card.appendChild(note);
+
+    const MAX_PER_GROUP = 40;
+    const draw = () => {
+      box.querySelectorAll('.g').forEach((e) => e.remove());
+      const W = box.clientWidth, H = box.clientHeight;
+      if (!W) return;
+      const gs = groups.map((g) => ({ g, items: [] }));
+      for (const q of gsc.queries) {
+        const v = q[mode] || 0;
+        if (v <= 0) continue;
+        gs.find((x) => x.g === groupOf(q.query)).items.push({ q, value: v });
+      }
+      let folded = 0;
+      for (const x of gs) {
+        x.items.sort((a, b) => b.value - a.value);
+        if (x.items.length > MAX_PER_GROUP) {
+          const rest = x.items.splice(MAX_PER_GROUP);
+          const sum = (k) => rest.reduce((a, i) => a + (i.q[k] || 0), 0);
+          const clicks = sum('clicks'), imps = sum('impressions');
+          x.items.push({ value: rest.reduce((a, i) => a + i.value, 0), q: { query: `その他 ${rest.length} 語`, clicks, impressions: imps, ctr: imps ? clicks / imps : 0, position: null }, rest: true });
+          folded += rest.length;
+        }
+        x.value = x.items.reduce((a, i) => a + i.value, 0);
+      }
+      const live = gs.filter((x) => x.value > 0).sort((a, b) => b.value - a.value);
+      if (!live.length) { note.textContent = 'データがありません'; return; }
+      squarify(live, { x: 0, y: 0, w: W, h: H });
+      for (const x of live) {
+        const gEl = el('div', 'g');
+        gEl.style.cssText = `left:${x.x}px;top:${x.y}px;width:${x.w}px;height:${x.h}px;background:${hex2rgba(x.g.color, 0.08)}`;
+        const showHead = x.h > 40 && x.w > 60;
+        if (showHead) gEl.appendChild(el('div', 'gh', `${x.g.label}（${fmtInt(x.value)}）`));
+        const top = showHead ? 22 : 0;
+        squarify(x.items, { x: 0, y: top, w: x.w - 4, h: x.h - top - 4 });
+        for (const it of x.items) {
+          const n = el('div', 'n');
+          const al = alpha(it.q.ctr || 0);
+          n.style.cssText = `left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;background:${hex2rgba(x.g.color, al)}`;
+          if (al >= 0.66) n.classList.add('dk'); // 濃い色の上は白文字
+          if (it.w > 44 && it.h > 18) {
+            n.appendChild(el('b', null, it.q.query));
+            if (it.h > 34 && it.w > 70) n.appendChild(el('small', null, `${fmtInt(it.q.clicks)} クリック / ${fmtInt(it.q.impressions)} 表示`));
+          }
+          n.addEventListener('pointerenter', () => {
+            tip.replaceChildren(el('div', 'd', it.q.query));
+            const row = (k, v) => { const r = el('div', 'row'); r.append(el('span', null, k), el('b', null, v)); tip.appendChild(r); };
+            row('クリック', fmtInt(it.q.clicks)); row('表示回数', fmtInt(it.q.impressions)); row('CTR', fmtPct(it.q.ctr || 0));
+            if (it.q.position != null) row('平均順位', it.q.position.toFixed(1) + ' 位');
+            tip.style.display = 'block';
+          });
+          n.addEventListener('pointermove', (ev) => {
+            const b = box.getBoundingClientRect();
+            const px = ev.clientX - b.left, py = ev.clientY - b.top;
+            const right = px > b.width / 2;
+            tip.style.left = right ? 'auto' : px + 14 + 'px'; tip.style.right = right ? b.width - px + 14 + 'px' : 'auto';
+            tip.style.top = Math.min(py + 14, b.height - tip.offsetHeight - 8) + 'px';
+          });
+          n.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+          gEl.appendChild(n);
+        }
+        box.appendChild(gEl);
+      }
+      const shown = live.reduce((a, x) => a + x.items.filter((i) => !i.rest).length, 0);
+      note.textContent = `${mode === 'clicks' ? 'クリックがあった' : '表示があった'}キーワード ${shown + folded} 語${folded ? `（各グループ上位 ${MAX_PER_GROUP} 語まで表示、残りは「その他」にまとめています）` : ''}。分類はキーワードに含まれる言葉で自動的に分けています。`;
+    };
+    draw();
+    let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(draw, 150); });
+    window.addEventListener('hashchange', () => { if (location.hash === '#search') setTimeout(draw, 30); });
+  })();
 
   if (gsc) {
     $('#gsc-range').textContent = `${gsc.range.start} 〜 ${gsc.range.end}（検索データは2日ほど遅れて確定します）`;

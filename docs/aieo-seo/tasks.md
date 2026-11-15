@@ -21,16 +21,15 @@
 | 記事の出典 | ✕ 公開5記事・下書き9本とも出典・参考文献の記載が**ゼロ** |
 | 記事の要約（meta description） | △ 新しい2記事（best-brushing-timing, denture-chewing-power）が `summary` 空 |
 | 著者情報 | ○ 記事末尾に院長プロフィールあり。△ 「監修」「AI利用」の明記なし |
-| 計測 | ○ GA4（G-P8PPKGZVRT）、人気記事ランキング。△ Search Console の本番ドメイン設定は未確認（TODOはVercel URL時代のまま）。✕ Bing Webmaster Tools 未登録 |
+| 計測 | ○ GA4（G-P8PPKGZVRT）、人気記事ランキング。○ Search Console は本番ドメイン `sc-domain:minoru-dental.jp` で設定済み（2026-11-14 確認、ダッシュボードが毎朝取得）。✕ Bing Webmaster Tools 未登録 |
 | 制作フロー | AIで下書き→Decap CMSの編集ワークフロー→院長監修→公開。監修の観点・チェック項目が未文書化 |
 
 ## タスク一覧
 
 ### P0: 計測の基準値と制作ルールを作る（1か月以内）
 
-- [ ] **Search Console を本番ドメインで確認する**
-  `https://www.minoru-dental.jp` のプロパティが有効か確認し、`sitemap.xml` を送信。インデックス状況とカバレッジのエラーを記録する。「生成AIパフォーマンスレポート」が表示されるかも確認（段階展開中）。
-  完了条件: 全7URLがインデックス済み、現在のクリック/表示回数を記録。
+- [x] **Search Console を本番ドメインで確認する**（2026-11-14: `sc-domain:minoru-dental.jp` で有効。クリック/表示回数は集客ダッシュボードで毎朝記録される）
+  - [ ] 残り: `sitemap.xml` の送信状況とインデックス状況・カバレッジのエラーを Search Console の画面で確認する
 - [ ] **Bing Webmaster Tools に登録する**
   Search Consoleからのインポートで登録可能。「AI Performance」で Copilot からの引用（Total Citations / Grounding Queries）を見られるようにする。
   完了条件: サイト検証済み、sitemap送信済み。
