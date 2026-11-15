@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <title>集客ダッシュボード | みのる歯科</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
   :root {
     color-scheme: light;
@@ -58,19 +60,53 @@
     line-height: 1.6;
   }
   a { color: inherit; }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 24px 16px 64px; }
-  .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; align-items: start; }
+  :root { --side-w: 240px; --rail-w: 52px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 24px 16px 64px; transition: margin-left .2s ease; }
+  body[data-side="open"] .wrap { margin-left: var(--side-w); max-width: none; }
+  /* 左に固定したサイドパネル */
   .side {
-    position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px;
+    position: fixed; top: 0; left: 0; bottom: 0; width: var(--side-w); z-index: 20;
+    display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--border);
+    transform: translateX(-100%); transition: transform .2s ease, width .2s ease; overflow-y: auto; overflow-x: hidden;
   }
-  .side a {
+  body[data-side="open"] .side { transform: none; }
+  /* パソコンでは閉じても細いレールとして左端に残り、開くボタンだけ出す */
+  @media (min-width: 821px) {
+    .side { transform: none; }
+    body[data-side="closed"] .side { width: var(--rail-w); }
+    body[data-side="closed"] .side-head { padding: 10px; justify-content: center; border-bottom: 0; }
+    body[data-side="closed"] .side-head b, body[data-side="closed"] .side nav, body[data-side="closed"] .side-foot { display: none; }
+    body[data-side="closed"] .side-toggle { border: 1px solid var(--axis); background: var(--page); }
+    body[data-side="closed"] .wrap { margin-left: var(--rail-w); max-width: none; }
+    body[data-side="closed"] header.top .side-toggle { display: none; }
+  }
+  .side-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 14px 10px 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  .side-head b { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .side-head b span { display: block; color: var(--brand); font-size: 13px; }
+  .side-toggle {
+    appearance: none; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; border-radius: 8px;
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  }
+  .side-toggle:hover { background: var(--page); color: var(--ink); }
+  .side-toggle svg { width: 20px; height: 20px; }
+  .side nav { display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; }
+  .side nav a {
     display: block; text-decoration: none; color: var(--ink-2); font-size: 14px; font-weight: 600;
     padding: 8px 10px; border-radius: 8px; line-height: 1.4;
   }
-  .side a small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 1px; }
-  .side a:hover { background: var(--page); color: var(--ink); }
-  .side a[aria-current="page"] { background: var(--brand-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--brand); }
+  .side nav a small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 1px; }
+  .side nav a:hover { background: var(--page); color: var(--ink); }
+  .side nav a[aria-current="page"] { background: var(--brand-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--brand); }
+  .side-foot { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .side-foot div + div { margin-top: 4px; }
+  /* 閉じているときにヘッダーに出る開くボタン */
+  header.top .side-toggle { display: none; align-self: center; margin-left: -4px; }
+  /* パネルを開いているときは見出しがパネル側にあるので、ヘッダーの見出しは出さない */
+  @media (min-width: 821px) { body[data-side="open"] header.top { display: none; } }
+  .side-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 19; }
   .main { min-width: 0; }
   .page > h2:first-child { margin-top: 4px; }
   .help {
@@ -86,7 +122,7 @@
     font-weight: 400; box-shadow: 0 4px 14px rgba(0,0,0,0.12); pointer-events: none;
   }
   .help-tip[hidden] { display: none; }
-  header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 8px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 8px; min-height: 32px; }
   header.top h1 { font-size: 20px; margin: 0; font-weight: 700; }
   header.top h1 span { color: var(--brand); margin-right: 8px; }
   .meta { color: var(--muted); font-size: 12px; }
@@ -108,6 +144,8 @@
   .grid { display: grid; gap: 12px; }
   .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  #trends { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 820px) { #trends { grid-template-columns: minmax(0, 1fr); } }
   .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
     min-width: 0;
@@ -176,6 +214,10 @@
   details.tbl { margin-top: 10px; font-size: 13px; }
   details.tbl summary { cursor: pointer; color: var(--ink-2); }
   .dim { color: var(--muted); }
+  #city-map { height: 440px; border-radius: 8px; background: var(--page); z-index: 0; }
+  #city-map .leaflet-popup-content { font-size: 13px; margin: 10px 14px; line-height: 1.5; }
+  .map-legend { display: flex; gap: 14px; align-items: center; font-size: 12px; color: var(--muted); margin: 8px 0 0; flex-wrap: wrap; }
+  .map-legend i { display: inline-block; border-radius: 50%; background: var(--series-1); opacity: .55; vertical-align: middle; margin-right: 4px; }
   .gate {
     max-width: 380px; margin: 48px auto; background: var(--surface); border: 1px solid var(--border);
     border-radius: 12px; padding: 24px 22px;
@@ -192,19 +234,16 @@
     background: var(--brand); color: #fff; cursor: pointer;
   }
   .gate .err-msg { color: var(--bad); font-size: 13px; margin: 10px 0 0; min-height: 1.2em; }
-  .lock { font-size: 12px; color: var(--muted); margin-left: auto; cursor: pointer; background: none; border: 0; font-family: inherit; text-decoration: underline; }
-  body.locked .side, body.locked .main > :not(#gate) { display: none; }
-  body.locked .layout { display: block; }
+  .lock { font-size: 12px; color: var(--muted); margin: 8px 0 0; padding: 0; cursor: pointer; background: none; border: 0; font-family: inherit; text-decoration: underline; }
+  body.locked .side, body.locked .side-backdrop, body.locked header.top .side-toggle, body.locked .main > :not(#gate) { display: none; }
+  body.locked .wrap { margin-left: 0; }
   @media (max-width: 820px) {
-    .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-    .side {
-      top: 0; z-index: 5; flex-direction: row; overflow-x: auto; gap: 4px; padding: 6px;
-      margin: 0 -16px; border-radius: 0; border-left: 0; border-right: 0; scrollbar-width: none;
-    }
-    .side::-webkit-scrollbar { display: none; }
-    .side a { white-space: nowrap; padding: 6px 12px; font-size: 13px; }
-    .side a small { display: none; }
-    .side a[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--brand); }
+    /* スマホでは上に重ねるドロワー。本文はずらさない */
+    body[data-side="open"] .wrap { margin-left: 0; }
+    body[data-side="open"] .side-backdrop { display: block; }
+    body[data-side="open"] { overflow: hidden; }
+    header.top .side-toggle { display: inline-flex; }
+    .side { box-shadow: 0 0 24px rgba(0,0,0,0.2); }
   }
   @media (max-width: 600px) {
     .tile .value { font-size: 22px; }
@@ -212,24 +251,37 @@
   }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <header class="top">
-    <h1><span>みのる歯科</span>集客ダッシュボード</h1>
-    <div class="meta" id="generated"></div>
-    <button type="button" class="lock" id="lock-btn" hidden>ロックする</button>
-  </header>
-  <div class="layout">
-  <nav class="side" aria-label="ページ">
+<body data-side="open">
+<aside class="side" id="side">
+  <div class="side-head">
+    <b><span>みのる歯科</span>集客ダッシュボード</b>
+    <button type="button" class="side-toggle" data-side-toggle aria-label="サイドパネルを閉じる" aria-controls="side" aria-expanded="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+    </button>
+  </div>
+  <nav aria-label="ページ">
     <a href="#summary" data-page="summary">サマリー</a>
     <a href="#daily" data-page="daily">日別の推移</a>
-    <a href="#traffic" data-page="traffic">流入分析<small>どこから来ているか・何をしたか</small></a>
+    <a href="#traffic" data-page="traffic">流入分析<small>どこから来て、何をしたか</small></a>
     <a href="#region" data-page="region">地域分析<small>どこに住んでいる人か</small></a>
     <a href="#search" data-page="search">Google 検索<small>検索・マップでの見つかり方</small></a>
     <a href="#pages" data-page="pages">ページ分析<small>よく見られたページ・使われ方・記事の効果</small></a>
     <a href="#ads" data-page="ads">Google 広告</a>
     <a href="#action" data-page="action">Action<small>成果につながる行動</small></a>
   </nav>
+  <div class="side-foot">
+    <div id="side-generated"></div>
+    <button type="button" class="lock" id="lock-btn" hidden>ロックする</button>
+  </div>
+</aside>
+<div class="side-backdrop" data-side-toggle></div>
+<div class="wrap">
+  <header class="top">
+    <button type="button" class="side-toggle" data-side-toggle aria-label="サイドパネルを開く" aria-controls="side" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+    </button>
+    <h1><span>みのる歯科</span>集客ダッシュボード</h1>
+  </header>
   <main class="main">
   <div id="gate" class="gate" hidden>
     <h2>パスワードを入力</h2>
@@ -241,7 +293,6 @@
       <div class="err-msg" id="gate-err"></div>
     </form>
   </div>
-  <p class="note">Google アナリティクス（GA4）・Search Console・Google 広告（GA4 連携）の数値を毎朝まとめています。「直近28日」とその前の28日を比べています。<span class="help" data-help="howto" tabindex="0" role="button" aria-label="用語の説明の見方">?</span></p>
   <div id="alerts"></div>
 
   <section class="page" data-page="summary">
@@ -262,19 +313,19 @@
   </section>
 
   <section class="page" data-page="traffic" hidden>
-  <h2>どこから来ているか <span class="tag">GA4</span></h2>
-  <div class="grid two">
-    <div class="card" id="channels"></div>
-    <div class="card" id="devices"></div>
-  </div>
-
   <h2>どこから来て、何をしたか <span class="tag">GA4</span> <span class="sub">直近28日のセッションの流れ。帯の太さが件数</span></h2>
   <div class="card" id="flow"></div>
   </section>
 
   <section class="page" data-page="region" hidden>
   <h2>どこに住んでいる人か <span class="tag">GA4</span> <span class="sub">IPアドレスからの推定。精度は市区町村で7割ほどです</span></h2>
-  <div class="card" id="cities"></div>
+  <div class="card" id="city-map-card">
+    <h3>地図で見る</h3>
+    <p class="desc">丸の大きさがユーザー数（直近28日）。丸に触れると数字が出ます。遠方や海外は地図の外なので、下の表で確認してください。</p>
+    <div id="city-map"></div>
+    <div class="map-legend" id="city-map-legend"></div>
+  </div>
+  <div class="card" id="cities" style="margin-top:12px"></div>
   </section>
 
   <section class="page" data-page="search" hidden>
@@ -314,7 +365,6 @@
   <div class="card" id="key-events"></div>
   </section>
   </main>
-  </div>
 </div>
 <div class="help-tip" id="help-tip" role="tooltip" hidden></div>
 
@@ -322,14 +372,24 @@
 // ---------------------------------------------------------- サイドパネルのページ切り替え（#summary など）
 (function () {
   const pages = [...document.querySelectorAll('.page')];
-  const links = [...document.querySelectorAll('.side a')];
+  const links = [...document.querySelectorAll('.side nav a')];
+  const mobile = () => window.matchMedia('(max-width: 820px)').matches;
+  const SIDE_KEY = 'dashboard-side';
+  const setSide = (open, remember = true) => {
+    document.body.dataset.side = open ? 'open' : 'closed';
+    document.querySelectorAll('button[data-side-toggle]').forEach((b) => { b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', open ? 'サイドパネルを閉じる' : 'サイドパネルを開く'); });
+    if (remember && !mobile()) { try { localStorage.setItem(SIDE_KEY, open ? 'open' : 'closed'); } catch (e) {} }
+  };
+  let saved = null; try { saved = localStorage.getItem(SIDE_KEY); } catch (e) {}
+  setSide(mobile() ? false : saved !== 'closed', false);
+  document.querySelectorAll('[data-side-toggle]').forEach((b) => b.addEventListener('click', () => setSide(document.body.dataset.side !== 'open')));
+  links.forEach((a) => a.addEventListener('click', () => { if (mobile()) setSide(false, false); }));
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && mobile() && document.body.dataset.side === 'open') setSide(false, false); });
   const show = () => {
     const id = location.hash.slice(1);
     const name = pages.some((p) => p.dataset.page === id) ? id : 'summary';
     pages.forEach((p) => { p.hidden = p.dataset.page !== name; });
     links.forEach((a) => { if (a.dataset.page === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-    const cur = links.find((a) => a.dataset.page === name);
-    if (cur && cur.scrollIntoView && window.matchMedia('(max-width: 820px)').matches) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
   };
   window.addEventListener('hashchange', () => { show(); window.scrollTo(0, 0); });
   show();
@@ -337,7 +397,6 @@
 
 // ---------------------------------------------------------- 用語の ? にホバー（スマホはタップ）で説明を出す
 window.HELP = {
-  howto: '数字や項目名の横の「?」にマウスを乗せる（スマホはタップ）と、その言葉の説明が出ます。',
   users: 'サイトに来た人の数。同じ人が何回来ても 1 人と数えます（ブラウザや端末が違うと別の人になります）。',
   sessions: '訪問の回数。1 人が朝と夜に来れば 2 回です。30 分操作がないと次の訪問として数え直します。',
   pageViews: 'ページが表示された回数。1 回の訪問で 3 ページ見れば 3 回です。',
@@ -509,7 +568,10 @@ window.HELP = {
   try { const r = await fetch('/blog-posts.json', { cache: 'no-store' }); if (r.ok) posts = (await r.json()).posts || []; } catch (e) { /* 任意 */ }
   const postMarkers = posts.map((p) => ({ date: p.date, label: p.title })).sort((a, b) => a.date.localeCompare(b.date));
   const gen = new Date(data.generatedAt);
-  $('#generated').textContent = `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`;
+  $('#side-generated').replaceChildren(
+    el('div', null, `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`),
+    el('div', null, '毎朝 6:30 に自動更新。直近28日とその前の28日を比べています')
+  );
 
   if (data.errors && data.errors.gsc) {
     const a = el('div', 'alert err');
@@ -589,7 +651,7 @@ window.HELP = {
   }
 
   // ---------------------------------------------------------- charts
-  const W = 520, H = 200, PAD = { t: 10, r: 14, b: 26, l: 40 };
+  const W = 520, H0 = 200, PAD = { t: 10, r: 14, b: 26, l: 40 };
   const SVGNS = 'http://www.w3.org/2000/svg';
   const svgEl = (tag, attrs = {}) => {
     const e = document.createElementNS(SVGNS, tag);
@@ -604,7 +666,7 @@ window.HELP = {
     return m * p;
   }
   /** rows: [{date, ...}], series: [{key, label, color, fmt}], kind: 'line' | 'bar' */
-  function chartCard(title, desc, rows, series, kind, fmt = fmtInt, markers = []) {
+  function chartCard(title, desc, rows, series, kind, fmt = fmtInt, markers = [], opts = {}) {
     const card = el('div', 'card');
     card.appendChild(el('h3', null, title));
     if (desc) card.appendChild(el('p', 'desc', desc));
@@ -624,6 +686,7 @@ window.HELP = {
         }
         box.appendChild(lg);
       }
+      const H = opts.height ? opts.height() : H0;
       const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': title });
       const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
       const n = sub.length;
@@ -752,27 +815,46 @@ window.HELP = {
 
   const trendCharts = [];
   const trends = $('#trends');
+  // 日別の推移の 4 枚が、スクロールなしで 1 画面に収まるグラフの高さ（viewBox 単位）を出す
+  const trendHeight = () => {
+    if (window.matchMedia('(max-width: 820px)').matches) return H0;
+    const first = trends.firstElementChild;
+    if (!first || !trends.offsetParent) return H0;
+    const top = trends.getBoundingClientRect().top + window.scrollY;
+    const perCard = (window.innerHeight - top - 24 - 12) / 2;
+    const svg = first.querySelector('svg');
+    const chrome = svg ? first.offsetHeight - svg.getBoundingClientRect().height : 92; // グラフ以外（見出し・説明・凡例・余白）
+    const innerW = first.clientWidth - 32;
+    const h = (perCard - chrome) * W / innerW;
+    return Math.max(110, Math.min(H0, Math.round(h)));
+  };
+  const trendOpts = { height: trendHeight };
   if (ga) {
     trendCharts.push(chartCard('サイト訪問（GA4）', '1日あたりのユーザー数とセッション数。縦線は記事の公開日', ga.daily,
-      [{ key: 'users', label: 'ユーザー', color: 'var(--series-1)' }, { key: 'sessions', label: 'セッション', color: 'var(--series-2)' }], 'line', fmtInt, postMarkers));
+      [{ key: 'users', label: 'ユーザー', color: 'var(--series-1)' }, { key: 'sessions', label: 'セッション', color: 'var(--series-2)' }], 'line', fmtInt, postMarkers, trendOpts));
   }
   if (gsc) {
     trendCharts.push(chartCard('検索からのクリック（Search Console）', '1日あたり Google 検索結果からクリックされた回数。縦線は記事の公開日', gsc.daily,
-      [{ key: 'clicks', label: 'クリック', color: 'var(--series-1)' }], 'bar', fmtInt, postMarkers));
+      [{ key: 'clicks', label: 'クリック', color: 'var(--series-1)' }], 'bar', fmtInt, postMarkers, trendOpts));
     trendCharts.push(chartCard('検索結果に表示された回数（Search Console）', '1日あたりの表示回数。クリックより先に増えるのが普通です。縦線は記事の公開日', gsc.daily,
-      [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }], 'line', fmtInt, postMarkers));
+      [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }], 'line', fmtInt, postMarkers, trendOpts));
   }
   if (ads && ads.linked && ads.daily && ads.daily.some((d) => d.cost > 0 || d.clicks > 0)) {
     trendCharts.push(chartCard('広告費（Google 広告）', '1日あたりの費用', ads.daily,
-      [{ key: 'cost', label: '費用', color: 'var(--series-2)', fmt: fmtYen }], 'bar', (v) => '¥' + fmtInt(v)));
+      [{ key: 'cost', label: '費用', color: 'var(--series-2)', fmt: fmtYen }], 'bar', (v) => '¥' + fmtInt(v), [], trendOpts));
   }
   for (const c of trendCharts) trends.appendChild(c.card);
   const applyRange = (days) => {
     for (const c of trendCharts) c.render(days);
-    document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === String(days))));
+    document.querySelectorAll('.seg button[data-range]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === String(days))));
   };
-  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => applyRange(Number(b.dataset.range))));
+  document.querySelectorAll('.seg button[data-range]').forEach((b) => b.addEventListener('click', () => applyRange(Number(b.dataset.range))));
+  const currentRange = () => Number(document.querySelector('.seg button[data-range][aria-pressed="true"]')?.dataset.range || 28);
   applyRange(28);
+  // 高さは画面サイズとページ表示時に決まるので、そのたびに描き直す
+  let resizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => applyRange(currentRange()), 150); });
+  window.addEventListener('hashchange', () => { if (location.hash === '#daily') applyRange(currentRange()); });
   if (trendCharts.length === 0) trends.appendChild(el('div', 'empty', 'データがありません'));
 
   // ---------------------------------------------------------- tables
@@ -822,16 +904,6 @@ window.HELP = {
     ));
   }
 
-  if (ga) {
-    barTable($('#channels'), ['流入チャネル', 'channel'], 'セッション数（直近28日）。右は前の28日。', ga.channels,
-      (r) => channelJa[r.channel] || r.channel, (r) => r.sessions,
-      [{ label: '前の28日', num: true }], (r) => [td(fmtInt(r.previousSessions), true)]);
-    const devJa = { desktop: 'パソコン', mobile: 'スマートフォン', tablet: 'タブレット' };
-    barTable($('#devices'), ['端末', 'device'], 'セッション数（直近28日）', ga.devices, (r) => devJa[r.device] || r.device, (r) => r.sessions);
-  } else {
-    $('#channels').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
-    $('#devices').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
-  }
 
   const cityJa = {
     Higashimatsuyama: '東松山市', Saitama: 'さいたま市', Kawagoe: '川越市', Sakado: '坂戸市', Tsurugashima: '鶴ヶ島市', Kumagaya: '熊谷市',
@@ -853,6 +925,58 @@ window.HELP = {
     const reg = regionJa[r.region] !== undefined ? regionJa[r.region] : r.region;
     return reg && !c.startsWith('東京') ? `${c}（${reg}）` : c;
   };
+  // 市区町村のおおよその座標（市役所・町役場付近）。地図の丸を置くために使う
+  const cityLatLng = {
+    Higashimatsuyama: [36.0423, 139.4000], Saitama: [35.8617, 139.6455], Kawagoe: [35.9251, 139.4858], Sakado: [35.9573, 139.4030], Tsurugashima: [35.9345, 139.3931],
+    Kumagaya: [36.1473, 139.3886], Konosu: [36.0658, 139.5222], Yoshimi: [36.0400, 139.4540], Ranzan: [36.0570, 139.3203], Namegawa: [36.0658, 139.3620],
+    Ogawa: [36.0567, 139.2618], Hatoyama: [35.9815, 139.3340], Kawajima: [35.9770, 139.4820], Tokorozawa: [35.7996, 139.4688], Fukaya: [36.1975, 139.2815],
+    Honjo: [36.2437, 139.1903], Gyoda: [36.1389, 139.4553], Ageo: [35.9774, 139.5933], Okegawa: [36.0026, 139.5582], Kitamoto: [36.0269, 139.5303],
+    Fujimino: [35.8796, 139.5197], Fujimi: [35.8566, 139.5491], Shiki: [35.8367, 139.5804], Asaka: [35.7972, 139.5937], Wako: [35.7813, 139.6058],
+    Niiza: [35.7934, 139.5654], Hanno: [35.8558, 139.3278], Hidaka: [35.9078, 139.3392], Moroyama: [35.9418, 139.3160], Ogose: [35.9645, 139.2944],
+    Tokigawa: [36.0088, 139.2960], Chichibu: [35.9918, 139.0855], Yorii: [36.1183, 139.1930], Kawaguchi: [35.8078, 139.7241], Koshigaya: [35.8911, 139.7908],
+    Kasukabe: [35.9753, 139.7524], Soka: [35.8255, 139.8054], Kuki: [36.0621, 139.6668], Iruma: [35.8358, 139.3911], Sayama: [35.8529, 139.4123],
+    Shiraoka: [36.0190, 139.6769], Hasuda: [35.9944, 139.6622], Satte: [36.0781, 139.7256], Toda: [35.8176, 139.6779], Warabi: [35.8256, 139.6797],
+    Misato: [35.8303, 139.8724], Yashio: [35.8226, 139.8393],
+    Chiyoda: [35.6940, 139.7536], Chuo: [35.6706, 139.7720], Minato: [35.6581, 139.7516], Shinjuku: [35.6938, 139.7034], Shibuya: [35.6640, 139.6982],
+    Toshima: [35.7261, 139.7167], Nerima: [35.7357, 139.6518], Itabashi: [35.7512, 139.7093], Suginami: [35.6995, 139.6364], Setagaya: [35.6464, 139.6533],
+    Yokohama: [35.4437, 139.6380], Kawasaki: [35.5308, 139.7029], Chiba: [35.6073, 140.1063], Kashiwa: [35.8676, 139.9758], Funabashi: [35.6947, 139.9826], Matsudo: [35.7876, 139.9031],
+    Osaka: [34.6937, 135.5023], Nagoya: [35.1815, 136.9066], Sapporo: [43.0618, 141.3545], Fukuoka: [33.5902, 130.4017],
+  };
+  (function renderCityMap() {
+    const card = $('#city-map-card'), box = $('#city-map'), legend = $('#city-map-legend');
+    if (!ga || !ga.cities || !ga.cities.length) { card.remove(); return; }
+    if (!window.L) { box.replaceWith(el('div', 'empty', '地図を読み込めませんでした（ネットワーク接続を確認してください）。下の表で確認できます。')); legend.remove(); return; }
+    const home = cityLatLng.Higashimatsuyama;
+    const pts = ga.cities.map((r) => {
+      const key = (r.city || '').replace(/ City$/, '');
+      const ll = cityLatLng[key];
+      return ll ? { r, key, ll } : null;
+    }).filter(Boolean);
+    const map = L.map(box, { scrollWheelZoom: false });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+    const maxUsers = Math.max(1, ...pts.map((p) => p.r.users));
+    const radius = (u) => 6 + 30 * Math.sqrt(u / maxUsers);
+    const nearby = [];
+    const dist = (a, b) => Math.hypot((a[0] - b[0]) * 111, (a[1] - b[1]) * 91); // おおよその km
+    pts.sort((a, b) => b.r.users - a.r.users).forEach((p) => {
+      const isHome = p.key === 'Higashimatsuyama';
+      const c = L.circleMarker(p.ll, { radius: radius(p.r.users), color: isHome ? '#388e3c' : '#2a78d6', weight: 1.5, fillColor: isHome ? '#388e3c' : '#2a78d6', fillOpacity: 0.4 }).addTo(map);
+      c.bindPopup(`<b>${cityLabel(p.r)}</b><br>ユーザー ${fmtInt(p.r.users)} 人 / セッション ${fmtInt(p.r.sessions)} 回`);
+      c.on('mouseover', () => c.openPopup());
+      if (dist(p.ll, home) < 70) nearby.push(p.ll);
+    });
+    const fit = () => { map.invalidateSize(); if (nearby.length > 1) map.fitBounds(L.latLngBounds(nearby).pad(0.15)); else map.setView(home, 10); };
+    fit();
+    // 地域分析ページを開いたときに地図の大きさを計算し直す（隠れている間は 0 幅のため）
+    window.addEventListener('hashchange', () => { if (location.hash === '#region') setTimeout(fit, 60); });
+    const missing = ga.cities.filter((r) => !cityLatLng[(r.city || '').replace(/ City$/, '')] && r.city !== '(not set)');
+    const lg = (u, text) => { const sp = el('span'); const i = el('i'); const d = Math.round(radius(u) * 2); i.style.width = d + 'px'; i.style.height = d + 'px'; sp.append(i, text); return sp; };
+    const q = Math.max(1, Math.round(maxUsers / 4));
+    legend.append(lg(maxUsers, `${fmtInt(maxUsers)} 人`), lg(q, `${fmtInt(q)} 人`));
+    const homeKey = el('span'); const hi = el('i'); hi.style.cssText = 'width:12px;height:12px;background:#388e3c'; homeKey.append(hi, '東松山市'); legend.appendChild(homeKey);
+    if (missing.length) legend.appendChild(el('span', 'dim', `地図にない: ${missing.map(cityLabel).join('、')}`));
+  })();
+
   if (ga && ga.cities) {
     barTable($('#cities'), '市区町村別', 'ユーザー数（直近28日）。右はセッション数。海外や遠方が混ざるのは、VPNや携帯回線の経路、クローラーなどが原因です。', ga.cities,
       cityLabel, (r) => r.users, [{ label: 'セッション', num: true }], (r) => [td(fmtInt(r.sessions), true)]);
@@ -893,7 +1017,7 @@ window.HELP = {
       [{ key: 'impressionsMaps', label: 'マップ', color: 'var(--series-1)' }, { key: 'impressionsSearch', label: '検索の店舗枠', color: 'var(--series-2)' }], 'line');
     chartsBox.append(actions.card, imps.card);
     trendCharts.push(actions, imps);
-    const days = Number(document.querySelector('.seg button[aria-pressed="true"]')?.dataset.range || 28);
+    const days = Number(document.querySelector('.seg button[data-range][aria-pressed="true"]')?.dataset.range || 28);
     actions.render(days); imps.render(days);
 
     kwBox.replaceChildren(h3('マップで店舗が出た検索キーワード', 'gbpKeyword'), el('p', 'desc', '直近2か月の月次データ。件数が少ないキーワードは「15未満」とだけ分かります'));
@@ -913,6 +1037,48 @@ window.HELP = {
       box.appendChild(el('div', 'empty', 'データがありません（次回の更新から表示されます）'));
       return;
     }
+    const devJa = { mobile: 'スマートフォン', desktop: 'パソコン', tablet: 'タブレット' };
+    const hasDevice = flow.channelLanding.some((e) => e.device);
+    const devices = hasDevice ? ['mobile', 'desktop', 'tablet'].filter((d) => flow.channelLanding.some((e) => e.device === d)) : [];
+    box.replaceChildren(h3('セッションの流れ', 'landing'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。Google マップから直接かけた電話はこの図には含まれず、「Google 検索」ページの「Google マップでの見られ方」に出ます。スマホでは横にスクロールできます。'));
+    const holder = el('div');
+    if (devices.length) {
+      const f = el('div', 'filters');
+      f.appendChild(el('span', 'lbl', '端末'));
+      const seg = el('div', 'seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', '端末');
+      for (const d of ['all', ...devices]) {
+        const b = el('button', null, d === 'all' ? 'すべて' : devJa[d] || d);
+        b.type = 'button'; b.dataset.device = d; b.setAttribute('aria-pressed', String(d === 'all'));
+        b.addEventListener('click', () => { seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(d); });
+        seg.appendChild(b);
+      }
+      f.appendChild(seg);
+      box.appendChild(f);
+    } else {
+      box.appendChild(el('p', 'desc', '端末別の切り替えは、次回の更新（翌朝 6:30）から使えます。'));
+    }
+    box.appendChild(holder);
+    // 端末で絞って、チャネル×着地ページ / 着地ページ×成果に集計し直す
+    const aggregate = (device) => {
+      const pick = (arr) => arr.filter((e) => device === 'all' || e.device === device);
+      const m1 = new Map();
+      for (const e of pick(flow.channelLanding)) { const k = e.channel + '|' + e.landing; m1.set(k, (m1.get(k) || 0) + e.sessions); }
+      const m2 = new Map();
+      for (const e of pick(flow.landingOutcome)) { const k = e.landing + '|' + e.outcome; m2.set(k, (m2.get(k) || 0) + e.sessions); }
+      return {
+        channelLanding: [...m1.entries()].map(([k, v]) => { const [channel, landing] = k.split('|'); return { channel, landing, sessions: v }; }),
+        landingOutcome: [...m2.entries()].map(([k, v]) => { const [landing, outcome] = k.split('|'); return { landing, outcome, sessions: v }; }),
+      };
+    };
+    const draw = (device) => {
+      const flow = aggregate(device);
+      holder.replaceChildren();
+      if (!flow.channelLanding.length) { holder.appendChild(el('div', 'empty', 'この端末のデータがありません')); return; }
+      drawSankey(holder, flow);
+    };
+    draw('all');
+  })();
+  function drawSankey(box, flow) {
     const landingJa = { top: 'トップページ', blog: 'ブログ', other: 'その他のページ' };
     const outcomeJa = { tel_click: '電話をタップ', line_click: 'LINE を押した', map_click: '地図を開いた', none: '何もせず離脱' };
     const chanColors = ['var(--flow-1)', 'var(--flow-2)', 'var(--flow-3)', 'var(--flow-4)', 'var(--flow-5)', 'var(--flow-6)'];
@@ -1021,7 +1187,7 @@ window.HELP = {
 
     const wrap = el('div', 'sankey-wrap');
     wrap.appendChild(svg);
-    box.replaceChildren(h3('セッションの流れ', 'landing'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。Google マップから直接かけた電話はこの図には含まれず、「Google 検索」ページの「Google マップでの見られ方」に出ます。スマホでは横にスクロールできます。'), wrap);
+    box.appendChild(wrap);
 
     // 表で見る（アクセシビリティ用の代替表示）
     const det = el('details', 'tbl');
@@ -1033,7 +1199,7 @@ window.HELP = {
     det.appendChild(table([{ label: 'から' }, { label: 'へ' }, { label: 'セッション', num: true }], rows,
       (r) => { const tr = el('tr'); tr.append(td(r.a), td(r.b), td(fmtInt(r.v), true)); return tr; }));
     box.appendChild(det);
-  })();
+  }
 
   if (gsc) {
     $('#gsc-range').textContent = `${gsc.range.start} 〜 ${gsc.range.end}（検索データは2日ほど遅れて確定します）`;
@@ -1101,7 +1267,7 @@ window.HELP = {
         [{ key: 'rageClicks', label: '怒りクリック', color: 'var(--series-2)' }, { key: 'deadClicks', label: '反応しない', color: 'var(--series-3)' }, { key: 'quickBacks', label: 'すぐ戻る', color: 'var(--series-1)' }], 'line', fmtInt, postMarkers);
       chartsBox.append(c1.card, c2.card);
       trendCharts.push(c1, c2);
-      const days = Number(document.querySelector('.seg button[aria-pressed="true"]')?.dataset.range || 28);
+      const days = Number(document.querySelector('.seg button[data-range][aria-pressed="true"]')?.dataset.range || 28);
       c1.render(days); c2.render(days);
     } else {
       chartsBox.appendChild(el('div', 'empty', '日別のグラフは履歴が 2 日分以上たまると表示されます'));
