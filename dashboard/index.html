@@ -58,7 +58,34 @@
     line-height: 1.6;
   }
   a { color: inherit; }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 24px 16px 64px; }
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .side {
+    position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px;
+  }
+  .side a {
+    display: block; text-decoration: none; color: var(--ink-2); font-size: 14px; font-weight: 600;
+    padding: 8px 10px; border-radius: 8px; line-height: 1.4;
+  }
+  .side a small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 1px; }
+  .side a:hover { background: var(--page); color: var(--ink); }
+  .side a[aria-current="page"] { background: var(--brand-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--brand); }
+  .main { min-width: 0; }
+  .page > h2:first-child { margin-top: 4px; }
+  .help {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 15px; height: 15px; margin-left: 4px; border: 1px solid var(--axis); border-radius: 50%;
+    font-size: 10px; font-weight: 700; line-height: 1; color: var(--muted); background: transparent;
+    cursor: help; vertical-align: 1px; user-select: none; font-family: inherit;
+  }
+  .help:hover, .help:focus-visible { color: var(--ink); border-color: var(--ink-2); outline: none; }
+  .help-tip {
+    position: fixed; z-index: 10; max-width: 300px; background: var(--tip-bg); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.6;
+    font-weight: 400; box-shadow: 0 4px 14px rgba(0,0,0,0.12); pointer-events: none;
+  }
+  .help-tip[hidden] { display: none; }
   header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 8px; }
   header.top h1 { font-size: 20px; margin: 0; font-weight: 700; }
   header.top h1 span { color: var(--brand); margin-right: 8px; }
@@ -148,9 +175,6 @@
   .sankey-wrap rect.node { stroke: var(--surface); stroke-width: 1; }
   details.tbl { margin-top: 10px; font-size: 13px; }
   details.tbl summary { cursor: pointer; color: var(--ink-2); }
-  .glossary { font-size: 13px; color: var(--ink-2); }
-  .glossary dt { font-weight: 600; color: var(--ink); margin-top: 8px; }
-  .glossary dd { margin: 0; }
   .dim { color: var(--muted); }
   .gate {
     max-width: 380px; margin: 48px auto; background: var(--surface); border: 1px solid var(--border);
@@ -169,7 +193,19 @@
   }
   .gate .err-msg { color: var(--bad); font-size: 13px; margin: 10px 0 0; min-height: 1.2em; }
   .lock { font-size: 12px; color: var(--muted); margin-left: auto; cursor: pointer; background: none; border: 0; font-family: inherit; text-decoration: underline; }
-  body.locked .wrap > :not(header.top):not(#gate) { display: none; }
+  body.locked .side, body.locked .main > :not(#gate) { display: none; }
+  body.locked .layout { display: block; }
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .side {
+      top: 0; z-index: 5; flex-direction: row; overflow-x: auto; gap: 4px; padding: 6px;
+      margin: 0 -16px; border-radius: 0; border-left: 0; border-right: 0; scrollbar-width: none;
+    }
+    .side::-webkit-scrollbar { display: none; }
+    .side a { white-space: nowrap; padding: 6px 12px; font-size: 13px; }
+    .side a small { display: none; }
+    .side a[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--brand); }
+  }
   @media (max-width: 600px) {
     .tile .value { font-size: 22px; }
     th, td { padding: 6px 4px; }
@@ -183,6 +219,18 @@
     <div class="meta" id="generated"></div>
     <button type="button" class="lock" id="lock-btn" hidden>ロックする</button>
   </header>
+  <div class="layout">
+  <nav class="side" aria-label="ページ">
+    <a href="#summary" data-page="summary">サマリー</a>
+    <a href="#daily" data-page="daily">日別の推移</a>
+    <a href="#traffic" data-page="traffic">流入分析<small>どこから来ているか・何をしたか</small></a>
+    <a href="#region" data-page="region">地域分析<small>どこに住んでいる人か</small></a>
+    <a href="#search" data-page="search">Google 検索<small>検索・マップでの見つかり方</small></a>
+    <a href="#pages" data-page="pages">ページ分析<small>よく見られたページ・使われ方・記事の効果</small></a>
+    <a href="#ads" data-page="ads">Google 広告</a>
+    <a href="#action" data-page="action">Action<small>成果につながる行動</small></a>
+  </nav>
+  <main class="main">
   <div id="gate" class="gate" hidden>
     <h2>パスワードを入力</h2>
     <p>このページの数値は暗号化されています。パスワードを入れると、このブラウザの中だけで復号して表示します。</p>
@@ -193,12 +241,15 @@
       <div class="err-msg" id="gate-err"></div>
     </form>
   </div>
-  <p class="note">Google アナリティクス（GA4）・Search Console・Google 広告（GA4 連携）の数値を毎朝まとめています。「直近28日」とその前の28日を比べています。</p>
+  <p class="note">Google アナリティクス（GA4）・Search Console・Google 広告（GA4 連携）の数値を毎朝まとめています。「直近28日」とその前の28日を比べています。<span class="help" data-help="howto" tabindex="0" role="button" aria-label="用語の説明の見方">?</span></p>
   <div id="alerts"></div>
 
+  <section class="page" data-page="summary">
   <h2>サマリー <span class="sub">直近28日 と 前の28日の比較</span></h2>
   <div class="grid tiles" id="tiles"></div>
+  </section>
 
+  <section class="page" data-page="daily" hidden>
   <h2>日別の推移</h2>
   <div class="filters">
     <span class="lbl">期間</span>
@@ -208,7 +259,9 @@
     </div>
   </div>
   <div class="grid two" id="trends"></div>
+  </section>
 
+  <section class="page" data-page="traffic" hidden>
   <h2>どこから来ているか <span class="tag">GA4</span></h2>
   <div class="grid two">
     <div class="card" id="channels"></div>
@@ -217,22 +270,28 @@
 
   <h2>どこから来て、何をしたか <span class="tag">GA4</span> <span class="sub">直近28日のセッションの流れ。帯の太さが件数</span></h2>
   <div class="card" id="flow"></div>
+  </section>
 
-  <h2>Google マップでの見られ方 <span class="tag">ビジネスプロフィール</span> <span class="sub" id="gbp-range"></span></h2>
-  <div id="gbp-alert"></div>
-  <div class="grid tiles" id="gbp-tiles"></div>
-  <div class="grid two" id="gbp-charts" style="margin-top:12px"></div>
-  <div class="card" id="gbp-keywords" style="margin-top:12px"></div>
-
+  <section class="page" data-page="region" hidden>
   <h2>どこに住んでいる人か <span class="tag">GA4</span> <span class="sub">IPアドレスからの推定。精度は市区町村で7割ほどです</span></h2>
   <div class="card" id="cities"></div>
+  </section>
 
+  <section class="page" data-page="search" hidden>
   <h2>Google 検索での見つかり方 <span class="tag">Search Console</span> <span class="sub" id="gsc-range"></span></h2>
   <div class="grid two">
     <div class="card" id="queries"></div>
     <div class="card" id="gsc-pages"></div>
   </div>
 
+  <h2>Google マップでの見られ方 <span class="tag">ビジネスプロフィール</span> <span class="sub" id="gbp-range"></span></h2>
+  <div id="gbp-alert"></div>
+  <div class="grid tiles" id="gbp-tiles"></div>
+  <div class="grid two" id="gbp-charts" style="margin-top:12px"></div>
+  <div class="card" id="gbp-keywords" style="margin-top:12px"></div>
+  </section>
+
+  <section class="page" data-page="pages" hidden>
   <h2>よく見られたページ <span class="tag">GA4</span></h2>
   <div class="card" id="ga-pages"></div>
 
@@ -243,29 +302,107 @@
 
   <h2>記事の公開と数字の関係 <span class="tag">GA4 + Search Console</span> <span class="sub">公開前後 7 日の比較と、記事ごとの現在値</span></h2>
   <div class="card" id="post-impact"></div>
+  </section>
 
+  <section class="page" data-page="ads" hidden>
   <h2>Google 広告 <span class="tag">GA4 連携</span></h2>
   <div class="card" id="ads"></div>
+  </section>
 
-  <h2>成果につながる行動（キーイベント） <span class="tag">GA4</span></h2>
+  <section class="page" data-page="action" hidden>
+  <h2>成果につながる行動（キーイベント）<span class="help" data-help="keyEvent" tabindex="0" role="button" aria-label="キーイベントとは">?</span> <span class="tag">GA4</span></h2>
   <div class="card" id="key-events"></div>
-
-  <h2>用語の説明</h2>
-  <div class="card glossary">
-    <dl>
-      <dt>ユーザー / セッション / 表示回数（GA4）</dt>
-      <dd>ユーザーはサイトに来た人数、セッションは訪問回数、表示回数はページが見られた回数です。1人が2回来て3ページ見ると、1・2・3になります。</dd>
-      <dt>エンゲージメント率（GA4）</dt>
-      <dd>10秒以上見た・2ページ以上見た・キーイベントが起きた、のいずれかに当てはまる訪問の割合。すぐ離脱されていないかの目安です。</dd>
-      <dt>表示回数 / クリック数 / CTR / 平均掲載順位（Search Console）</dt>
-      <dd>Google の検索結果に出た回数と、そこからクリックされた回数。CTR はクリック÷表示。平均掲載順位は検索結果で何番目に出たかの平均で、小さいほど上位です。</dd>
-      <dt>流入チャネル</dt>
-      <dd>Organic Search＝検索から、Direct＝URL直打ちやブックマーク、Referral＝他サイトのリンク、Paid Search＝Google 広告、Organic Social＝SNS、Unassigned＝判別できなかったもの。</dd>
-      <dt>キーイベント</dt>
-      <dd>電話番号のタップや予約ページの閲覧など、GA4 で「成果」として設定した行動。未設定だとここは空になります。</dd>
-    </dl>
+  </section>
+  </main>
   </div>
 </div>
+<div class="help-tip" id="help-tip" role="tooltip" hidden></div>
+
+<script>
+// ---------------------------------------------------------- サイドパネルのページ切り替え（#summary など）
+(function () {
+  const pages = [...document.querySelectorAll('.page')];
+  const links = [...document.querySelectorAll('.side a')];
+  const show = () => {
+    const id = location.hash.slice(1);
+    const name = pages.some((p) => p.dataset.page === id) ? id : 'summary';
+    pages.forEach((p) => { p.hidden = p.dataset.page !== name; });
+    links.forEach((a) => { if (a.dataset.page === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    const cur = links.find((a) => a.dataset.page === name);
+    if (cur && cur.scrollIntoView && window.matchMedia('(max-width: 820px)').matches) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+  };
+  window.addEventListener('hashchange', () => { show(); window.scrollTo(0, 0); });
+  show();
+})();
+
+// ---------------------------------------------------------- 用語の ? にホバー（スマホはタップ）で説明を出す
+window.HELP = {
+  howto: '数字や項目名の横の「?」にマウスを乗せる（スマホはタップ）と、その言葉の説明が出ます。',
+  users: 'サイトに来た人の数。同じ人が何回来ても 1 人と数えます（ブラウザや端末が違うと別の人になります）。',
+  sessions: '訪問の回数。1 人が朝と夜に来れば 2 回です。30 分操作がないと次の訪問として数え直します。',
+  pageViews: 'ページが表示された回数。1 回の訪問で 3 ページ見れば 3 回です。',
+  engagementRate: '10秒以上見た・2ページ以上見た・キーイベントが起きた、のいずれかに当てはまる訪問の割合。すぐ離脱されていないかの目安です。',
+  gscClicks: 'Google の検索結果から、このサイトがクリックされた回数（Search Console）。',
+  gscImpressions: 'Google の検索結果にこのサイトが表示された回数（Search Console）。画面に出ただけで数え、見られたかどうかは問いません。',
+  ctr: 'クリック率。クリック数 ÷ 表示回数。検索結果のタイトルや説明文が、検索した人に響いているかの目安です。',
+  position: '検索結果で何番目に出たかの平均。小さいほど上位です。10 位までがだいたい 1 ページ目です。',
+  channel: 'どこから来たか。検索（自然）＝Google などの検索から、直接アクセス＝URL直打ちやブックマーク、他サイトのリンク＝他サイトから、Google 広告＝広告から、SNS＝SNSから、不明＝判別できなかったもの。',
+  device: '訪問に使われた端末の種類（スマートフォン・パソコン・タブレット）。',
+  landing: '訪問で最初に開いたページ（ランディングページ）。検索や広告から直接ブログ記事に来た場合は「ブログ」になります。',
+  keyEvent: '電話番号のタップ・LINE ボタン・地図を開くなど、GA4 で「成果」として登録した行動。未登録だと数えられません。',
+  adCost: 'Google 広告に払った金額。GA4 に連携された値なので、Google 広告の管理画面と数円ずれることがあります。',
+  adImpressions: '広告が表示された回数。',
+  adClicks: '広告がクリックされた回数。',
+  cpc: 'クリック単価。広告費 ÷ 広告クリック数。1 回クリックされるのにかかった費用です。',
+  campaign: 'Google 広告で、予算・地域・キーワードなどをまとめて管理する単位。',
+  gbpCalls: 'Google マップや検索の店舗情報の「電話」ボタンが押された回数。サイトを通らないので GA4 には出ません。',
+  directions: '店舗情報の「経路」を押して、医院までのルートを調べた回数。来院を考えている強いサインです。',
+  gbpWebsite: '店舗情報の「ウェブサイト」ボタンが押されて、このサイトに来た回数。',
+  gbpMaps: 'Google マップで、医院の店舗情報（ビジネスプロフィール）が表示された回数。',
+  gbpSearch: '「東松山 歯医者」などで Google 検索したとき、地図付きで出る店舗の枠に医院が表示された回数。',
+  gbpKeyword: 'Google マップや検索の店舗枠で、医院が表示されたときに使われていた検索キーワード。',
+  clSessions: 'Microsoft Clarity で記録された訪問の数。GA4 とは数え方が違うので、数字は一致しません。',
+  scrollDepth: 'ページをどこまでスクロールしたかの平均（%）。100% なら最後まで読まれています。',
+  activeTime: 'タブを開いているだけの時間を除いた、スクロールやクリックなど実際に操作していた時間の平均。',
+  rageClicks: '同じ場所を短い時間に何度も連打したクリック。押しても反応しない・分かりにくい場所があるサインです。',
+  deadClicks: 'クリックしても何も起きなかったクリック。リンクだと思われているのにリンクでない文字や画像などで起きます。',
+  quickBacks: 'ページを開いてすぐ前のページに戻った訪問。期待した内容ではなかった可能性があります。',
+};
+(function () {
+  const tip = document.getElementById('help-tip');
+  let pinned = null;
+  const place = (btn) => {
+    const text = window.HELP[btn.dataset.help];
+    if (!text) return;
+    tip.textContent = text;
+    tip.hidden = false;
+    const r = btn.getBoundingClientRect();
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  };
+  const hide = () => { tip.hidden = true; pinned = null; };
+  document.addEventListener('mouseover', (ev) => { const b = ev.target.closest && ev.target.closest('.help'); if (b && !pinned) place(b); });
+  document.addEventListener('mouseout', (ev) => { const b = ev.target.closest && ev.target.closest('.help'); if (b && !pinned) tip.hidden = true; });
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest && ev.target.closest('.help');
+    if (!b) { hide(); return; }
+    if (pinned === b) { hide(); return; }
+    pinned = b; place(b);
+  });
+  document.addEventListener('focusin', (ev) => { if (ev.target.classList && ev.target.classList.contains('help')) place(ev.target); });
+  document.addEventListener('focusout', (ev) => { if (ev.target.classList && ev.target.classList.contains('help') && !pinned) tip.hidden = true; });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') hide();
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList && ev.target.classList.contains('help')) { ev.preventDefault(); ev.target.click(); }
+  });
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+})();
+</script>
 
 <script>
 (async function () {
@@ -288,6 +425,13 @@
     if (text != null) e.textContent = text;
     return e;
   };
+  // 用語の「?」。説明文は上の window.HELP
+  const help = (key) => {
+    const h = el('span', 'help', '?');
+    h.dataset.help = key; h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-label', '用語の説明');
+    return h;
+  };
+  const h3 = (title, key) => { const e = el('h3', null, title); if (key) e.appendChild(help(key)); return e; };
 
   // ---------------------------------------------------------- データ読み込み（暗号化 or 平文）
   const b64 = (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
@@ -394,7 +538,9 @@
   // ---------------------------------------------------------- tiles
   function tile(label, value, unit, cur, prev, opts = {}) {
     const t = el('div', 'card tile');
-    t.appendChild(el('div', 'label', label));
+    const lb = el('div', 'label', label);
+    if (opts.help) lb.appendChild(help(opts.help));
+    t.appendChild(lb);
     const v = el('div', 'value', value);
     if (unit) v.appendChild(el('small', null, unit));
     t.appendChild(v);
@@ -419,26 +565,26 @@
   if (ga) {
     const c = ga.summary.current, p = ga.summary.previous;
     tiles.append(
-      tile('ユーザー数', fmtInt(c.users), '人', c.users, p.users),
-      tile('セッション（訪問回数）', fmtInt(c.sessions), '回', c.sessions, p.sessions),
-      tile('ページ表示回数', fmtInt(c.pageViews), '回', c.pageViews, p.pageViews),
-      tile('エンゲージメント率', fmtPct(c.engagementRate, 0), '', c.engagementRate, p.engagementRate, { fmtPrev: (v) => fmtPct(v, 0) })
+      tile('ユーザー数', fmtInt(c.users), '人', c.users, p.users, { help: 'users' }),
+      tile('セッション（訪問回数）', fmtInt(c.sessions), '回', c.sessions, p.sessions, { help: 'sessions' }),
+      tile('ページ表示回数', fmtInt(c.pageViews), '回', c.pageViews, p.pageViews, { help: 'pageViews' }),
+      tile('エンゲージメント率', fmtPct(c.engagementRate, 0), '', c.engagementRate, p.engagementRate, { fmtPrev: (v) => fmtPct(v, 0), help: 'engagementRate' })
     );
   }
   if (gsc) {
     const c = gsc.current, p = gsc.previous;
     tiles.append(
-      tile('検索クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks),
-      tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions),
-      tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v) }),
-      tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位' })
+      tile('検索クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'gscClicks' }),
+      tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions' }),
+      tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr' }),
+      tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position' })
     );
   }
   if (ads && ads.linked) {
     const c = ads.current, p = ads.previous;
     tiles.append(
-      tile('広告費', fmtYen(c.cost), '', c.cost, p.cost, { fmtPrev: fmtYen }),
-      tile('広告クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks)
+      tile('広告費', fmtYen(c.cost), '', c.cost, p.cost, { fmtPrev: fmtYen, help: 'adCost' }),
+      tile('広告クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'adClicks' })
     );
   }
 
@@ -633,7 +779,7 @@
   function table(headers, rows, renderRow) {
     const t = el('table');
     const thead = el('thead'); const tr = el('tr');
-    headers.forEach((h) => tr.appendChild(el('th', h.num ? 'num' : '', h.label)));
+    headers.forEach((h) => { const th = el('th', h.num ? 'num' : '', h.label); if (h.help) th.appendChild(help(h.help)); tr.appendChild(th); });
     thead.appendChild(tr); t.appendChild(thead);
     const tb = el('tbody');
     rows.forEach((r, i) => tb.appendChild(renderRow(r, i)));
@@ -653,7 +799,7 @@
     'Cross-network': '広告（複数ネットワーク）', 'AI Assistant': 'AI アシスタント（ChatGPT など）', 'Organic Video': '動画', 'Organic Shopping': 'ショッピング', 'Paid Other': 'その他の広告',
   };
   function barTable(container, title, desc, rows, labelOf, valueOf, extraHeaders = [], extraCells = () => []) {
-    container.replaceChildren(el('h3', null, title), el('p', 'desc', desc));
+    container.replaceChildren(Array.isArray(title) ? h3(...title) : h3(title), el('p', 'desc', desc));
     if (!rows || rows.length === 0) { container.appendChild(el('div', 'empty', 'データがありません')); return; }
     const max = Math.max(1, ...rows.map(valueOf));
     container.appendChild(table(
@@ -677,11 +823,11 @@
   }
 
   if (ga) {
-    barTable($('#channels'), '流入チャネル', 'セッション数（直近28日）。右は前の28日。', ga.channels,
+    barTable($('#channels'), ['流入チャネル', 'channel'], 'セッション数（直近28日）。右は前の28日。', ga.channels,
       (r) => channelJa[r.channel] || r.channel, (r) => r.sessions,
       [{ label: '前の28日', num: true }], (r) => [td(fmtInt(r.previousSessions), true)]);
     const devJa = { desktop: 'パソコン', mobile: 'スマートフォン', tablet: 'タブレット' };
-    barTable($('#devices'), '端末', 'セッション数（直近28日）', ga.devices, (r) => devJa[r.device] || r.device, (r) => r.sessions);
+    barTable($('#devices'), ['端末', 'device'], 'セッション数（直近28日）', ga.devices, (r) => devJa[r.device] || r.device, (r) => r.sessions);
   } else {
     $('#channels').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
     $('#devices').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
@@ -734,11 +880,11 @@
     const c = gbp.current, p = gbp.previous;
     $('#gbp-range').textContent = `${gbp.range.start} 〜 ${gbp.range.end}（マップのデータは3日ほど遅れて確定します）`;
     tilesBox.append(
-      tile('マップから電話', fmtInt(c.calls), '件', c.calls, p.calls),
-      tile('経路を検索', fmtInt(c.directions), '件', c.directions, p.directions),
-      tile('マップからサイトへ', fmtInt(c.websiteClicks), '件', c.websiteClicks, p.websiteClicks),
-      tile('マップでの表示', fmtInt(c.impressionsMaps), '回', c.impressionsMaps, p.impressionsMaps),
-      tile('Google 検索の店舗枠での表示', fmtInt(c.impressionsSearch), '回', c.impressionsSearch, p.impressionsSearch)
+      tile('マップから電話', fmtInt(c.calls), '件', c.calls, p.calls, { help: 'gbpCalls' }),
+      tile('経路を検索', fmtInt(c.directions), '件', c.directions, p.directions, { help: 'directions' }),
+      tile('マップからサイトへ', fmtInt(c.websiteClicks), '件', c.websiteClicks, p.websiteClicks, { help: 'gbpWebsite' }),
+      tile('マップでの表示', fmtInt(c.impressionsMaps), '回', c.impressionsMaps, p.impressionsMaps, { help: 'gbpMaps' }),
+      tile('Google 検索の店舗枠での表示', fmtInt(c.impressionsSearch), '回', c.impressionsSearch, p.impressionsSearch, { help: 'gbpSearch' })
     );
     if (c.messages || p.messages) tilesBox.append(tile('メッセージ', fmtInt(c.messages), '件', c.messages, p.messages));
     const actions = chartCard('マップからの行動', '1日あたりの電話・経路検索・サイトクリック。GA4 には出ない「地図から直接電話した人」が見えます', gbp.daily,
@@ -750,7 +896,7 @@
     const days = Number(document.querySelector('.seg button[aria-pressed="true"]')?.dataset.range || 28);
     actions.render(days); imps.render(days);
 
-    kwBox.replaceChildren(el('h3', null, 'マップで店舗が出た検索キーワード'), el('p', 'desc', '直近2か月の月次データ。件数が少ないキーワードは「15未満」とだけ分かります'));
+    kwBox.replaceChildren(h3('マップで店舗が出た検索キーワード', 'gbpKeyword'), el('p', 'desc', '直近2か月の月次データ。件数が少ないキーワードは「15未満」とだけ分かります'));
     if (gbp.keywords && gbp.keywords.length) {
       kwBox.appendChild(table([{ label: 'キーワード' }, { label: '表示回数', num: true }],
         gbp.keywords.slice(0, 20), (r) => { const tr = el('tr'); tr.append(td(r.keyword), td(r.impressions != null ? fmtInt(r.impressions) : `${r.threshold ?? 15}未満`, true)); return tr; }));
@@ -875,7 +1021,7 @@
 
     const wrap = el('div', 'sankey-wrap');
     wrap.appendChild(svg);
-    box.replaceChildren(el('h3', null, 'セッションの流れ'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。Google マップから直接かけた電話はこの図には含まれず、下の「Google マップでの見られ方」に出ます。スマホでは横にスクロールできます。'), wrap);
+    box.replaceChildren(h3('セッションの流れ', 'landing'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。Google マップから直接かけた電話はこの図には含まれず、「Google 検索」ページの「Google マップでの見られ方」に出ます。スマホでは横にスクロールできます。'), wrap);
 
     // 表で見る（アクセシビリティ用の代替表示）
     const det = el('details', 'tbl');
@@ -894,13 +1040,13 @@
     const q = $('#queries');
     q.replaceChildren(el('h3', null, '検索キーワード'), el('p', 'desc', 'どんな言葉で検索して見つかったか（クリック数順）'));
     q.appendChild(gsc.queries.length ? table(
-      [{ label: 'キーワード' }, { label: 'クリック', num: true }, { label: '表示', num: true }, { label: 'CTR', num: true }, { label: '順位', num: true }],
+      [{ label: 'キーワード' }, { label: 'クリック', num: true, help: 'gscClicks' }, { label: '表示', num: true, help: 'gscImpressions' }, { label: 'CTR', num: true, help: 'ctr' }, { label: '順位', num: true, help: 'position' }],
       gsc.queries, (r) => { const tr = el('tr'); tr.append(td(r.query), td(fmtInt(r.clicks), true), td(fmtInt(r.impressions), true), td(fmtPct(r.ctr), true), td(r.position.toFixed(1), true)); return tr; }
     ) : el('div', 'empty', 'まだ検索データがありません'));
     const gp = $('#gsc-pages');
     gp.replaceChildren(el('h3', null, '検索から来られたページ'), el('p', 'desc', 'Google 検索結果に出たページ（クリック数順）'));
     gp.appendChild(gsc.pages.length ? table(
-      [{ label: 'ページ' }, { label: 'クリック', num: true }, { label: '表示', num: true }, { label: '順位', num: true }],
+      [{ label: 'ページ' }, { label: 'クリック', num: true, help: 'gscClicks' }, { label: '表示', num: true, help: 'gscImpressions' }, { label: '順位', num: true, help: 'position' }],
       gsc.pages, (r) => { const tr = el('tr'); tr.append(pageCell(r.title, r.page), td(fmtInt(r.clicks), true), td(fmtInt(r.impressions), true), td(r.position.toFixed(1), true)); return tr; }
     ) : el('div', 'empty', 'まだ検索データがありません'));
   } else {
@@ -912,7 +1058,7 @@
   if (ga && ga.pages.length) {
     gpg.replaceChildren(el('h3', null, 'ページ別の表示回数'), el('p', 'desc', '直近28日で見られた回数が多い順'));
     gpg.appendChild(table(
-      [{ label: '#' }, { label: 'ページ' }, { label: '表示回数', num: true }, { label: 'ユーザー', num: true }],
+      [{ label: '#' }, { label: 'ページ' }, { label: '表示回数', num: true, help: 'pageViews' }, { label: 'ユーザー', num: true, help: 'users' }],
       ga.pages, (r, i) => { const tr = el('tr'); tr.append(td(String(i + 1)), pageCell(r.title, r.path), td(fmtInt(r.pageViews), true), td(fmtInt(r.users), true)); return tr; }
     ));
   } else {
@@ -942,12 +1088,12 @@
     if (data.errors && data.errors.clarity) alertBox.appendChild(el('div', 'alert err', 'Clarity の最新データを取得できなかったため、前回までの履歴を表示しています。 ' + data.errors.clarity.slice(0, 120)));
     const pct = (v) => (v == null ? '–' : Math.round(v) + '%');
     tilesBox.append(
-      tile('セッション（前日）', fmtInt(L.sessions), '', sum(last7, 'sessions'), sum(prev7, 'sessions'), { fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' }),
-      tile('平均スクロール深度', pct(L.scrollDepth), '', avg(last7, 'scrollDepth'), avg(prev7, 'scrollDepth'), { fmtPrev: pct, na: '前週比は履歴 14 日でできます' }),
-      tile('実際に操作していた時間', fmtDur(L.engagementActiveSec), '', avg(last7, 'engagementActiveSec'), avg(prev7, 'engagementActiveSec'), { fmtPrev: fmtDur, na: '前週比は履歴 14 日でできます' }),
-      tile('怒りクリック', fmtInt(L.rageClicks), '件', sum(last7, 'rageClicks'), sum(prev7, 'rageClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' }),
-      tile('反応しない場所のクリック', fmtInt(L.deadClicks), '件', sum(last7, 'deadClicks'), sum(prev7, 'deadClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' }),
-      tile('すぐ戻った訪問', fmtInt(L.quickBacks), '件', sum(last7, 'quickBacks'), sum(prev7, 'quickBacks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます' })
+      tile('セッション（前日）', fmtInt(L.sessions), '', sum(last7, 'sessions'), sum(prev7, 'sessions'), { fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'clSessions' }),
+      tile('平均スクロール深度', pct(L.scrollDepth), '', avg(last7, 'scrollDepth'), avg(prev7, 'scrollDepth'), { fmtPrev: pct, na: '前週比は履歴 14 日でできます', help: 'scrollDepth' }),
+      tile('実際に操作していた時間', fmtDur(L.engagementActiveSec), '', avg(last7, 'engagementActiveSec'), avg(prev7, 'engagementActiveSec'), { fmtPrev: fmtDur, na: '前週比は履歴 14 日でできます', help: 'activeTime' }),
+      tile('怒りクリック', fmtInt(L.rageClicks), '件', sum(last7, 'rageClicks'), sum(prev7, 'rageClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'rageClicks' }),
+      tile('反応しない場所のクリック', fmtInt(L.deadClicks), '件', sum(last7, 'deadClicks'), sum(prev7, 'deadClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'deadClicks' }),
+      tile('すぐ戻った訪問', fmtInt(L.quickBacks), '件', sum(last7, 'quickBacks'), sum(prev7, 'quickBacks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'quickBacks' })
     );
     if (hist.length >= 2) {
       const c1 = chartCard('読まれた深さと操作時間', '日別。スクロール深度（%）', hist, [{ key: 'scrollDepth', label: 'スクロール深度 %', color: 'var(--series-1)' }], 'line', (v) => Math.round(v) + '%', postMarkers);
@@ -1006,7 +1152,7 @@
     ));
     const lg = el('p', 'desc'); lg.style.marginTop = '10px';
     const i = el('i', 'mk'); i.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--marker);margin-right:6px;vertical-align:middle';
-    lg.append(i, '上の「日別の推移」の縦線が記事の公開日です。線の上の点に触れると記事名が出ます。');
+    lg.append(i, '「日別の推移」ページのグラフの縦線が記事の公開日です。線の上の点に触れると記事名が出ます。');
     box.appendChild(lg);
   })();
 
@@ -1021,7 +1167,7 @@
   } else {
     adsBox.replaceChildren(el('h3', null, 'キャンペーン別'), el('p', 'desc', '直近28日。費用は GA4 に連携された値で、Google 広告の管理画面と数円ずれることがあります。'));
     adsBox.appendChild(ads.campaigns.length ? table(
-      [{ label: 'キャンペーン' }, { label: '表示', num: true }, { label: 'クリック', num: true }, { label: '費用', num: true }, { label: 'クリック単価', num: true }, { label: 'セッション', num: true }, { label: 'キーイベント', num: true }],
+      [{ label: 'キャンペーン', help: 'campaign' }, { label: '表示', num: true, help: 'adImpressions' }, { label: 'クリック', num: true, help: 'adClicks' }, { label: '費用', num: true, help: 'adCost' }, { label: 'クリック単価', num: true, help: 'cpc' }, { label: 'セッション', num: true, help: 'sessions' }, { label: 'キーイベント', num: true, help: 'keyEvent' }],
       ads.campaigns, (r) => { const tr = el('tr'); tr.append(td(r.campaign), td(fmtInt(r.impressions), true), td(fmtInt(r.clicks), true), td(fmtYen(r.cost), true), td(r.clicks ? fmtYen(r.cost / r.clicks) : '–', true), td(fmtInt(r.sessions), true), td(fmtInt(r.keyEvents), true)); return tr; }
     ) : el('div', 'empty', 'キャンペーン別のデータがありません'));
   }
@@ -1031,7 +1177,7 @@
   if (ga && ga.keyEvents.length) {
     ke.replaceChildren(el('h3', null, 'キーイベント別'), el('p', 'desc', '直近28日の件数と前の28日'));
     ke.appendChild(table(
-      [{ label: 'イベント' }, { label: '直近28日', num: true }, { label: '前の28日', num: true }],
+      [{ label: 'イベント', help: 'keyEvent' }, { label: '直近28日', num: true }, { label: '前の28日', num: true }],
       ga.keyEvents, (r) => { const tr = el('tr'); tr.append(pageCell(eventJa[r.event] || null, r.event), td(fmtInt(r.count), true), td(fmtInt(r.previousCount), true)); return tr; }
     ));
   } else {
