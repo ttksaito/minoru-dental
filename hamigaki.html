@@ -690,7 +690,7 @@ function update(dt){
   if(remaining<=Math.max(12,total0*0.10)&&cavLeft()<=Math.max(6,cav0*0.06)){win();return;}
   if(!balls.length){
     st.lives--;bigT=0;flossT=0;tone(300,0.4,'sawtooth',0.06,-220);if(!RM)shake=0.3;
-    if(st.lives<=0){st.mode='over';show('over');}
+    if(st.lives<=0){st.mode='over';saveBest();try{localStorage.setItem('hamigaki-stage','0');}catch(e){}show('over');}
     else{newBall();st.mode='ready';aimT=0;say('泡を落とした。のこり '+st.lives);}
   }
 }
@@ -852,8 +852,8 @@ function show(kind){
     html='<h1><small>'+S.name+'クリア</small>ピカピカ！</h1><p>'+S.name+'を '+fmt(st.time)+' でみがき終えた。</p><p>スコア '+st.score+'点</p>';
     label='つぎは'+STAGES[st.stage+1].name;
   }else if(kind==='over'){
-    html='<h1><small>'+S.name+'</small>泡が<br>なくなった</h1><p>きれい度 '+pct()+'% まで進んだ。</p><p>スコア '+st.score+'点</p>';
-    label='もう一度みがく';
+    html='<h1><small>'+S.name+'</small>泡が<br>なくなった</h1><p>きれい度 '+pct()+'% まで進んだ。</p><p>スコア '+st.score+'点（最高 '+st.best+'点）</p><p>泡を3つ落としたので、つぎは最初のコースからスコア0でスタート。</p>';
+    label='最初からみがく';
   }else if(kind==='lost'){
     html='<h1><small>'+S.name+'</small>歯が<br>抜けた</h1><p>'+(lostWhy==='gum'?'泡を当てすぎて歯ぐきがやせてしまった。上から降る歯みがき粉で回復できる。':'虫歯が歯ぐきまで広がってしまった。虫歯の穴は早めに泡を当てて掃除しよう。')+'</p><p>スコア '+st.score+'点</p>';
     label='もう一度みがく';
@@ -870,7 +870,8 @@ function show(kind){
     wake();goFull();screenEl.hidden=true;
     if(kind==='title'){st.score=0;startStage(st.stage,false);}
     else if(kind==='clear')startStage(st.stage+1,true);
-    else if(kind==='over'||kind==='lost'){saveBest();st.score=st.scoreStart;startStage(st.stage,false);}
+    else if(kind==='over'){st.total=0;st.score=0;startStage(0,false);}
+    else if(kind==='lost'){saveBest();st.score=st.scoreStart;startStage(st.stage,false);}
     else{st.total=0;st.score=0;startStage(0,false);}
   });
   try{go.focus({preventScroll:true});}catch(e){}
