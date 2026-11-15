@@ -133,6 +133,18 @@
   .bar .trk { flex: 1; height: 10px; border-radius: 4px; background: transparent; position: relative; }
   .bar .fill { height: 10px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
   .bar .v { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  :root { --flow-1: #2a78d6; --flow-2: #1baf7a; --flow-3: #eda100; --flow-4: #e87ba4; --flow-5: #4a3aa7; --flow-6: #008300; --flow-goal: #eb6834; --flow-none: #d9d6cf; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --flow-1: #3987e5; --flow-2: #199e70; --flow-3: #c98500; --flow-4: #d55181; --flow-5: #9085e9; --flow-6: #008300; --flow-goal: #d95926; --flow-none: #3a3a37; } }
+  .sankey-wrap { overflow-x: auto; }
+  .sankey-wrap svg { min-width: 560px; display: block; width: 100%; height: auto; }
+  .sankey-wrap text { font-size: 12px; fill: var(--ink); }
+  .sankey-wrap text.v { fill: var(--ink-2); font-size: 11px; }
+  .sankey-wrap text.col { fill: var(--muted); font-size: 11px; font-weight: 600; }
+  .sankey-wrap path.link { fill-opacity: 0.45; transition: fill-opacity .15s; cursor: pointer; }
+  .sankey-wrap path.link:hover, .sankey-wrap path.link.hl { fill-opacity: 0.85; }
+  .sankey-wrap rect.node { stroke: var(--surface); stroke-width: 1; }
+  details.tbl { margin-top: 10px; font-size: 13px; }
+  details.tbl summary { cursor: pointer; color: var(--ink-2); }
   .glossary { font-size: 13px; color: var(--ink-2); }
   .glossary dt { font-weight: 600; color: var(--ink); margin-top: 8px; }
   .glossary dd { margin: 0; }
@@ -199,6 +211,9 @@
     <div class="card" id="channels"></div>
     <div class="card" id="devices"></div>
   </div>
+
+  <h2>どこから来て、何をしたか <span class="tag">GA4</span> <span class="sub">直近28日のセッションの流れ。帯の太さが件数</span></h2>
+  <div class="card" id="flow"></div>
 
   <h2>どこに住んでいる人か <span class="tag">GA4</span> <span class="sub">IPアドレスからの推定。精度は市区町村で7割ほどです</span></h2>
   <div class="card" id="cities"></div>
@@ -659,6 +674,136 @@
   } else {
     $('#cities').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
   }
+
+  // ---------------------------------------------------------- サンキー図（チャネル → 着地ページ → 成果）
+  (function renderFlow() {
+    const box = $('#flow');
+    const flow = ga && ga.flow;
+    if (!flow || !flow.channelLanding || flow.channelLanding.length === 0) {
+      box.appendChild(el('div', 'empty', 'データがありません（次回の更新から表示されます）'));
+      return;
+    }
+    const landingJa = { top: 'トップページ', blog: 'ブログ', other: 'その他のページ' };
+    const outcomeJa = { tel_click: '電話をタップ', line_click: 'LINE を押した', map_click: '地図を開いた', none: '何もせず離脱' };
+    const chanColors = ['var(--flow-1)', 'var(--flow-2)', 'var(--flow-3)', 'var(--flow-4)', 'var(--flow-5)', 'var(--flow-6)'];
+    const chanOrder = ['Organic Search', 'Direct', 'Paid Search', 'Referral', 'Organic Social', 'Cross-network', 'Unassigned', 'AI Assistant'];
+
+    // ノード集計
+    const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
+    const chanTotals = {};
+    for (const e of flow.channelLanding) chanTotals[e.channel] = (chanTotals[e.channel] || 0) + e.sessions;
+    // 小さいチャネルは「その他」にまとめる（最大 6）
+    const chans = Object.entries(chanTotals).sort((a, b) => b[1] - a[1]);
+    const keep = chans.slice(0, 5).map(([c]) => c);
+    const hasOther = chans.length > 5;
+    const chanKey = (c) => (keep.includes(c) ? c : 'その他');
+    const left = {};
+    for (const e of flow.channelLanding) {
+      const k = chanKey(e.channel) + '|' + e.landing;
+      left[k] = (left[k] || 0) + e.sessions;
+    }
+    const leftLinks = Object.entries(left).map(([k, v]) => { const [c, l] = k.split('|'); return { s: c, t: l, v }; });
+    const rightLinks = flow.landingOutcome.map((e) => ({ s: e.landing, t: e.outcome, v: e.sessions }));
+
+    const col0 = [...new Set(leftLinks.map((l) => l.s))].sort((a, b) => (a === 'その他' ? 1 : b === 'その他' ? -1 : sum(leftLinks.filter((l) => l.s === b), (l) => l.v) - sum(leftLinks.filter((l) => l.s === a), (l) => l.v)));
+    const col1 = ['top', 'blog', 'other'].filter((l) => leftLinks.some((x) => x.t === l) || rightLinks.some((x) => x.s === l));
+    const col2 = ['tel_click', 'line_click', 'map_click', 'none'].filter((o) => rightLinks.some((x) => x.t === o));
+    const colorOf = {};
+    col0.forEach((c, i) => { colorOf[c] = c === 'その他' ? 'var(--muted)' : chanColors[i % chanColors.length]; });
+
+    const nodeVal = (id, col) => {
+      if (col === 0) return sum(leftLinks.filter((l) => l.s === id), (l) => l.v);
+      if (col === 1) return Math.max(sum(leftLinks.filter((l) => l.t === id), (l) => l.v), sum(rightLinks.filter((l) => l.s === id), (l) => l.v));
+      return sum(rightLinks.filter((l) => l.t === id), (l) => l.v);
+    };
+    const W = 640, H = 300, PADX = 8, TOP = 26, GAP = 10, NW = 14;
+    const cols = [col0, col1, col2];
+    const colX = [PADX, W / 2 - NW / 2, W - PADX - NW];
+    const totals = cols.map((c, i) => sum(c, (id) => nodeVal(id, i)));
+    const maxTotal = Math.max(...totals, 1);
+    const innerH = H - TOP - 10;
+    const scale = Math.max(0.0001, (innerH - GAP * (Math.max(...cols.map((c) => c.length)) - 1)) / maxTotal);
+    const pos = {}; // id -> {x,y,h,col}
+    cols.forEach((c, ci) => {
+      const total = sum(c, (id) => nodeVal(id, ci)) * scale + GAP * (c.length - 1);
+      let y = TOP + (innerH - total) / 2;
+      c.forEach((id) => {
+        const h = Math.max(2, nodeVal(id, ci) * scale);
+        pos[ci + ':' + id] = { x: colX[ci], y, h, col: ci };
+        y += h + GAP;
+      });
+    });
+    // リンクの y 割り当て
+    const outOff = {}, inOff = {};
+    const place = (links, sc, tc) => {
+      const tIndex = (id) => cols[tc].indexOf(id), sIndex = (id) => cols[sc].indexOf(id);
+      links.sort((a, b) => sIndex(a.s) - sIndex(b.s) || tIndex(a.t) - tIndex(b.t));
+      for (const l of links) {
+        const sk = sc + ':' + l.s, tk = tc + ':' + l.t;
+        outOff[sk] = outOff[sk] || 0; inOff[tk] = inOff[tk] || 0;
+        l.y0 = pos[sk].y + outOff[sk]; l.y1 = pos[tk].y + inOff[tk]; l.w = l.v * scale;
+        outOff[sk] += l.w; inOff[tk] += l.w;
+      }
+    };
+    // 右側は入る順を揃えるため、ターゲット順にも並べる
+    place(leftLinks, 0, 1);
+    rightLinks.sort((a, b) => cols[1].indexOf(a.s) - cols[1].indexOf(b.s) || cols[2].indexOf(a.t) - cols[2].indexOf(b.t));
+    // 中央ノードの入り口オフセットは左リンクで消費済みなので、出口は別カウンタ
+    const outOff2 = {}, inOff2 = {};
+    for (const l of rightLinks) {
+      const sk = '1:' + l.s, tk = '2:' + l.t;
+      outOff2[sk] = outOff2[sk] || 0; inOff2[tk] = inOff2[tk] || 0;
+      l.y0 = pos[sk].y + outOff2[sk]; l.y1 = pos[tk].y + inOff2[tk]; l.w = l.v * scale;
+      outOff2[sk] += l.w; inOff2[tk] += l.w;
+    }
+
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '流入チャネルから着地ページ、成果までの流れ' });
+    const label = (x, y, text, cls, anchor) => { const t = svgEl('text', { x, y, 'text-anchor': anchor || 'start', class: cls || '' }); t.textContent = text; svg.appendChild(t); };
+    label(colX[0], 14, '流入チャネル', 'col', 'start');
+    label(colX[1] + NW / 2, 14, '最初に着いたページ', 'col', 'middle');
+    label(colX[2] + NW, 14, '成果', 'col', 'end');
+
+    const band = (l, x0, x1, color, title) => {
+      const xm = (x0 + x1) / 2;
+      const d = `M${x0},${l.y0} C${xm},${l.y0} ${xm},${l.y1} ${x1},${l.y1} L${x1},${l.y1 + l.w} C${xm},${l.y1 + l.w} ${xm},${l.y0 + l.w} ${x0},${l.y0 + l.w} Z`;
+      const p = svgEl('path', { d, class: 'link', fill: color });
+      p.appendChild(svgEl('title')).textContent = title;
+      svg.appendChild(p);
+      return p;
+    };
+    const nameOf = (id, col) => col === 0 ? (channelJa[id] || id) : col === 1 ? landingJa[id] : outcomeJa[id] || id;
+    leftLinks.forEach((l) => band(l, colX[0] + NW, colX[1], colorOf[l.s], `${nameOf(l.s, 0)} → ${nameOf(l.t, 1)}: ${l.v} セッション`));
+    rightLinks.forEach((l) => band(l, colX[1] + NW, colX[2], l.t === 'none' ? 'var(--flow-none)' : 'var(--flow-goal)', `${nameOf(l.s, 1)} → ${nameOf(l.t, 2)}: ${l.v} セッション`));
+
+    // ノードとラベル
+    cols.forEach((c, ci) => c.forEach((id) => {
+      const pz = pos[ci + ':' + id];
+      const fill = ci === 0 ? colorOf[id] : ci === 1 ? 'var(--ink-2)' : (id === 'none' ? 'var(--muted)' : 'var(--flow-goal)');
+      svg.appendChild(svgEl('rect', { x: pz.x, y: pz.y, width: NW, height: pz.h, rx: 2, fill, class: 'node' }));
+      const v = nodeVal(id, ci);
+      const compact = pz.h < 34; // 低いノードは 1 行にまとめて重なりを防ぐ
+      const ty = compact ? pz.y + pz.h / 2 + 4 : pz.y + pz.h / 2 - 3;
+      const lx = ci === 2 ? pz.x - 6 : pz.x + NW + 6;
+      const anchor = ci === 2 ? 'end' : 'start';
+      if (compact) { label(lx, ty, `${nameOf(id, ci)}　${v}`, '', anchor); }
+      else { label(lx, ty, nameOf(id, ci), '', anchor); label(lx, ty + 15, `${v}`, 'v', anchor); }
+    }));
+
+    const wrap = el('div', 'sankey-wrap');
+    wrap.appendChild(svg);
+    box.replaceChildren(el('h3', null, 'セッションの流れ'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。スマホでは横にスクロールできます。'), wrap);
+
+    // 表で見る（アクセシビリティ用の代替表示）
+    const det = el('details', 'tbl');
+    det.appendChild(el('summary', null, '表で見る'));
+    const rows = [
+      ...leftLinks.map((l) => ({ a: nameOf(l.s, 0), b: nameOf(l.t, 1), v: l.v })),
+      ...rightLinks.map((l) => ({ a: nameOf(l.s, 1), b: nameOf(l.t, 2), v: l.v })),
+    ];
+    det.appendChild(table([{ label: 'から' }, { label: 'へ' }, { label: 'セッション', num: true }], rows,
+      (r) => { const tr = el('tr'); tr.append(td(r.a), td(r.b), td(fmtInt(r.v), true)); return tr; }));
+    box.appendChild(det);
+  })();
 
   if (gsc) {
     $('#gsc-range').textContent = `${gsc.range.start} 〜 ${gsc.range.end}（検索データは2日ほど遅れて確定します）`;

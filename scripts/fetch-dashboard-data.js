@@ -275,6 +275,68 @@ async function fetchGa4() {
     console.warn(`キーイベントの取得をスキップ: ${e.message.slice(0, 200)}`);
   }
 
+  // 7b) 流れ（サンキー図用）: チャネル → 最初に着いたページ → 成果（キーイベント）
+  const landingGroup = (lp) => {
+    const path = (lp || '').replace(/[?#].*$/, '').replace(/\/index\.html$/, '/');
+    if (path === '/' || path === '' || path === '(not set)') return 'top';
+    if (path.startsWith('/blog/') || path === '/blog.html') return 'blog';
+    return 'other';
+  };
+  let flow = { channelLanding: [], landingOutcome: [] };
+  try {
+    const clReport = await ga4Report({
+      dateRanges: [current],
+      dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'landingPage' }],
+      metrics: [{ name: 'sessions' }],
+      limit: 2000,
+    });
+    const clMap = new Map();
+    for (const r of rowsToObjects(clReport)) {
+      const key = `${r.sessionDefaultChannelGroup}|${landingGroup(r.landingPage)}`;
+      clMap.set(key, (clMap.get(key) || 0) + r.sessions);
+    }
+    const channelLanding = [...clMap.entries()].map(([k, v]) => {
+      const [channel, landing] = k.split('|');
+      return { channel, landing, sessions: v };
+    });
+
+    // ランディング別のセッション総数
+    const landingTotals = {};
+    for (const e of channelLanding) landingTotals[e.landing] = (landingTotals[e.landing] || 0) + e.sessions;
+
+    // ランディング × キーイベント（そのイベントが起きたセッション数）
+    const loMap = new Map();
+    try {
+      const loReport = await ga4Report({
+        dateRanges: [current],
+        dimensions: [{ name: 'landingPage' }, { name: 'eventName' }],
+        metrics: [{ name: 'sessions' }],
+        dimensionFilter: { filter: { fieldName: 'isKeyEvent', stringFilter: { value: 'true' } } },
+        limit: 2000,
+      });
+      for (const r of rowsToObjects(loReport)) {
+        const key = `${landingGroup(r.landingPage)}|${r.eventName}`;
+        loMap.set(key, (loMap.get(key) || 0) + r.sessions);
+      }
+    } catch (e) {
+      console.warn(`流れ（成果側）の取得をスキップ: ${e.message.slice(0, 200)}`);
+    }
+    const landingOutcome = [];
+    const withEvent = {};
+    for (const [k, v] of loMap.entries()) {
+      const [landing, event] = k.split('|');
+      landingOutcome.push({ landing, outcome: event, sessions: v });
+      withEvent[landing] = (withEvent[landing] || 0) + v;
+    }
+    for (const landing of Object.keys(landingTotals)) {
+      const none = Math.max(0, landingTotals[landing] - (withEvent[landing] || 0));
+      if (none > 0) landingOutcome.push({ landing, outcome: 'none', sessions: none });
+    }
+    flow = { channelLanding, landingOutcome };
+  } catch (e) {
+    console.warn(`流れ（サンキー図用）の取得をスキップ: ${e.message.slice(0, 200)}`);
+  }
+
   // 8) Google 広告（GA4 リンク経由）。未リンクなら全て 0 / 空になる
   //    advertiserAd* 指標はキャンペーン系ディメンションと一緒でないと取得できないため、
   //    常に sessionGoogleAdsCampaignName を付けて取り、こちらで合算する
@@ -374,6 +436,7 @@ async function fetchGa4() {
     devices,
     cities,
     keyEvents,
+    flow,
     ads,
   };
 }
