@@ -2,7 +2,12 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- ホーム画面に追加したときはアドレスバーなしの全画面で起動する（iPhone / Android） -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="はみがきブレイカー">
+<meta name="theme-color" content="#9fdcf0">
 <title>はみがきブレイカー｜みのる歯科の歯みがきブロック崩し</title>
 <meta name="description" content="歯ブラシで泡を打ち返して歯垢と虫歯をきれいにする、みのる歯科（埼玉県東松山市）のお子さま向けブロック崩しゲーム。スマホでもパソコンでも無料で遊べます。">
 <link rel="canonical" href="https://www.minoru-dental.jp/hamigaki.html">
@@ -267,6 +272,18 @@ function fmt(t){t=Math.round(t);return Math.floor(t/60)+':'+String(t%60).padStar
 /* ---------- sound ---------- */
 let AC=null,muted=false,lastTick=0,lastFizz=0;
 function wake(){if(AC||muted)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;}}
+/* タッチ端末では「みがきはじめる」などのタップ（ユーザー操作）を使って全画面にする。
+   Fullscreen API 非対応（古い iPhone など）やホーム画面から起動済みの場合は何もしない。 */
+function goFull(){
+  try{
+    if(!matchMedia('(pointer: coarse)').matches)return;
+    if(navigator.standalone||matchMedia('(display-mode: standalone)').matches)return;
+    if(document.fullscreenElement||document.webkitFullscreenElement)return;
+    const el=document.documentElement;
+    const p=el.requestFullscreen?el.requestFullscreen({navigationUI:'hide'}):el.webkitRequestFullscreen?el.webkitRequestFullscreen():null;
+    if(p&&p.catch)p.catch(()=>{});
+  }catch(e){}
+}
 function tone(f,d,kind,v,slide){
   if(muted||!AC)return;
   try{const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=kind||'square';o.frequency.setValueAtTime(f,t);
@@ -658,11 +675,11 @@ function show(kind){
   }
   screenEl.innerHTML=html+'<button id="go" type="button">'+label+'</button>'+extra;
   const rs=document.getElementById('reset');
-  if(rs)rs.addEventListener('click',()=>{wake();screenEl.hidden=true;st.total=0;startStage(0,false);});
+  if(rs)rs.addEventListener('click',()=>{wake();goFull();screenEl.hidden=true;st.total=0;startStage(0,false);});
   screenEl.hidden=false;
   const go=document.getElementById('go');
   go.addEventListener('click',()=>{
-    wake();screenEl.hidden=true;
+    wake();goFull();screenEl.hidden=true;
     if(kind==='title')startStage(st.stage,false);
     else if(kind==='clear')startStage(st.stage+1,true);
     else if(kind==='over'||kind==='lost')startStage(st.stage,false);
