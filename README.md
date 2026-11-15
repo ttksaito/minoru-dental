@@ -225,6 +225,8 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 - GA4: 直近28日と前28日の比較、日別推移（90日）、流入チャネル、端末、ページ別、キーイベント
 - Search Console: 検索クリック・表示回数・CTR・平均掲載順位、検索キーワード、検索から来られたページ（データは2日遅れ）
 - Google 広告: GA4 と Google 広告のリンク経由で費用・クリック・キャンペーン別を取得（Google Ads API は使わない）
+- Google マップ（ビジネスプロフィール）: 通話・経路検索・サイトクリック・表示回数の日別と、店舗が出た検索キーワード（Business Profile Performance API）
+- 流れの図: 流入チャネル → 最初に着いたページ → 成果（電話 / LINE / 地図 / 何もせず）のサンキー図
 - 手動実行: GitHubの Actions タブ → 集客ダッシュボードの更新 → Run workflow
 - データは GitHub Actions 上で AES-256-GCM で暗号化して `dashboard/data.enc` に保存する（リポジトリが公開のため）。ページを開くとパスワード入力が出て、ブラウザの中だけで復号して表示する。パスワードは GitHub Secrets の `DASHBOARD_PASSWORD`
 - パスワードを変える: `gh secret set DASHBOARD_PASSWORD` で更新し、ワークフローを手動実行すると新しいパスワードで再暗号化される（古いパスワードは使えなくなる）
@@ -236,7 +238,12 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 2. Search Console の対象プロパティ → 設定 → ユーザーと権限 → 「ユーザーを追加」で上記サービスアカウントのメールアドレスを「制限付き」以上で追加する
 3. （任意）プロパティが複数ある場合は GitHub の Settings → Secrets and variables → Actions → Variables に `GSC_SITE_URL`（例: `sc-domain:minoru-dental.jp`）を設定する。未設定なら権限のあるプロパティを自動で選ぶ
 4. Google 広告の数値を出すには GA4 の 管理 → サービス間のリンク → Google 広告のリンク が設定されていること
-5. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
+5. Google マップ（ビジネスプロフィール）の通話数・経路検索などを出すには、次の 3 つが必要
+   - Google Cloud プロジェクト（minoru-dental）で「My Business Account Management API」「My Business Business Information API」「Business Profile Performance API」を有効にする
+   - Business Profile API の利用申請（https://developers.google.com/my-business/content/prereqs の「アクセスをリクエスト」フォーム）。承認されるまで割り当てが 0 で 403/429 になる
+   - ビジネスプロフィールの管理画面 → ユーザー → サービスアカウント `ga4-popular-posts@minoru-dental.iam.gserviceaccount.com` を「管理者」として追加
+   - 店舗が複数ある場合は GitHub の Variables に `GBP_LOCATION_ID` を設定（未設定なら自動で選ぶ）
+6. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
 
 ## デプロイ方法
 

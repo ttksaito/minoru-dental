@@ -15,6 +15,8 @@
  * 任意:
  *   GSC_SITE_URL      … Search Console のプロパティ（例: sc-domain:minoru-dental.jp）。
  *                       未指定なら権限のあるプロパティから自動で選ぶ
+ *   GBP_LOCATION_ID   … Google ビジネスプロフィールのロケーション ID（数字）。未指定なら自動で探す
+ *                       （トークンに business.manage スコープが必要。サービスアカウントを店舗の管理者に追加しておく）
  *   DASHBOARD_PASSWORD … 指定すると dashboard/data.enc に暗号化して書き出す（公開リポジトリ向け）。
  *                        未指定なら dashboard/data.json に平文で書く（ローカル確認用）
  */
@@ -551,6 +553,117 @@ async function fetchGsc() {
   };
 }
 
+// ---------------------------------------------------------------- Google ビジネスプロフィール（Google マップ）
+
+const GBP_LOCATION_ID = process.env.GBP_LOCATION_ID || '';
+
+function ymd(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return { year: y, month: m, day: d };
+}
+
+async function resolveGbpLocation() {
+  if (GBP_LOCATION_ID) return GBP_LOCATION_ID.replace(/^locations\//, '');
+  const acc = await callApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
+  const accounts = acc.accounts || [];
+  if (accounts.length === 0) throw new Error('ビジネスプロフィールのアカウントが見つかりません（サービスアカウントを店舗の管理者に追加してください）');
+  for (const a of accounts) {
+    const loc = await callApi(
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${a.name}/locations?readMask=name,title&pageSize=20`
+    );
+    const locations = loc.locations || [];
+    if (locations.length > 0) {
+      const pick = locations.find((l) => /みのる/.test(l.title || '')) || locations[0];
+      console.log(`ビジネスプロフィール: ${pick.title}（${pick.name}、候補 ${locations.length} 件）`);
+      return pick.name.replace(/^locations\//, '');
+    }
+  }
+  throw new Error('ビジネスプロフィールのロケーションが見つかりません');
+}
+
+async function fetchGbp() {
+  const locationId = await resolveGbpLocation();
+  const metrics = [
+    'CALL_CLICKS',
+    'BUSINESS_DIRECTION_REQUESTS',
+    'WEBSITE_CLICKS',
+    'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+    'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+    'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+    'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+    'BUSINESS_CONVERSATIONS',
+    'BUSINESS_BOOKINGS',
+  ];
+  // GBP のデータは 2〜3 日遅れ。前期比較は 28 日ずつ、日別は 90 日
+  const LAG = 3;
+  const end = daysAgo(LAG);
+  const start = daysAgo(LAG + SERIES_DAYS - 1);
+  const s = ymd(start), e = ymd(end);
+  const params = new URLSearchParams();
+  metrics.forEach((m) => params.append('dailyMetrics', m));
+  params.set('dailyRange.start_date.year', s.year); params.set('dailyRange.start_date.month', s.month); params.set('dailyRange.start_date.day', s.day);
+  params.set('dailyRange.end_date.year', e.year); params.set('dailyRange.end_date.month', e.month); params.set('dailyRange.end_date.day', e.day);
+  const res = await callApi(
+    `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries?${params}`
+  );
+
+  // 日別に整形
+  const byDate = new Map();
+  for (const series of res.multiDailyMetricTimeSeries || []) {
+    for (const m of series.dailyMetricTimeSeries || []) {
+      const metric = m.dailyMetric;
+      for (const pt of (m.timeSeries && m.timeSeries.datedValues) || []) {
+        const d = pt.date;
+        const date = `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
+        if (!byDate.has(date)) byDate.set(date, { date, calls: 0, directions: 0, websiteClicks: 0, impressionsMaps: 0, impressionsSearch: 0, messages: 0, bookings: 0 });
+        const row = byDate.get(date);
+        const v = Number(pt.value || 0);
+        if (metric === 'CALL_CLICKS') row.calls += v;
+        else if (metric === 'BUSINESS_DIRECTION_REQUESTS') row.directions += v;
+        else if (metric === 'WEBSITE_CLICKS') row.websiteClicks += v;
+        else if (metric === 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS' || metric === 'BUSINESS_IMPRESSIONS_MOBILE_MAPS') row.impressionsMaps += v;
+        else if (metric === 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH' || metric === 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH') row.impressionsSearch += v;
+        else if (metric === 'BUSINESS_CONVERSATIONS') row.messages += v;
+        else if (metric === 'BUSINESS_BOOKINGS') row.bookings += v;
+      }
+    }
+  }
+  const daily = fillDates([...byDate.values()], start, end, { calls: 0, directions: 0, websiteClicks: 0, impressionsMaps: 0, impressionsSearch: 0, messages: 0, bookings: 0 });
+
+  const sumRange = (from, to) => {
+    const out = { calls: 0, directions: 0, websiteClicks: 0, impressionsMaps: 0, impressionsSearch: 0, messages: 0, bookings: 0 };
+    for (const r of daily) if (r.date >= from && r.date <= to) for (const k of Object.keys(out)) out[k] += r[k];
+    return out;
+  };
+  const curStart = daysAgo(LAG + DAYS - 1), prevEnd = daysAgo(LAG + DAYS), prevStart = daysAgo(LAG + DAYS * 2 - 1);
+  const current = sumRange(curStart, end);
+  const previous = sumRange(prevStart, prevEnd);
+
+  // 検索キーワード（月次。直近 2 か月分）
+  let keywords = [];
+  try {
+    const now = new Date();
+    const m0 = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const m1 = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const kp = new URLSearchParams({
+      'monthlyRange.start_month.year': m0.getUTCFullYear(), 'monthlyRange.start_month.month': m0.getUTCMonth() + 1,
+      'monthlyRange.end_month.year': m1.getUTCFullYear(), 'monthlyRange.end_month.month': m1.getUTCMonth() + 1,
+      pageSize: 50,
+    });
+    const kw = await callApi(`https://businessprofileperformance.googleapis.com/v1/locations/${locationId}/searchkeywords/impressions/monthly?${kp}`);
+    keywords = (kw.searchKeywordsCounts || []).map((k) => ({
+      keyword: k.searchKeyword,
+      // 少数は threshold（15 未満）として値が無い場合がある
+      impressions: k.insightsValue && k.insightsValue.value != null ? Number(k.insightsValue.value) : null,
+      threshold: k.insightsValue && k.insightsValue.threshold != null ? Number(k.insightsValue.threshold) : null,
+    }));
+  } catch (e) {
+    console.warn(`ビジネスプロフィールの検索キーワード取得をスキップ: ${e.message.slice(0, 200)}`);
+  }
+
+  return { locationId, range: { start: curStart, end }, previousRange: { start: prevStart, end: prevEnd }, current, previous, daily, keywords };
+}
+
 // ---------------------------------------------------------------- main
 
 async function main() {
@@ -565,6 +678,7 @@ async function main() {
     days: DAYS,
     ga4: null,
     gsc: null,
+    gbp: null,
     errors: {},
   };
 
@@ -601,6 +715,17 @@ async function main() {
   } catch (e) {
     console.error(`Search Console の取得に失敗: ${e.message}`);
     output.errors.gsc = e.message.slice(0, 500);
+  }
+
+  console.log('Google ビジネスプロフィールからデータを取得中...');
+  try {
+    output.gbp = await fetchGbp();
+    console.log(
+      `  通話 ${output.gbp.current.calls} / 経路 ${output.gbp.current.directions} / サイトクリック ${output.gbp.current.websiteClicks}（${output.gbp.range.start}〜${output.gbp.range.end}）`
+    );
+  } catch (e) {
+    console.error(`ビジネスプロフィールの取得に失敗: ${e.message}`);
+    output.errors.gbp = e.message.slice(0, 500);
   }
 
   if (!output.ga4 && !output.gsc) {

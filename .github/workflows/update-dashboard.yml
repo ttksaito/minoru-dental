@@ -26,7 +26,7 @@ jobs:
           workload_identity_provider: 'projects/522170574882/locations/global/workloadIdentityPools/github/providers/minoru-dental'
           service_account: 'ga4-popular-posts@minoru-dental.iam.gserviceaccount.com'
           token_format: 'access_token'
-          access_token_scopes: 'https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/webmasters.readonly'
+          access_token_scopes: 'https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/webmasters.readonly,https://www.googleapis.com/auth/business.manage'
 
       - name: Node.jsをセットアップ
         uses: actions/setup-node@v4
@@ -37,6 +37,7 @@ jobs:
         env:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
           GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+          GBP_LOCATION_ID: ${{ vars.GBP_LOCATION_ID }}
           GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
         run: node scripts/fetch-dashboard-data.js

@@ -215,6 +215,12 @@
   <h2>どこから来て、何をしたか <span class="tag">GA4</span> <span class="sub">直近28日のセッションの流れ。帯の太さが件数</span></h2>
   <div class="card" id="flow"></div>
 
+  <h2>Google マップでの見られ方 <span class="tag">ビジネスプロフィール</span> <span class="sub" id="gbp-range"></span></h2>
+  <div id="gbp-alert"></div>
+  <div class="grid tiles" id="gbp-tiles"></div>
+  <div class="grid two" id="gbp-charts" style="margin-top:12px"></div>
+  <div class="card" id="gbp-keywords" style="margin-top:12px"></div>
+
   <h2>どこに住んでいる人か <span class="tag">GA4</span> <span class="sub">IPアドレスからの推定。精度は市区町村で7割ほどです</span></h2>
   <div class="card" id="cities"></div>
 
@@ -675,6 +681,51 @@
     $('#cities').appendChild(el('div', 'empty', 'GA4 のデータがありません'));
   }
 
+  // ---------------------------------------------------------- Google ビジネスプロフィール（Google マップ）
+  (function renderGbp() {
+    const gbp = data.gbp;
+    const tilesBox = $('#gbp-tiles'), chartsBox = $('#gbp-charts'), kwBox = $('#gbp-keywords'), alertBox = $('#gbp-alert');
+    if (!gbp) {
+      const msg = (data.errors && data.errors.gbp) || '';
+      const a = el('div', 'alert');
+      if (/not been used|is disabled|PERMISSION_DENIED|403|quota|429/i.test(msg)) {
+        a.append('Google マップ（ビジネスプロフィール）のデータはまだ取得できていません。Google Cloud で Business Profile の API を有効にし、API 利用申請を通し、サービスアカウントを店舗の管理者に追加すると表示されます（手順は README の「ダッシュボード」参照）。 ');
+      } else {
+        a.append('Google マップ（ビジネスプロフィール）のデータはまだ取得できていません。 ');
+      }
+      if (msg) a.appendChild(el('span', 'dim', msg.slice(0, 160)));
+      alertBox.appendChild(a);
+      tilesBox.remove(); chartsBox.remove(); kwBox.remove();
+      return;
+    }
+    const c = gbp.current, p = gbp.previous;
+    $('#gbp-range').textContent = `${gbp.range.start} 〜 ${gbp.range.end}（マップのデータは3日ほど遅れて確定します）`;
+    tilesBox.append(
+      tile('マップから電話', fmtInt(c.calls), '件', c.calls, p.calls),
+      tile('経路を検索', fmtInt(c.directions), '件', c.directions, p.directions),
+      tile('マップからサイトへ', fmtInt(c.websiteClicks), '件', c.websiteClicks, p.websiteClicks),
+      tile('マップでの表示', fmtInt(c.impressionsMaps), '回', c.impressionsMaps, p.impressionsMaps),
+      tile('Google 検索の店舗枠での表示', fmtInt(c.impressionsSearch), '回', c.impressionsSearch, p.impressionsSearch)
+    );
+    if (c.messages || p.messages) tilesBox.append(tile('メッセージ', fmtInt(c.messages), '件', c.messages, p.messages));
+    const actions = chartCard('マップからの行動', '1日あたりの電話・経路検索・サイトクリック。GA4 には出ない「地図から直接電話した人」が見えます', gbp.daily,
+      [{ key: 'calls', label: '電話', color: 'var(--series-1)' }, { key: 'directions', label: '経路検索', color: 'var(--series-2)' }, { key: 'websiteClicks', label: 'サイトへ', color: 'var(--series-3)' }], 'line');
+    const imps = chartCard('店舗情報が表示された回数', 'Google マップと Google 検索の店舗枠', gbp.daily,
+      [{ key: 'impressionsMaps', label: 'マップ', color: 'var(--series-1)' }, { key: 'impressionsSearch', label: '検索の店舗枠', color: 'var(--series-2)' }], 'line');
+    chartsBox.append(actions.card, imps.card);
+    trendCharts.push(actions, imps);
+    const days = Number(document.querySelector('.seg button[aria-pressed="true"]')?.dataset.range || 28);
+    actions.render(days); imps.render(days);
+
+    kwBox.replaceChildren(el('h3', null, 'マップで店舗が出た検索キーワード'), el('p', 'desc', '直近2か月の月次データ。件数が少ないキーワードは「15未満」とだけ分かります'));
+    if (gbp.keywords && gbp.keywords.length) {
+      kwBox.appendChild(table([{ label: 'キーワード' }, { label: '表示回数', num: true }],
+        gbp.keywords.slice(0, 20), (r) => { const tr = el('tr'); tr.append(td(r.keyword), td(r.impressions != null ? fmtInt(r.impressions) : `${r.threshold ?? 15}未満`, true)); return tr; }));
+    } else {
+      kwBox.appendChild(el('div', 'empty', 'キーワードのデータがありません'));
+    }
+  })();
+
   // ---------------------------------------------------------- サンキー図（チャネル → 着地ページ → 成果）
   (function renderFlow() {
     const box = $('#flow');
@@ -791,7 +842,7 @@
 
     const wrap = el('div', 'sankey-wrap');
     wrap.appendChild(svg);
-    box.replaceChildren(el('h3', null, 'セッションの流れ'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。スマホでは横にスクロールできます。'), wrap);
+    box.replaceChildren(el('h3', null, 'セッションの流れ'), el('p', 'desc', '左から右へ、どこから来て、どのページに着き、電話や LINE を押したか。成果の件数は GA4 でキーイベントを登録した日以降の分です。Google マップから直接かけた電話はこの図には含まれず、下の「Google マップでの見られ方」に出ます。スマホでは横にスクロールできます。'), wrap);
 
     // 表で見る（アクセシビリティ用の代替表示）
     const det = el('details', 'tbl');

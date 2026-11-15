@@ -32,7 +32,7 @@ try {
 }
 fs.writeFileSync(OUT, JSON.stringify(data, null, 2) + '\n', 'utf8');
 
-const ga = data.ga4, gsc = data.gsc;
+const ga = data.ga4, gsc = data.gsc, gbp = data.gbp;
 console.log(`生成日時: ${data.generatedAt}（直近${data.days}日 vs 前${data.days}日）→ dashboard/data.json に保存`);
 if (ga) {
   const c = ga.summary.current, p = ga.summary.previous;
@@ -47,4 +47,10 @@ if (gsc) {
   const targets = gsc.queries.filter((q) => /東松山/.test(q.query));
   console.log('  「東松山」を含むキーワード:');
   for (const q of targets) console.log(`    ${q.query}: 表示 ${q.impressions} / 順位 ${q.position.toFixed(1)} / クリック ${q.clicks}`);
+}
+if (gbp) {
+  const c = gbp.current, p = gbp.previous;
+  console.log(`ビジネスプロフィール（${gbp.range.start}〜${gbp.range.end}）: 通話 ${c.calls}（前 ${p.calls}） 経路 ${c.directions}（前 ${p.directions}） サイトクリック ${c.websiteClicks}（前 ${p.websiteClicks}） 表示 マップ ${c.impressionsMaps} / 検索 ${c.impressionsSearch}`);
+} else if (data.errors && data.errors.gbp) {
+  console.log(`ビジネスプロフィール: 未取得（${data.errors.gbp.slice(0, 120)}）`);
 }
