@@ -925,7 +925,9 @@
     const tilesBox = $('#clarity-tiles'), chartsBox = $('#clarity-charts'), alertBox = $('#clarity-alert');
     if (!cl) {
       const a = el('div', 'alert');
-      a.append('Microsoft Clarity はまだ連携していません。連携すると、ページのどこまで読まれたか（スクロール深度）、押しても反応しない場所を連打した「怒りクリック」、すぐ戻った訪問などが見えます。ヒートマップと録画は Clarity の画面で確認します。 ');
+      const err = (data.errors && data.errors.clarity) || '';
+      if (/データがない|400/.test(err)) a.append('Microsoft Clarity は連携済みです。まだ記録されたデータがないため、翌朝の更新から表示されます。 ');
+      else a.append('Microsoft Clarity はまだ連携していません。連携すると、ページのどこまで読まれたか（スクロール深度）、押しても反応しない場所を連打した「怒りクリック」、すぐ戻った訪問などが見えます。ヒートマップと録画は Clarity の画面で確認します。 ');
       if (data.errors && data.errors.clarity) a.appendChild(el('span', 'dim', data.errors.clarity.slice(0, 160)));
       alertBox.appendChild(a);
       tilesBox.remove(); chartsBox.remove();

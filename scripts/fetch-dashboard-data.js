@@ -696,9 +696,14 @@ function loadPreviousClarityHistory() {
 async function fetchClarity() {
   // 前日 1 日分のスナップショット（API の上限は 1 日 10 回・最大 3 日分）
   const res = await fetch('https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=1', {
-    headers: { Authorization: `Bearer ${CLARITY_TOKEN}`, Accept: 'application/json' },
+    headers: { Authorization: `Bearer ${CLARITY_TOKEN}`, Accept: 'application/json', 'Content-Type': 'application/json' },
   });
   const text = await res.text();
+  if (res.status === 400 && !text.trim()) {
+    throw new Error('Clarity API 400（本文なし）: まだ記録されたデータがない可能性があります。タグ設置の翌日以降に解消します');
+  }
+  if (res.status === 401 || res.status === 403) throw new Error(`Clarity API ${res.status}: トークンが無効です。Clarity の設定 → データのエクスポートで再発行し、CLARITY_API_TOKEN を登録し直してください`);
+  if (res.status === 429) throw new Error('Clarity API 429: 1 日の呼び出し上限（10 回）に達しました。翌日に再取得します');
   if (!res.ok) throw new Error(`Clarity API ${res.status}: ${text.slice(0, 300)}`);
   const arr = JSON.parse(text);
   const get = (name) => (arr.find((m) => m.metricName === name) || {}).information || [];
