@@ -697,6 +697,20 @@
                 <!-- ブログ記事一覧（ビルド時に静的生成） -->
                 <article class="blog-post" data-tags="歯の豆知識">
                     <div class="blog-post-image">
+                        <a href="blog/sunday-dentist-higashimatsuyama/"><img src="/blog/uploads/sunday-dentist-higashimatsuyama.png" alt="東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先" loading="lazy" decoding="async"></a>
+                    </div>
+                    <div class="blog-post-content">
+                        <div class="blog-post-meta">
+                            <span>2026年11月15日</span>
+                        </div>
+                        <div class="blog-post-tags"><span class="blog-post-tag">歯の豆知識</span></div>
+                        <h3><a href="blog/sunday-dentist-higashimatsuyama/">東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先</a></h3>
+                        <p>日曜や祝日に急に歯が痛くなったとき、東松山市には市の「休日歯科センター」があります。受付時間や電話、行く前にすること、埼玉県の救急電話相談で歯科の案内が対象外であることまで、市と県の公式情報で整理しました。</p>
+                        <a href="blog/sunday-dentist-higashimatsuyama/" class="read-more">続きを読む →</a>
+                    </div>
+                </article>
+                <article class="blog-post" data-tags="歯の豆知識">
+                    <div class="blog-post-image">
                         <a href="blog/first-visit-questions/"><img src="/blog/uploads/first-visit-questions.webp" alt="初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト" loading="lazy" decoding="async"></a>
                     </div>
                     <div class="blog-post-content">
@@ -809,6 +823,10 @@
                     <h3>最新記事</h3>
                     <ul id="latest-posts-list">
                         <li>
+                            <a href="blog/sunday-dentist-higashimatsuyama/">東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先</a>
+                            <span class="post-date">2026年11月15日</span>
+                        </li>
+                        <li>
                             <a href="blog/first-visit-questions/">初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト</a>
                             <span class="post-date">2026年10月20日</span>
                         </li>
@@ -824,10 +842,6 @@
                             <a href="blog/regular-checkup/">定期検診の重要性について</a>
                             <span class="post-date">2025年3月15日</span>
                         </li>
-                        <li>
-                            <a href="blog/proper-brushing/">正しい歯磨きの方法と注意点</a>
-                            <span class="post-date">2025年2月20日</span>
-                        </li>
                     </ul>
                 </div>
 
@@ -836,9 +850,9 @@
                     <h3>カテゴリー</h3>
                     <ul id="categories-list">
                         <li><a href="#" data-category="虫歯予防">虫歯予防 <span class="category-count">3</span></a></li>
+                        <li><a href="#" data-category="歯の豆知識">歯の豆知識 <span class="category-count">2</span></a></li>
                         <li><a href="#" data-category="歯磨き">歯磨き <span class="category-count">2</span></a></li>
                         <li><a href="#" data-category="予防歯科">予防歯科 <span class="category-count">2</span></a></li>
-                        <li><a href="#" data-category="歯の豆知識">歯の豆知識 <span class="category-count">1</span></a></li>
                         <li><a href="#" data-category="小児歯科">小児歯科 <span class="category-count">1</span></a></li>
                         <li><a href="#" data-category="定期検診">定期検診 <span class="category-count">1</span></a></li>
                         <li><a href="#" data-category="入れ歯">入れ歯 <span class="category-count">1</span></a></li>
@@ -850,9 +864,9 @@
                     <h3>タグ</h3>
                     <div class="blog-post-tags" id="tags-cloud">
                         <span class="blog-post-tag tag-filter" data-category="虫歯予防" role="button" tabindex="0">虫歯予防</span>
+                        <span class="blog-post-tag tag-filter" data-category="歯の豆知識" role="button" tabindex="0">歯の豆知識</span>
                         <span class="blog-post-tag tag-filter" data-category="歯磨き" role="button" tabindex="0">歯磨き</span>
                         <span class="blog-post-tag tag-filter" data-category="予防歯科" role="button" tabindex="0">予防歯科</span>
-                        <span class="blog-post-tag tag-filter" data-category="歯の豆知識" role="button" tabindex="0">歯の豆知識</span>
                         <span class="blog-post-tag tag-filter" data-category="小児歯科" role="button" tabindex="0">小児歯科</span>
                         <span class="blog-post-tag tag-filter" data-category="定期検診" role="button" tabindex="0">定期検診</span>
                         <span class="blog-post-tag tag-filter" data-category="入れ歯" role="button" tabindex="0">入れ歯</span>
@@ -1081,7 +1095,7 @@
 
             // ===== 人気記事ランキング（popular-posts.json はGitHub ActionsがGA4から自動集計） =====
             // 記事ID→タイトルの対応表（ビルド時に埋め込み）
-            const POSTS_META = [{"id":"first-visit-questions","title":"初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト"},{"id":"best-brushing-timing","title":"歯を磨くベストなタイミングはいつ？"},{"id":"denture-chewing-power","title":"入れ歯になると、どのくらい噛めなくなる？"},{"id":"regular-checkup","title":"定期検診の重要性について"},{"id":"proper-brushing","title":"正しい歯磨きの方法と注意点"},{"id":"child-dental-care","title":"お子様の歯を守るために知っておきたいこと"}];
+            const POSTS_META = [{"id":"sunday-dentist-higashimatsuyama","title":"東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先"},{"id":"first-visit-questions","title":"初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト"},{"id":"best-brushing-timing","title":"歯を磨くベストなタイミングはいつ？"},{"id":"denture-chewing-power","title":"入れ歯になると、どのくらい噛めなくなる？"},{"id":"regular-checkup","title":"定期検診の重要性について"},{"id":"proper-brushing","title":"正しい歯磨きの方法と注意点"},{"id":"child-dental-care","title":"お子様の歯を守るために知っておきたいこと"}];
             fetch('popular-posts.json')
                 .then(response => {
                     if (!response.ok) throw new Error('popular-posts.json の読み込みに失敗');

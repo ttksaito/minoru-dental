@@ -1,6 +1,16 @@
 {
   "posts": [
     {
+      "id": "sunday-dentist-higashimatsuyama",
+      "title": "東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先",
+      "date": "2026-11-15",
+      "tags": [
+        "歯の豆知識"
+      ],
+      "summary": "日曜や祝日に急に歯が痛くなったとき、東松山市には市の「休日歯科センター」があります。受付時間や電話、行く前にすること、埼玉県の救急電話相談で歯科の案内が対象外であることまで、市と県の公式情報で整理しました。",
+      "image": "blog/uploads/sunday-dentist-higashimatsuyama.png"
+    },
+    {
       "id": "first-visit-questions",
       "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
       "date": "2026-10-20",
