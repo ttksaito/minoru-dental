@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="はみがきブレイカー">
 <meta name="theme-color" content="#9fdcf0">
+<link rel="apple-touch-icon" href="image/apple-touch-icon.png">
 <title>はみがきブレイカー｜みのる歯科の歯みがきブロック崩し</title>
 <meta name="description" content="歯ブラシで泡を打ち返して歯垢と虫歯をきれいにする、みのる歯科（埼玉県東松山市）のお子さま向けブロック崩しゲーム。スマホでもパソコンでも無料で遊べます。">
 <link rel="canonical" href="https://www.minoru-dental.jp/hamigaki.html">
@@ -48,6 +49,7 @@ canvas{display:block;width:100%;height:100%}
   text-shadow:0.9cqw 0.9cqw 0 var(--gum);text-wrap:balance}
 #screen h1 small{display:block;font-size:4.2cqw;color:var(--mint);text-shadow:none;letter-spacing:.3em;margin-bottom:1.5cqw}
 #screen p{font-size:4.3cqw;line-height:1.6;max-width:78cqw;text-wrap:balance}
+#screen p.hint{font-size:3.3cqw;line-height:1.5;color:#5a7a9a}
 #screen ul{list-style:none;display:grid;gap:1.6cqw;font-size:3.8cqw;line-height:1.45;text-align:left;
   border-top:0.5cqw dashed #8fbfd3;border-bottom:0.5cqw dashed #8fbfd3;padding:3cqw 0;width:78cqw}
 #screen li{display:grid;grid-template-columns:8cqw 1fr;gap:2.4cqw;align-items:center}
@@ -658,6 +660,11 @@ function show(kind){
       '<li><span class="chip w">広</span>ブラシが広く</li>'+
       '<li><span class="chip m">う</span>虫歯が止まる</li>'+
       '<li><span class="chip a">ア</span>汚れが増える</li></ul>';
+    /* iPhone の Safari は Fullscreen API 非対応（動画のみ）。ホーム画面に追加すれば全画面で起動できるので案内する */
+    const de=document.documentElement;
+    if(matchMedia('(pointer: coarse)').matches&&!(de.requestFullscreen||de.webkitRequestFullscreen)
+       &&!(navigator.standalone||matchMedia('(display-mode: standalone)').matches))
+      html+='<p class="hint">全画面であそぶには、ブラウザの共有ボタンから「ホーム画面に追加」して開いてください。</p>';
     label=st.stage>0?((st.stage+1)+' '+STAGES[st.stage].name+'からつづける'):'みがきはじめる';
     if(st.stage>0)extra='<button id="reset" type="button">最初のコースからあそぶ</button>';
   }else if(kind==='clear'){
