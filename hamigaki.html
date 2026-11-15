@@ -90,6 +90,7 @@ canvas{display:block;width:100%;height:100%}
 (function(){
 "use strict";
 const W=360,H=640,CS=4,GW=90,GH=104,GY=40,PADY=540,FLOSS_Y=568,FOOT=56,FLOSS_SEC=10;
+const DECAY_SPEED=1.3; // 虫歯が広がる速さの倍率（各コースの rot に掛ける。1 が元の速さ）
 const EMPTY=0,TOOTH=1,GUM=2,PLAQUE=3,DEBRIS=4,DECAY=5;
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
@@ -339,7 +340,8 @@ const st={stage:0,lives:3,mode:'title',time:0,total:0,score:0,scoreStart:0,best:
 try{st.best=parseInt(localStorage.getItem('hamigaki-best'),10)||0;}catch(e){}
 function addScore(n){st.score+=n;}
 function saveBest(){if(st.score>st.best){st.best=st.score;try{localStorage.setItem('hamigaki-best',String(st.best));}catch(e){}}}
-const GUM_MAX=8;let gumHurt=0,gumHit=false,gumTold=false,gumRest=0,gumKick=0,gumCool=0,wobT=9,wobDir=1,gumDropT=30,fakeT=38,lostWhy='decay';
+const GUM_MAX=5; // 歯ぐきに当たった回数がここに達すると歯が抜ける（1〜2回: 揺れなし、3回: 0.7°、4回: 1.2°、5回: 抜ける）
+let gumHurt=0,gumHit=false,gumTold=false,gumRest=0,gumKick=0,gumCool=0,wobT=9,wobDir=1,gumDropT=30,fakeT=38,lostWhy='decay';
 const pad={x:W/2,w:64};
 let balls=[],items=[],parts=[],bigT=0,aimT=0,growT=0,candyT=25,winceT=0,shake=0,flossT=0,fastT=0,slowT=0,holdT=0,wideT=0,freezeT=0,rotT=0,dangerD=99,dangerTold=false,dangerT=0,falling=false,fallT=0,
     msg={text:'',t:0},growTold=false,clearT=0,fillList=[],keys={};
@@ -486,7 +488,7 @@ function useItem(kind){
   else if(kind==='W'){wideT+=14;tone(440,0.25,'triangle',0.05,440);}
   else if(kind==='M'){freezeT+=10;tone(880,0.35,'triangle',0.05,400);}
   else if(kind==='B'){drillTooth();if(!RM)shake=0.35;winceT=0.8;tone(140,0.4,'sawtooth',0.06,-70);}
-  else if(kind==='G'){if(gumHurt>0){gumHurt=Math.max(0,gumHurt-4);applyGum();}else addScore(50);tone(620,0.3,'triangle',0.05,300);}
+  else if(kind==='G'){if(gumHurt>0){gumHurt=Math.max(0,gumHurt-2);applyGum();}else addScore(50);tone(620,0.3,'triangle',0.05,300);}
   else{addPlaque(80);spawnFood(2);if(!RM)shake=0.35;tone(200,0.3,'sawtooth',0.06,-120);}
 }
 
@@ -548,13 +550,13 @@ function moveBall(b,dt){
 }
 // sway angle in degrees for the number of gum hits so far
 function wobbleDeg(){const h=gumHurt;
-  return h<3?0:h<=5?0.7:h<=7?1.2:1.8;}
+  return h<3?0:h===3?0.7:h===4?1.2:1.8;}
 function hurtGum(){
   gumHurt++;gumRest=0;applyGum();winceT=0.4;tone(150,0.09,'sawtooth',0.05,-40);
   if(gumHurt>=GUM_MAX){lostWhy='gum';toothLost();}
   else if(!gumTold){gumTold=true;say('歯ぐきに当てるとやせて、歯がぐらつく');}
   else if(gumHurt===3)say('歯がぐらつきはじめた');
-  else if(gumHurt===GUM_MAX-2)say('歯ぐきがやせて、歯が抜けそう');
+  else if(gumHurt===GUM_MAX-1)say('歯ぐきがやせて、歯が抜けそう');
 }
 function launch(){
   const a=aimAngle();let any=false;
@@ -572,7 +574,7 @@ function growCavity(sec){
     if(y<GH-1&&type[k+GW]===TOOTH)fr.push(k+GW);}
   if(!fr.length)return;
   // every exposed edge spreads at its own pace, so a nearly clean cavity grows slowly
-  const want=fr.length*S.rot*sec;let n=Math.floor(want)+(Math.random()<want%1?1:0);
+  const want=fr.length*S.rot*DECAY_SPEED*sec;let n=Math.floor(want)+(Math.random()<want%1?1:0);
   while(n-->0){const q=fr[(Math.random()*fr.length)|0];if(type[q]!==TOOTH)continue;
     type[q]=DECAY;hp[q]=1;cavf[q]=1;remaining++;dirty=true;
     if(gumDist[q]<=1){lostWhy='decay';toothLost();return;}}
@@ -796,11 +798,12 @@ function draw(){
       ctx.font='13px DotGothic16, monospace';ctx.fillStyle='#24406b';ctx.textAlign='left';ctx.fillText(Math.ceil(e[1]),x+13,y+1);});
     ctx.fillStyle='#24406b';ctx.font='20px DotGothic16, monospace';ctx.textAlign='right';ctx.fillText(sc,W-10,y+1);ctx.textAlign='left';
 }
-  // gum gauge on the gum itself: one block per hit left; a gap sits wherever the sway angle steps up
+  // gum gauge on the gum itself: one square per hit left, grouped into 4 blocks
+  // [hit5] [hit4] [hit3] [hit2 hit1]: the first block takes two hits, each later block one; a gap sits wherever the sway angle steps up
   {const left=GUM_MAX-gumHurt;let x=8;const y=GY+6;
-    for(let i=0;i<GUM_MAX;i++){const hitNo=GUM_MAX-i; // the hit that removes this block
+    for(let i=0;i<GUM_MAX;i++){const hitNo=GUM_MAX-i; // the hit that removes this square
       ctx.fillStyle=i<left?'#ffffff':'rgba(110,24,56,.3)';ctx.fillRect(x,y,13,12);
-      x+=15;if(hitNo===8||hitNo===6||hitNo===3)x+=7;}}
+      x+=15;if(hitNo===5||hitNo===4||hitNo===3)x+=7;}}
   for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(262+i*17,18,5.5,0,7);
     if(i<st.lives){ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#168f86';ctx.lineWidth=2;ctx.stroke();}
     else{ctx.strokeStyle='#a9c6d6';ctx.lineWidth=1.5;ctx.stroke();}}
