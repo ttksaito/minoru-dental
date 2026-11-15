@@ -91,6 +91,7 @@ canvas{display:block;width:100%;height:100%}
 "use strict";
 const W=360,H=640,CS=4,GW=90,GH=104,GY=40,PADY=540,FLOSS_Y=568,FOOT=56,FLOSS_SEC=10;
 const DECAY_SPEED=1.3; // 虫歯が広がる速さの倍率（各コースの rot に掛ける。1 が元の速さ）
+const PLAQUE_SPEED=1.3; // 歯垢が虫歯に変わる速さの倍率（各コースの grow 秒をこの値で割る。1 が元の速さ）
 const EMPTY=0,TOOTH=1,GUM=2,PLAQUE=3,DEBRIS=4,DECAY=5;
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
@@ -672,7 +673,7 @@ function update(dt){
   items=items.filter(i=>!i.dead);
   fizzStep(dt);
   if(freezeT<=0){
-    growT+=dt;if(growT>=S.grow){growT=0;growDecay();}
+    growT+=dt;if(growT>=S.grow/PLAQUE_SPEED){growT=0;growDecay();}
     rotT+=dt;if(rotT>=0.25){rotT-=0.25;growCavity(0.25);if(st.mode==='play')crumble();}
     if(st.mode!=='play')return;
   }
