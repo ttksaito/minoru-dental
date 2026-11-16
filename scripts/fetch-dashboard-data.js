@@ -70,8 +70,9 @@ function isoDate(d) {
   return d.toISOString().slice(0, 10);
 }
 
+/** n 日前の日付（日本時間基準）。GA4 の "yesterday" などの相対日付はプロパティのタイムゾーン（日本時間）で解釈されるので、それに合わせる */
 function daysAgo(n) {
-  const d = new Date();
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000); // UTC → JST
   d.setUTCDate(d.getUTCDate() - n);
   return isoDate(d);
 }
@@ -142,10 +143,11 @@ function splitByRange(report, metricNames) {
 }
 
 async function fetchGa4() {
-  const current = { startDate: `${DAYS - 1}daysAgo`, endDate: 'today' };
+  // 当日分は更新時刻（毎朝 6:30）にはほとんど入っていないので、前日までの 28 日を「直近」とする
+  const current = { startDate: `${DAYS}daysAgo`, endDate: 'yesterday' };
   const previous = {
-    startDate: `${DAYS * 2 - 1}daysAgo`,
-    endDate: `${DAYS}daysAgo`,
+    startDate: `${DAYS * 2}daysAgo`,
+    endDate: `${DAYS + 1}daysAgo`,
   };
   const summaryMetrics = [
     'activeUsers',
@@ -165,7 +167,7 @@ async function fetchGa4() {
 
   // 2) 日別推移（90日）
   const dailyReport = await ga4Report({
-    dateRanges: [{ startDate: `${SERIES_DAYS - 1}daysAgo`, endDate: 'today' }],
+    dateRanges: [{ startDate: `${SERIES_DAYS}daysAgo`, endDate: 'yesterday' }],
     dimensions: [{ name: 'date' }],
     metrics: [
       { name: 'activeUsers' },
@@ -184,7 +186,7 @@ async function fetchGa4() {
       pageViews: r.screenPageViews,
       engagementRate: r.engagementRate,
     })),
-    daysAgo(SERIES_DAYS - 1), daysAgo(0), { users: 0, sessions: 0, pageViews: 0, engagementRate: 0 }
+    daysAgo(SERIES_DAYS), daysAgo(1), { users: 0, sessions: 0, pageViews: 0, engagementRate: 0 }
   );
 
   // 3) 流入チャネル（今期 vs 前期）
@@ -388,7 +390,7 @@ async function fetchGa4() {
       .sort((a, b) => b.cost - a.cost || b.clicks - a.clicks);
 
     const adDailyReport = await ga4Report({
-      dateRanges: [{ startDate: `${SERIES_DAYS - 1}daysAgo`, endDate: 'today' }],
+      dateRanges: [{ startDate: `${SERIES_DAYS}daysAgo`, endDate: 'yesterday' }],
       dimensions: [{ name: 'date' }, { name: 'sessionGoogleAdsCampaignName' }],
       metrics: [{ name: 'advertiserAdClicks' }, { name: 'advertiserAdCost' }],
       limit: 10000,
@@ -403,7 +405,7 @@ async function fetchGa4() {
     }
     const adDaily = fillDates(
       [...dailyMap.values()].map((d) => ({ ...d, cost: Math.round(d.cost) })),
-      daysAgo(SERIES_DAYS - 1), daysAgo(0), { clicks: 0, cost: 0 }
+      daysAgo(SERIES_DAYS), daysAgo(1), { clicks: 0, cost: 0 }
     );
 
     const linked =

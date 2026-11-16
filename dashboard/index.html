@@ -638,7 +638,7 @@ window.HELP = {
   const gen = new Date(data.generatedAt);
   $('#side-generated').replaceChildren(
     el('div', null, `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`),
-    el('div', null, '毎朝 6:30 に自動更新。直近28日とその前の28日を比べています')
+    el('div', null, '毎朝 6:30 に自動更新。前日までの直近28日とその前の28日を比べています')
   );
 
   if (data.errors && data.errors.gsc) {
