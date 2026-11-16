@@ -143,7 +143,7 @@ function splitByRange(report, metricNames) {
 }
 
 async function fetchGa4() {
-  // 当日分は更新時刻（毎朝 6:30）にはほとんど入っていないので、前日までの 28 日を「直近」とする
+  // 当日分は更新時刻（毎朝 6:00）にはほとんど入っていないので、前日までの 28 日を「直近」とする
   const current = { startDate: `${DAYS}daysAgo`, endDate: 'yesterday' };
   const previous = {
     startDate: `${DAYS * 2}daysAgo`,

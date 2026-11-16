@@ -107,7 +107,7 @@ git push
 │   ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
 │   ├── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
 │   ├── draft-article.yml         # cms/blog/* ブランチの下書きに仮サムネ生成・PR作成
-│   └── update-dashboard.yml      # ダッシュボード集計の定期実行（毎日6:30 JST）
+│   └── update-dashboard.yml      # ダッシュボード集計の定期実行（毎日6:00 JST）
 ├── vercel.json             # Vercel設定（api/ 以外は本番ドメインへリダイレクト）
 ├── package.json
 └── TODO.md                 # サイト改善・集客施策のタスク管理
@@ -231,7 +231,7 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 
 ## 集客ダッシュボード
 
-`https://www.minoru-dental.jp/dashboard/` で、GA4・Search Console・Google 広告の数値を1ページで確認できます。GitHub Actions（`.github/workflows/update-dashboard.yml`）が毎日6:30 JSTに `dashboard/data.json` を更新します。
+`https://www.minoru-dental.jp/dashboard/` で、GA4・Search Console・Google 広告の数値を1ページで確認できます。GitHub Actions（`.github/workflows/update-dashboard.yml`）が毎日6:00 JSTに `dashboard/data.json` を更新します。
 
 - 認証: 人気記事ランキングと同じサービスアカウント（`ga4-popular-posts@minoru-dental.iam.gserviceaccount.com`）＋ Workload Identity Federation
 - GA4: 直近28日と前28日の比較、日別推移（90日）、流入チャネル、端末、ページ別、キーイベント

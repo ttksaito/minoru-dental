@@ -4,7 +4,7 @@ name: 集客ダッシュボードの更新
 # Google 広告の数値は GA4 とのリンク経由で取得する（Ads API は使わない）。
 on:
   schedule:
-    - cron: '30 21 * * *' # 毎日 6:30 JST
+    - cron: '0 21 * * *' # 毎日 6:00 JST
   workflow_dispatch:
 
 permissions:
