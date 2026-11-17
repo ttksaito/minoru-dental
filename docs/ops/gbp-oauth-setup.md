@@ -1,6 +1,12 @@
 # ビジネスプロフィールのデータ取得を運営者アカウントの OAuth に切り替える
 
-作成: 2026-11-17
+作成: 2026-11-17（同日に設定完了。以下は再設定するときの手順）
+
+## 現在の設定
+
+- OAuth 同意画面: アプリ名「みのる歯科ダッシュボード」、対象 **内部**（info@minoru-dental.jp の Workspace 組織内だけ。Google の確認不要、トークンの 7 日失効なし）、スコープ business.manage
+- OAuth クライアント: デスクトップ アプリ `dashboard-gbp`
+- 認可したアカウント: info@minoru-dental.jp（店舗「みのる歯科医院」の管理者、locations/17449218090490710647）
 
 ## 背景
 
@@ -15,7 +21,7 @@
 Google Cloud Console → プロジェクト `minoru-dental`（番号 522170574882）で:
 
 1. **API とサービス → OAuth 同意画面**
-   - ユーザーの種類: 外部
+   - ユーザーの種類: **内部**（Workspace のアカウントで店舗を管理している場合。Gmail で管理しているなら外部にし、テストユーザー追加と本番公開が必要）
    - アプリ名: みのる歯科ダッシュボード、サポートメール: 運営者のメール
    - スコープ: 「スコープを追加」で `https://www.googleapis.com/auth/business.manage` を追加
    - テストユーザー: 店舗を管理している Google アカウントを追加
@@ -31,10 +37,13 @@ Google Cloud Console → プロジェクト `minoru-dental`（番号 52217057488
 
 ### 2. 認可してリフレッシュトークンを取る（運営者の PC で）
 
+クライアント作成時にダウンロードした JSON（`client_secret_….json`）を ~/Downloads に置いたまま、1 行で実行する（JSON を自動で読む。別の場所なら引数でパスを渡す）。
+
 ```bash
-cd ~/projects/minoru-dental
-GBP_CLIENT_ID='xxxx.apps.googleusercontent.com' GBP_CLIENT_SECRET='yyyy' node scripts/gbp-oauth-setup.js
+cd ~/projects/minoru-dental && node scripts/gbp-oauth-setup.js
 ```
+
+コマンドを 2 行に分けて貼ると `node` だけが動いて入力待ちになるので注意。
 
 - 表示された URL をブラウザで開き、**店舗を管理している Google アカウント**でログインして許可する
 - ターミナルに「見える店舗: みのる歯科医院（locations/…）」と出れば権限は足りている。出なければログインしたアカウントが店舗の管理者ではない
