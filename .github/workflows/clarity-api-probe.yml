@@ -40,7 +40,14 @@ jobs:
             console.log('  構造:', JSON.stringify(shape(data), null, 1));
           };
           (async () => {
-            await call('/recordings/sample', { sortBy: 0, start: start.toISOString(), end: end.toISOString(), filters: { date: { start: start.toISOString(), end: end.toISOString() } }, count: 3 });
-            await call('/dashboard/query', { query: 'sessions by day for the last 7 days' });
+            const date = { start: start.toISOString(), end: end.toISOString() };
+            await call('/recordings/sample', { sortBy: 0, start: date.start, end: date.end, filters: { date }, count: 3 });
+            // クリックが多いセッション（timelineEvents の形を見る）
+            await call('/recordings/sample', { sortBy: 0, start: date.start, end: date.end, filters: { date, sessionClickEventCount: { min: 2, max: null } }, count: 2 });
+            // 端末フィルタが効くか
+            await call('/recordings/sample', { sortBy: 0, start: date.start, end: date.end, filters: { date, deviceType: ['Mobile'] }, count: 1 });
+            // 自然文の問い合わせ（timezone 必須）。過去 30 日が取れるなら履歴の穴埋めに使える
+            await call('/dashboard/query', { query: 'Sessions count by day for the last 30 days', timezone: 'Asia/Tokyo' });
+            await call('/dashboard/query', { query: 'Average scroll depth by day for the last 30 days', timezone: 'Asia/Tokyo' });
           })();
           JS
