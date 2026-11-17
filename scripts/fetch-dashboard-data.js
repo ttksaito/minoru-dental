@@ -653,10 +653,18 @@ async function resolveGbpLocation() {
     accounts = again.accounts || accounts;
   }
   if (accounts.length === 0) throw new Error('ビジネスプロフィールのアカウントが見つかりません（サービスアカウントを店舗の管理者に追加してください）');
+  console.log(`ビジネスプロフィールのアカウント: ${accounts.map((a) => `${a.name}（${a.type || '-'} / ${a.accountName || '-'}）`).join(', ')}`);
+  // 1 つのアカウントで失敗しても、残り（ビジネスグループなど）を試す
   for (const a of accounts) {
-    const loc = await callApi(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${a.name}/locations?readMask=name,title&pageSize=20`
-    );
+    let loc;
+    try {
+      loc = await gbpApi(
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${a.name}/locations?readMask=name,title&pageSize=20`
+      );
+    } catch (e) {
+      console.warn(`  ${a.name} の店舗一覧を取得できません: ${e.message.replace(/\s+/g, ' ').slice(0, 200)}`);
+      continue;
+    }
     const locations = loc.locations || [];
     if (locations.length > 0) {
       const pick = locations.find((l) => /みのる/.test(l.title || '')) || locations[0];
