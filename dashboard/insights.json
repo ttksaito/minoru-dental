@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T06:00:47.772Z",
+  "generatedAt": "2026-11-17T08:37:03.479Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
     "start": "2026-10-19",
@@ -9,8 +9,8 @@
     {
       "query": "みのる歯科",
       "clicks": 1,
-      "impressions": 36,
-      "position": 6
+      "impressions": 40,
+      "position": 6.2
     },
     {
       "query": "みのるしか",
@@ -115,6 +115,12 @@
       "position": 55
     },
     {
+      "query": "歯ブラシ 使い方",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 8
+    },
+    {
       "query": "歯医者 はじめて",
       "clicks": 0,
       "impressions": 1,
@@ -138,8 +144,8 @@
       "page": "/",
       "title": null,
       "clicks": 7,
-      "impressions": 163,
-      "position": 11.8
+      "impressions": 172,
+      "position": 11.6
     },
     {
       "page": "/blog/denture-chewing-power/",
@@ -159,15 +165,15 @@
       "page": "/blog/proper-brushing/",
       "title": "正しい歯磨きの方法と注意点",
       "clicks": 0,
-      "impressions": 7,
-      "position": 49.3
+      "impressions": 8,
+      "position": 44.1
     },
     {
       "page": "/blog/first-visit-questions/",
       "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
       "clicks": 0,
-      "impressions": 4,
-      "position": 23
+      "impressions": 6,
+      "position": 17.5
     },
     {
       "page": "/blog/best-brushing-timing/",
@@ -180,8 +186,8 @@
       "page": "/blog/child-dental-care/",
       "title": "お子様の歯を守るために知っておきたいこと",
       "clicks": 0,
-      "impressions": 2,
-      "position": 6.5
+      "impressions": 3,
+      "position": 4.7
     }
   ],
   "blogPageViews": [
