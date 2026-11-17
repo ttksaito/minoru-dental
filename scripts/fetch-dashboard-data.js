@@ -597,14 +597,17 @@ async function acceptPendingGbpInvitations(accounts) {
     } catch (e) {
       try { inv = await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations`); } catch (e2) { continue; }
     }
+    if ((inv.invitations || []).length === 0) console.log(`保留中の招待はありません（${a.name}）`);
     for (const i of inv.invitations || []) {
+      const target = (i.targetLocation && i.targetLocation.locationName) || (i.targetAccount && i.targetAccount.accountName) || '-';
+      console.log(`招待を確認: ${i.name} 役割 ${i.role || '-'} 種別 ${i.targetType || '-'} 対象 ${target}`);
       try {
         await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${i.name}:accept`, {});
         accepted++;
         const target = (i.targetLocation && i.targetLocation.locationName) || (i.targetAccount && i.targetAccount.accountName) || i.name;
         console.log(`ビジネスプロフィールの招待を承諾しました: ${target}（役割 ${i.role || '-'}）`);
       } catch (e) {
-        console.warn(`招待の承諾に失敗: ${i.name}: ${e.message.slice(0, 200)}`);
+        console.warn(`招待の承諾に失敗: ${i.name}: ${e.message.replace(/\s+/g, ' ').slice(0, 800)}`);
       }
     }
   }
