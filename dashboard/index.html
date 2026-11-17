@@ -86,6 +86,7 @@
   }
   .side-head b { font-size: 15px; font-weight: 700; line-height: 1.3; }
   .side-head b span { display: block; color: var(--brand); font-size: 13px; }
+  .side-head b small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
   .side-toggle {
     appearance: none; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; border-radius: 8px;
     width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; flex: none;
@@ -224,6 +225,9 @@
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   tr:last-child td { border-bottom: 0; }
   tfoot td { font-weight: 600; border-top: 1px solid var(--grid); color: var(--ink-2); }
+  #ads-table { overflow-x: auto; } /* キャンペーン表が横に長くてもページ全体が広がらないように */
+  details.card summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+  details.card[open] summary { margin-bottom: 8px; }
   tr.dim td { color: var(--muted); }
   td .t { display: block; color: var(--ink); }
   td .p { display: block; color: var(--muted); font-size: 11px; word-break: break-all; }
@@ -311,7 +315,7 @@
 <body data-side="open">
 <aside class="side" id="side">
   <div class="side-head">
-    <b><span>みのる歯科</span>集客ダッシュボード</b>
+    <b><span>みのる歯科</span>集客ダッシュボード<small id="side-today"></small></b>
     <button type="button" class="side-toggle" data-side-toggle aria-label="サイドパネルを閉じる" aria-controls="side" aria-expanded="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
     </button>
@@ -440,7 +444,17 @@
   <section class="page" data-page="ads" hidden>
   <h2>Google 広告 <span class="tag">GA4 連携</span></h2>
   <div class="card" id="ads-table"></div>
-  <div class="card" id="ads-daily"></div>
+  <div id="ads-daily" hidden>
+    <div class="filters">
+      <span class="lbl">期間</span>
+      <div class="seg" role="group" aria-label="期間">
+        <button type="button" data-adrange="28" aria-pressed="true">直近28日</button>
+        <button type="button" data-adrange="90" aria-pressed="false">直近90日</button>
+      </div>
+    </div>
+    <div class="grid two" id="ads-charts"></div>
+    <details class="card" id="ads-daily-table"><summary>日別の数値を表で見る</summary></details>
+  </div>
   </section>
 
   <section class="page" data-page="action" hidden>
@@ -622,6 +636,11 @@ window.HELP = {
   const readSaved = () => { try { return localStorage.getItem(PW_KEY) || sessionStorage.getItem(PW_KEY) || ''; } catch (e) { return ''; } };
   const savePw = (pw, remember) => { try { (remember ? localStorage : sessionStorage).setItem(PW_KEY, pw); } catch (e) {} };
   const clearPw = () => { try { localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } catch (e) {} };
+
+  // サイドバーの見出しに今日の日付（日本時間）。データの有無に関係なく出す
+  try {
+    $('#side-today').textContent = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+  } catch (e) { /* 任意 */ }
 
   let data;
   let encrypted = null;
@@ -852,7 +871,7 @@ window.HELP = {
       const x = (i) => PAD.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw);
       const y = (v) => PAD.t + ih - (v / ymax) * ih;
       // gridlines + y ticks
-      const ticks = 4;
+      const ticks = ymax >= 4 ? 4 : Math.max(1, Math.round(ymax)); // 最大値が小さいときは目盛りが同じ数字で重複しないように本数を減らす
       for (let k = 0; k <= ticks; k++) {
         const v = (ymax / ticks) * k;
         const yy = y(v);
@@ -1950,36 +1969,51 @@ window.HELP = {
     ) : el('div', 'empty', 'キャンペーン別のデータがありません'));
   }
 
-  // 広告の日別表（直近28日、新しい日が上）。表示・セッション・キーイベントは日別取得を始めた日以降のデータにだけ入っている
+  // 広告の日別（グラフ＋折りたたみの表）。表示・セッション・キーイベントは 2026-11-17 の更新から日別に入っている
   const adsDailyBox = $('#ads-daily');
-  if (ads && ads.linked && ads.daily && ads.daily.length) {
-    const rows = ads.daily.slice(-28).reverse();
-    const hasFull = rows.some((d) => d.impressions != null);
+  if (ads && ads.linked && ads.daily && ads.daily.some((d) => d.cost > 0 || d.clicks > 0 || d.impressions > 0)) {
+    adsDailyBox.hidden = false;
+    const rowsAll = ads.daily;
+    const cpcRows = rowsAll.map((d) => ({ date: d.date, cpc: d.clicks ? d.cost / d.clicks : 0 }));
+    const yen = (v) => '¥' + fmtInt(v);
+    const adsCharts = [
+      chartCard('広告費', '1 日あたりの費用', rowsAll, [{ key: 'cost', label: '費用', color: 'var(--series-2)', fmt: fmtYen }], 'bar', yen),
+      chartCard('広告クリック数', '1 日あたり広告がクリックされた回数', rowsAll, [{ key: 'clicks', label: 'クリック', color: 'var(--series-2)' }], 'bar'),
+      chartCard('広告の表示回数', '1 日あたり広告が表示された回数', rowsAll, [{ key: 'impressions', label: '表示', color: 'var(--series-3)' }], 'line'),
+      chartCard('クリック単価', '1 日あたりの費用 ÷ クリック。クリックがない日は 0', cpcRows, [{ key: 'cpc', label: 'クリック単価', color: 'var(--series-2)', fmt: fmtYen }], 'line', yen),
+      chartCard('広告からサイトへ', '広告経由で来たセッション数', rowsAll, [{ key: 'sessions', label: 'セッション', color: 'var(--series-1)' }], 'bar'),
+      chartCard('広告経由のキーイベント', '広告経由の訪問で電話・LINE・地図のタップが起きた件数', rowsAll, [{ key: 'keyEvents', label: 'キーイベント', color: 'var(--series-3)' }], 'bar'),
+    ];
+    const adsGrid = $('#ads-charts');
+    for (const c of adsCharts) adsGrid.appendChild(c.card);
+    const adsButtons = [...adsDailyBox.querySelectorAll('.seg button[data-adrange]')];
+    const renderAds = (days) => {
+      for (const c of adsCharts) c.render(days);
+      adsButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.adrange === String(days))));
+    };
+    adsButtons.forEach((b) => b.addEventListener('click', () => renderAds(Number(b.dataset.adrange))));
+    renderAds(28);
+
+    // 折りたたみの表（直近28日、新しい日が上）
+    const rows = rowsAll.slice(-28).reverse();
     const dash = (v, f) => (v == null ? '–' : f(v));
-    const wd = ['日', '月', '火', '水', '木', '金', '土'];
     const sum = (k) => rows.reduce((a, d) => a + (d[k] || 0), 0);
-    adsDailyBox.replaceChildren(
-      el('h3', null, '日別'),
-      el('p', 'desc', '直近28日を 1 日ずつ。新しい日が上です。複数キャンペーンがある日は合算しています。' + (hasFull ? '' : '表示・セッション・キーイベントの日別は次回の更新（翌朝 5〜6 時）から入ります。'))
-    );
+    const det = $('#ads-daily-table');
+    det.appendChild(el('p', 'desc', '直近28日を 1 日ずつ。新しい日が上です。複数キャンペーンがある日は合算しています。'));
     const t = table(
       [{ label: '日付' }, { label: '表示', num: true, help: 'adImpressions' }, { label: 'クリック', num: true, help: 'adClicks' }, { label: '費用', num: true, help: 'adCost' }, { label: 'クリック単価', num: true, help: 'cpc' }, { label: 'セッション', num: true, help: 'sessions' }, { label: 'キーイベント', num: true, help: 'keyEvent' }],
       rows, (d) => {
         const tr = el('tr');
-        const dt = new Date(d.date + 'T00:00:00');
-        const label = `${d.date.slice(5).replace('-', '/')}（${wd[dt.getDay()]}）`;
         if (!d.clicks && !d.cost && !d.impressions) tr.classList.add('dim');
-        tr.append(td(label), td(dash(d.impressions, fmtInt), true), td(fmtInt(d.clicks), true), td(fmtYen(d.cost), true), td(d.clicks ? fmtYen(d.cost / d.clicks) : '–', true), td(dash(d.sessions, fmtInt), true), td(dash(d.keyEvents, fmtInt), true));
+        tr.append(td(fmtDateWd(d.date).slice(5), false), td(dash(d.impressions, fmtInt), true), td(fmtInt(d.clicks), true), td(fmtYen(d.cost), true), td(d.clicks ? fmtYen(d.cost / d.clicks) : '–', true), td(dash(d.sessions, fmtInt), true), td(dash(d.keyEvents, fmtInt), true));
         return tr;
       }
     );
     const tf = el('tfoot'); const tr = el('tr');
     const clicks = sum('clicks'), cost = sum('cost');
-    tr.append(td('合計'), td(hasFull ? fmtInt(sum('impressions')) : '–', true), td(fmtInt(clicks), true), td(fmtYen(cost), true), td(clicks ? fmtYen(cost / clicks) : '–', true), td(hasFull ? fmtInt(sum('sessions')) : '–', true), td(hasFull ? fmtInt(sum('keyEvents')) : '–', true));
+    tr.append(td('合計'), td(fmtInt(sum('impressions')), true), td(fmtInt(clicks), true), td(fmtYen(cost), true), td(clicks ? fmtYen(cost / clicks) : '–', true), td(fmtInt(sum('sessions')), true), td(fmtInt(sum('keyEvents')), true));
     tf.appendChild(tr); t.appendChild(tf);
-    adsDailyBox.appendChild(t);
-  } else {
-    adsDailyBox.remove();
+    det.appendChild(t);
   }
 
   const ke = $('#key-events');
