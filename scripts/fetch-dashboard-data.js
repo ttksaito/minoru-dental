@@ -392,20 +392,34 @@ async function fetchGa4() {
     const adDailyReport = await ga4Report({
       dateRanges: [{ startDate: `${SERIES_DAYS}daysAgo`, endDate: 'yesterday' }],
       dimensions: [{ name: 'date' }, { name: 'sessionGoogleAdsCampaignName' }],
-      metrics: [{ name: 'advertiserAdClicks' }, { name: 'advertiserAdCost' }],
+      metrics: [
+        { name: 'advertiserAdImpressions' },
+        { name: 'advertiserAdClicks' },
+        { name: 'advertiserAdCost' },
+        { name: 'sessions' },
+        { name: 'keyEvents' },
+      ],
       limit: 10000,
     });
+    const dailyZero = { impressions: 0, clicks: 0, cost: 0, sessions: 0, keyEvents: 0 };
     const dailyMap = new Map();
     for (const r of rowsToObjects(adDailyReport)) {
       const date = `${r.date.slice(0, 4)}-${r.date.slice(4, 6)}-${r.date.slice(6, 8)}`;
-      if (!dailyMap.has(date)) dailyMap.set(date, { date, clicks: 0, cost: 0 });
+      if (!dailyMap.has(date)) dailyMap.set(date, { date, ...dailyZero });
       const d = dailyMap.get(date);
+      d.impressions += r.advertiserAdImpressions;
       d.clicks += r.advertiserAdClicks;
       d.cost += r.advertiserAdCost;
+      // セッション・キーイベントは「広告経由のセッション」に限る（キャンペーン名が付いた行だけ）
+      const name = r.sessionGoogleAdsCampaignName;
+      if (name && name !== '(not set)') {
+        d.sessions += r.sessions;
+        d.keyEvents += r.keyEvents;
+      }
     }
     const adDaily = fillDates(
       [...dailyMap.values()].map((d) => ({ ...d, cost: Math.round(d.cost) })),
-      daysAgo(SERIES_DAYS), daysAgo(1), { clicks: 0, cost: 0 }
+      daysAgo(SERIES_DAYS), daysAgo(1), dailyZero
     );
 
     const linked =

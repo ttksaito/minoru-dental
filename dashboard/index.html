@@ -223,6 +223,8 @@
   th { font-weight: 600; color: var(--ink-2); font-size: 12px; white-space: nowrap; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   tr:last-child td { border-bottom: 0; }
+  tfoot td { font-weight: 600; border-top: 1px solid var(--grid); color: var(--ink-2); }
+  tr.dim td { color: var(--muted); }
   td .t { display: block; color: var(--ink); }
   td .p { display: block; color: var(--muted); font-size: 11px; word-break: break-all; }
   .bar { display: flex; align-items: center; gap: 8px; }
@@ -438,6 +440,7 @@
   <section class="page" data-page="ads" hidden>
   <h2>Google 広告 <span class="tag">GA4 連携</span></h2>
   <div class="card" id="ads-table"></div>
+  <div class="card" id="ads-daily"></div>
   </section>
 
   <section class="page" data-page="action" hidden>
@@ -1945,6 +1948,38 @@ window.HELP = {
       [{ label: 'キャンペーン', help: 'campaign' }, { label: '表示', num: true, help: 'adImpressions' }, { label: 'クリック', num: true, help: 'adClicks' }, { label: '費用', num: true, help: 'adCost' }, { label: 'クリック単価', num: true, help: 'cpc' }, { label: 'セッション', num: true, help: 'sessions' }, { label: 'キーイベント', num: true, help: 'keyEvent' }],
       ads.campaigns, (r) => { const tr = el('tr'); tr.append(td(r.campaign), td(fmtInt(r.impressions), true), td(fmtInt(r.clicks), true), td(fmtYen(r.cost), true), td(r.clicks ? fmtYen(r.cost / r.clicks) : '–', true), td(fmtInt(r.sessions), true), td(fmtInt(r.keyEvents), true)); return tr; }
     ) : el('div', 'empty', 'キャンペーン別のデータがありません'));
+  }
+
+  // 広告の日別表（直近28日、新しい日が上）。表示・セッション・キーイベントは日別取得を始めた日以降のデータにだけ入っている
+  const adsDailyBox = $('#ads-daily');
+  if (ads && ads.linked && ads.daily && ads.daily.length) {
+    const rows = ads.daily.slice(-28).reverse();
+    const hasFull = rows.some((d) => d.impressions != null);
+    const dash = (v, f) => (v == null ? '–' : f(v));
+    const wd = ['日', '月', '火', '水', '木', '金', '土'];
+    const sum = (k) => rows.reduce((a, d) => a + (d[k] || 0), 0);
+    adsDailyBox.replaceChildren(
+      el('h3', null, '日別'),
+      el('p', 'desc', '直近28日を 1 日ずつ。新しい日が上です。複数キャンペーンがある日は合算しています。' + (hasFull ? '' : '表示・セッション・キーイベントの日別は次回の更新（翌朝 5〜6 時）から入ります。'))
+    );
+    const t = table(
+      [{ label: '日付' }, { label: '表示', num: true, help: 'adImpressions' }, { label: 'クリック', num: true, help: 'adClicks' }, { label: '費用', num: true, help: 'adCost' }, { label: 'クリック単価', num: true, help: 'cpc' }, { label: 'セッション', num: true, help: 'sessions' }, { label: 'キーイベント', num: true, help: 'keyEvent' }],
+      rows, (d) => {
+        const tr = el('tr');
+        const dt = new Date(d.date + 'T00:00:00');
+        const label = `${d.date.slice(5).replace('-', '/')}（${wd[dt.getDay()]}）`;
+        if (!d.clicks && !d.cost && !d.impressions) tr.classList.add('dim');
+        tr.append(td(label), td(dash(d.impressions, fmtInt), true), td(fmtInt(d.clicks), true), td(fmtYen(d.cost), true), td(d.clicks ? fmtYen(d.cost / d.clicks) : '–', true), td(dash(d.sessions, fmtInt), true), td(dash(d.keyEvents, fmtInt), true));
+        return tr;
+      }
+    );
+    const tf = el('tfoot'); const tr = el('tr');
+    const clicks = sum('clicks'), cost = sum('cost');
+    tr.append(td('合計'), td(hasFull ? fmtInt(sum('impressions')) : '–', true), td(fmtInt(clicks), true), td(fmtYen(cost), true), td(clicks ? fmtYen(cost / clicks) : '–', true), td(hasFull ? fmtInt(sum('sessions')) : '–', true), td(hasFull ? fmtInt(sum('keyEvents')) : '–', true));
+    tf.appendChild(tr); t.appendChild(tf);
+    adsDailyBox.appendChild(t);
+  } else {
+    adsDailyBox.remove();
   }
 
   const ke = $('#key-events');
