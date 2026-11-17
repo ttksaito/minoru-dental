@@ -229,6 +229,13 @@
   .bar .trk { flex: 1; height: 10px; border-radius: 4px; background: transparent; position: relative; }
   .bar .fill { height: 10px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
   .bar .v { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  td.ux-bad { color: var(--bad); font-weight: 600; }
+  td.nowrap { white-space: nowrap; }
+  td.ux-warn { color: var(--warn, #b7791f); font-weight: 600; }
+  .hints { margin: 0; padding-left: 18px; }
+  .hints li { margin: 6px 0; line-height: 1.6; }
+  .hints li b { font-weight: 600; }
+  .hints li .dim { font-size: 12px; }
   :root { --flow-1: #2a78d6; --flow-2: #1baf7a; --flow-3: #eda100; --flow-4: #e87ba4; --flow-5: #4a3aa7; --flow-6: #008300; --flow-goal: #eb6834; --flow-none: #d9d6cf; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --flow-1: #3987e5; --flow-2: #199e70; --flow-3: #c98500; --flow-4: #d55181; --flow-5: #9085e9; --flow-6: #008300; --flow-goal: #d95926; --flow-none: #3a3a37; } }
   .sankey-wrap { overflow-x: auto; }
@@ -307,7 +314,8 @@
     <a href="#traffic" data-page="traffic">流入分析<small>どこから来て、何をしたか</small></a>
     <a href="#region" data-page="region">地域分析<small>どこに住んでいる人か</small></a>
     <a href="#search" data-page="search">Google 検索<small>検索・マップでの見つかり方</small></a>
-    <a href="#pages" data-page="pages">ページ分析<small>よく見られたページ・使われ方・記事の効果</small></a>
+    <a href="#pages" data-page="pages">ページ分析<small>よく見られたページ・記事の効果</small></a>
+    <a href="#ux" data-page="ux">UX 改善<small>使いにくい場所を見つける</small></a>
     <a href="#ads" data-page="ads">Google 広告</a>
     <a href="#action" data-page="action">Action<small>成果につながる行動</small></a>
   </nav>
@@ -395,13 +403,26 @@
   <div class="card" id="page-map"></div>
   <div class="card" id="ga-pages" style="margin-top:12px"></div>
 
-  <h2>ページの使われ方 <span class="tag">Microsoft Clarity</span> <span class="sub" id="clarity-range"></span></h2>
-  <div id="clarity-alert"></div>
-  <div class="grid tiles" id="clarity-tiles"></div>
-  <div class="grid two" id="clarity-charts" style="margin-top:12px"></div>
-
   <h2>記事の公開と数字の関係 <span class="tag">GA4 + Search Console</span> <span class="sub">公開前後 7 日の比較と、記事ごとの現在値</span></h2>
   <div class="card" id="post-impact"></div>
+  </section>
+
+  <section class="page" data-page="ux" hidden>
+  <h2>ページの使われ方 <span class="tag">Microsoft Clarity</span> <span class="sub" id="clarity-range"></span></h2>
+  <div id="clarity-alert"></div>
+  <div id="clarity-body">
+    <div class="grid tiles" id="clarity-tiles"></div>
+    <div class="grid two" id="clarity-charts" style="margin-top:12px"></div>
+
+    <h2>直したほうがよさそうなページ <span class="sub" id="clarity-pages-range"></span></h2>
+    <div class="card" id="clarity-pages"></div>
+
+    <h2>端末・流入元ごとの使われ方 <span class="sub">同じ期間の合算。スマホだけ・広告だけで起きている問題を見つけます</span></h2>
+    <div class="grid" id="clarity-segments"></div>
+
+    <h2>気づき <span class="sub">数値から自動で出した仮説です。Clarity の録画で確かめてから直します</span></h2>
+    <div class="card" id="clarity-hints"></div>
+  </div>
   </section>
 
   <section class="page" data-page="ads" hidden>
@@ -488,6 +509,14 @@ window.HELP = {
   rageClicks: '同じ場所を短い時間に何度も連打したクリック。押しても反応しない・分かりにくい場所があるサインです。',
   deadClicks: 'クリックしても何も起きなかったクリック。リンクだと思われているのにリンクでない文字や画像などで起きます。',
   quickBacks: 'ページを開いてすぐ前のページに戻った訪問。期待した内容ではなかった可能性があります。',
+  excessiveScroll: '探しものが見つからず、上下に行ったり来たりと長くスクロールし続けた訪問。欲しい情報が見つけにくいサインです。',
+  scriptErrors: 'ページの中のプログラム（JavaScript）でエラーが起きた回数。ボタンが動かないなど、見えない不具合の手がかりです。',
+  errorClicks: 'クリックした直後にプログラムのエラーが起きた回数。押したものが壊れている可能性があります。',
+  pagesPerSession: '1 回の訪問で見たページ数の平均。1.0 なら 1 ページだけ見て帰っています。',
+  uxRate: 'つまずき率。怒りクリック・反応しないクリック・すぐ戻った訪問の合計 ÷ 訪問。高いページほど直す優先度が高い目安です。',
+  clDevice: 'Clarity が判定した端末。スマートフォン・パソコン・タブレット。',
+  clChannel: 'Clarity が判定した流入元。検索・広告・直接アクセスなど。GA4 の分類と少し違うことがあります。',
+  quickBackRate: 'すぐ戻った訪問 ÷ 訪問。広告や検索から来て「違った」と思われた割合の目安です。',
 };
 (function () {
   const tip = document.getElementById('help-tip');
@@ -682,9 +711,9 @@ window.HELP = {
       const worse = opts.lowerIsBetter ? up : down;
       d.classList.add(better ? 'up' : worse ? 'down' : 'flat');
       d.appendChild(el('b', null, (diff > 0 ? '+' : '') + (diff * 100).toFixed(0) + '%'));
-      d.append(`前の28日: ${opts.fmtPrev ? opts.fmtPrev(prev) : fmtInt(prev)}`);
+      d.append(`${opts.prevLabel || '前の28日'}: ${opts.fmtPrev ? opts.fmtPrev(prev) : fmtInt(prev)}`);
     } else if (cur != null && prev != null) {
-      d.append(`前の28日: ${opts.fmtPrev ? opts.fmtPrev(prev) : fmtInt(prev)}`);
+      d.append(`${opts.prevLabel || '前の28日'}: ${opts.fmtPrev ? opts.fmtPrev(prev) : fmtInt(prev)}`);
     } else {
       d.append(opts.na || 'データなし');
     }
@@ -1535,18 +1564,21 @@ window.HELP = {
     gpg.appendChild(el('div', 'empty', 'データがありません'));
   }
 
-  // ---------------------------------------------------------- Microsoft Clarity（ページの使われ方）
+  // ---------------------------------------------------------- Microsoft Clarity（UX 改善ページ）
   (function renderClarity() {
     const cl = data.clarity;
-    const tilesBox = $('#clarity-tiles'), chartsBox = $('#clarity-charts'), alertBox = $('#clarity-alert');
-    if (!cl) {
+    const tilesBox = $('#clarity-tiles'), chartsBox = $('#clarity-charts'), alertBox = $('#clarity-alert'), body = $('#clarity-body');
+    const pagesBox = $('#clarity-pages'), segBox = $('#clarity-segments'), hintsBox = $('#clarity-hints');
+    const CLARITY_PROJECT = 'https://clarity.microsoft.com/projects/view/zdshm3xahi';
+    const clLink = (text, kind) => { const a = el('a', null, text); a.href = `${CLARITY_PROJECT}/${kind}?date=Last%207%20days`; a.target = '_blank'; a.rel = 'noopener'; return a; };
+    if (!cl || !cl.latest) {
       const a = el('div', 'alert');
       const err = (data.errors && data.errors.clarity) || '';
       if (/データがない|400/.test(err)) a.append('Microsoft Clarity は連携済みです。まだ記録されたデータがないため、翌朝の更新から表示されます。 ');
       else a.append('Microsoft Clarity はまだ連携していません。連携すると、ページのどこまで読まれたか（スクロール深度）、押しても反応しない場所を連打した「怒りクリック」、すぐ戻った訪問などが見えます。ヒートマップと録画は Clarity の画面で確認します。 ');
-      if (data.errors && data.errors.clarity) a.appendChild(el('span', 'dim', data.errors.clarity.slice(0, 160)));
+      if (err) a.appendChild(el('span', 'dim', err.slice(0, 160)));
       alertBox.appendChild(a);
-      tilesBox.remove(); chartsBox.remove();
+      body.remove();
       return;
     }
     const L = cl.latest;
@@ -1554,32 +1586,165 @@ window.HELP = {
     const last7 = hist.slice(-7), prev7 = hist.slice(-14, -7);
     const avg = (rows, k) => rows.length ? rows.reduce((a, r) => a + (r[k] || 0), 0) / rows.length : null;
     const sum = (rows, k) => rows.length ? rows.reduce((a, r) => a + (r[k] || 0), 0) : null;
-    $('#clarity-range').textContent = `前日（${L.date}）の値と、直近 7 日の平均 vs その前 7 日`;
-    if (data.errors && data.errors.clarity) alertBox.appendChild(el('div', 'alert err', 'Clarity の最新データを取得できなかったため、前回までの履歴を表示しています。 ' + data.errors.clarity.slice(0, 120)));
     const pct = (v) => (v == null ? '–' : Math.round(v) + '%');
+    const fmt1 = (v) => (v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1));
+    const rate = (n, d) => (d > 0 ? n / d : 0);
+    const na = '前週比は履歴 14 日でできます';
+    const prevLabel = '前の 7 日';
+    $('#clarity-range').textContent = `前日（${L.date}。朝 5 時区切りのおよそ 1 日分）の値と、直近 7 日 vs その前 7 日`;
+    if (data.errors && data.errors.clarity) alertBox.appendChild(el('div', 'alert err', 'Clarity の最新データを取得できなかったため、前回までの履歴を表示しています。 ' + data.errors.clarity.slice(0, 120)));
+    if (data.errors && data.errors.clarityBreakdown) alertBox.appendChild(el('div', 'alert', '内訳の一部を取得できませんでした（全体の数値は最新です）。 ' + data.errors.clarityBreakdown.slice(0, 160)));
+
+    // ---- 全体のタイル
     tilesBox.append(
-      tile('セッション（前日）', fmtInt(L.sessions), '', sum(last7, 'sessions'), sum(prev7, 'sessions'), { fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'clSessions' }),
-      tile('平均スクロール深度', pct(L.scrollDepth), '', avg(last7, 'scrollDepth'), avg(prev7, 'scrollDepth'), { fmtPrev: pct, na: '前週比は履歴 14 日でできます', help: 'scrollDepth' }),
-      tile('実際に操作していた時間', fmtDur(L.engagementActiveSec), '', avg(last7, 'engagementActiveSec'), avg(prev7, 'engagementActiveSec'), { fmtPrev: fmtDur, na: '前週比は履歴 14 日でできます', help: 'activeTime' }),
-      tile('怒りクリック', fmtInt(L.rageClicks), '件', sum(last7, 'rageClicks'), sum(prev7, 'rageClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'rageClicks' }),
-      tile('反応しない場所のクリック', fmtInt(L.deadClicks), '件', sum(last7, 'deadClicks'), sum(prev7, 'deadClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'deadClicks' }),
-      tile('すぐ戻った訪問', fmtInt(L.quickBacks), '件', sum(last7, 'quickBacks'), sum(prev7, 'quickBacks'), { lowerIsBetter: true, fmtPrev: fmtInt, na: '前週比は履歴 14 日でできます', help: 'quickBacks' })
+      tile('セッション（前日）', fmtInt(L.sessions), '', sum(last7, 'sessions'), sum(prev7, 'sessions'), { fmtPrev: fmtInt, na, prevLabel, help: 'clSessions' }),
+      tile('平均スクロール深度', pct(L.scrollDepth), '', avg(last7, 'scrollDepth'), avg(prev7, 'scrollDepth'), { fmtPrev: pct, na, prevLabel, help: 'scrollDepth' }),
+      tile('実際に操作していた時間', fmtDur(L.engagementActiveSec), '', avg(last7, 'engagementActiveSec'), avg(prev7, 'engagementActiveSec'), { fmtPrev: fmtDur, na, prevLabel, help: 'activeTime' }),
+      tile('1 回の訪問で見たページ数', fmt1(L.pagesPerSession), 'ページ', avg(last7, 'pagesPerSession'), avg(prev7, 'pagesPerSession'), { fmtPrev: fmt1, na, prevLabel, help: 'pagesPerSession' }),
+      tile('怒りクリック', fmtInt(L.rageClicks), '件', sum(last7, 'rageClicks'), sum(prev7, 'rageClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na, prevLabel, help: 'rageClicks' }),
+      tile('反応しない場所のクリック', fmtInt(L.deadClicks), '件', sum(last7, 'deadClicks'), sum(prev7, 'deadClicks'), { lowerIsBetter: true, fmtPrev: fmtInt, na, prevLabel, help: 'deadClicks' }),
+      tile('すぐ戻った訪問', fmtInt(L.quickBacks), '件', sum(last7, 'quickBacks'), sum(prev7, 'quickBacks'), { lowerIsBetter: true, fmtPrev: fmtInt, na, prevLabel, help: 'quickBacks' }),
+      tile('スクリプトエラー', fmtInt(L.scriptErrors), '件', sum(last7, 'scriptErrors'), sum(prev7, 'scriptErrors'), { lowerIsBetter: true, fmtPrev: fmtInt, na, prevLabel, help: 'scriptErrors' })
     );
+
+    // ---- 日別グラフ
+    const deviceJa = { PC: 'パソコン', Mobile: 'スマートフォン', Tablet: 'タブレット', Other: 'その他' };
+    const deviceColor = { Mobile: 'var(--series-1)', PC: 'var(--series-2)', Tablet: 'var(--series-3)', Other: 'var(--series-4, var(--muted))' };
+    const byDevice = cl.byDevice || [], byUrl = cl.byUrl || [], byChannel = cl.byChannel || [];
+    const days = currentRange();
     if (hist.length >= 2) {
-      const c1 = chartCard('読まれた深さと操作時間', '日別。スクロール深度（%）', hist, [{ key: 'scrollDepth', label: 'スクロール深度 %', color: 'var(--series-1)' }], 'line', (v) => Math.round(v) + '%', postMarkers);
+      const c1 = chartCard('読まれた深さ', '日別。ページのどこまでスクロールされたか（%）。縦線は記事の公開日', hist, [{ key: 'scrollDepth', label: 'スクロール深度 %', color: 'var(--series-1)' }], 'line', (v) => Math.round(v) + '%', postMarkers);
       const c2 = chartCard('つまずきのサイン', '日別。怒りクリック・反応しないクリック・すぐ戻った訪問', hist,
         [{ key: 'rageClicks', label: '怒りクリック', color: 'var(--series-2)' }, { key: 'deadClicks', label: '反応しない', color: 'var(--series-3)' }, { key: 'quickBacks', label: 'すぐ戻る', color: 'var(--series-1)' }], 'line', fmtInt, postMarkers);
       chartsBox.append(c1.card, c2.card);
       trendCharts.push(c1, c2);
-      const days = Number(document.querySelector('.seg button[data-range][aria-pressed="true"]')?.dataset.range || 28);
       c1.render(days); c2.render(days);
+      if (byDevice.length >= 2) {
+        const devs = ['Mobile', 'PC', 'Tablet'].filter((d) => byDevice.some((day) => day.rows.some((r) => r.key === d && r.sessions > 0)));
+        const rows = byDevice.map((day) => { const o = { date: day.date }; for (const d of devs) { const r = day.rows.find((x) => x.key === d); o[d] = r && r.sessions > 0 ? r.scrollDepth : null; } return o; });
+        const c3 = chartCard('端末別の読まれた深さ', '日別。スマホとパソコンで差が開いていたら、スマホでの見え方を疑います', rows, devs.map((d) => ({ key: d, label: deviceJa[d] || d, color: deviceColor[d] })), 'line', (v) => Math.round(v) + '%', postMarkers);
+        const c4 = chartCard('端末別の操作時間', '日別。実際にスクロールやクリックをしていた時間の平均', byDevice.map((day) => { const o = { date: day.date }; for (const d of devs) { const r = day.rows.find((x) => x.key === d); o[d] = r && r.sessions > 0 ? r.engagementActiveSec : null; } return o; }),
+          devs.map((d) => ({ key: d, label: deviceJa[d] || d, color: deviceColor[d] })), 'line', fmtDur, postMarkers);
+        chartsBox.append(c3.card, c4.card);
+        trendCharts.push(c3, c4);
+        c3.render(days); c4.render(days);
+      }
     } else {
       chartsBox.appendChild(el('div', 'empty', '日別のグラフは履歴が 2 日分以上たまると表示されます'));
     }
-    const note = el('p', 'desc'); note.style.marginTop = '8px';
-    const a = el('a', null, 'Clarity の画面（ヒートマップ・録画）'); a.href = 'https://clarity.microsoft.com/'; a.target = '_blank'; a.rel = 'noopener';
-    note.append('どのページのどこで迷っているかは ', a, ' で見られます。');
-    chartsBox.appendChild(note);
+
+    // ---- 内訳の合算（直近 7 日分。訪問数で重み付け）
+    const aggregate = (daysList) => {
+      const map = new Map();
+      for (const day of daysList) for (const r of day.rows || []) {
+        if (!map.has(r.key)) map.set(r.key, { key: r.key, sessions: 0, users: 0, rageClicks: 0, deadClicks: 0, quickBacks: 0, excessiveScroll: 0, scriptErrors: 0, errorClicks: 0, _scroll: 0, _active: 0, _pps: 0, days: 0 });
+        const a = map.get(r.key);
+        a.sessions += r.sessions || 0; a.users += r.users || 0;
+        a.rageClicks += r.rageClicks || 0; a.deadClicks += r.deadClicks || 0; a.quickBacks += r.quickBacks || 0;
+        a.excessiveScroll += r.excessiveScroll || 0; a.scriptErrors += r.scriptErrors || 0; a.errorClicks += r.errorClicks || 0;
+        a._scroll += (r.scrollDepth || 0) * (r.sessions || 0); a._active += (r.engagementActiveSec || 0) * (r.sessions || 0); a._pps += (r.pagesPerSession || 0) * (r.sessions || 0);
+        a.days += 1;
+      }
+      return [...map.values()].map((a) => ({
+        ...a,
+        scrollDepth: a.sessions ? a._scroll / a.sessions : null,
+        activeSec: a.sessions ? a._active / a.sessions : null,
+        pagesPerSession: a.sessions ? a._pps / a.sessions : null,
+        issues: a.rageClicks + a.deadClicks + a.quickBacks,
+        issueRate: rate(a.rageClicks + a.deadClicks + a.quickBacks, a.sessions),
+        quickBackRate: rate(a.quickBacks, a.sessions),
+      }));
+    };
+    const windowDays = (list) => list.slice(-7);
+    const urlAgg = aggregate(windowDays(byUrl));
+    const devAgg = aggregate(windowDays(byDevice));
+    const chAgg = aggregate(windowDays(byChannel));
+    const titleOf = (p) => { const g = ga && ga.pages.find((x) => x.path === p); return g ? g.title : (p === '/' ? 'トップページ' : ''); };
+    const cellRate = (v, warn, bad) => { const c = td(fmtPct(v, 0), true); if (v >= bad) c.classList.add('ux-bad'); else if (v >= warn) c.classList.add('ux-warn'); return c; };
+    const cellScroll = (v) => { const c = td(pct(v), true); if (v != null && v < 30) c.classList.add('ux-bad'); else if (v != null && v < 45) c.classList.add('ux-warn'); return c; };
+    const cellCount = (v) => { const c = td(fmtInt(v), true); if (v >= 3) c.classList.add('ux-warn'); return c; };
+
+    // ---- 直したほうがよさそうなページ
+    const urlDaysN = windowDays(byUrl).length;
+    $('#clarity-pages-range').textContent = urlDaysN ? `直近 ${urlDaysN} 日分の合算。つまずきの多い順` : '';
+    if (!urlDaysN) {
+      pagesBox.appendChild(el('div', 'empty', 'ページごとのデータは次回の更新（翌朝 5〜6 時）から表示されます'));
+    } else {
+      const rows = urlAgg.filter((r) => r.sessions >= 3).sort((a, b) => (b.issues - a.issues) || (b.issueRate - a.issueRate) || (b.sessions - a.sessions)).slice(0, 15);
+      const desc = el('p', 'desc');
+      desc.append('訪問 3 回以上のページ。「つまずき率」が高い・「読まれた深さ」が浅いページから、', clLink('録画', 'impressions'), ' と ', clLink('ヒートマップ', 'heatmaps'), ' をページの URL で絞り込んで実際の様子を確かめます。');
+      pagesBox.append(h3('ページ別のつまずき'), desc);
+      pagesBox.appendChild(rows.length ? table(
+        [{ label: 'ページ' }, { label: '訪問', num: true, help: 'clSessions' }, { label: '読まれた深さ', num: true, help: 'scrollDepth' }, { label: '操作時間', num: true, help: 'activeTime' },
+         { label: '怒り', num: true, help: 'rageClicks' }, { label: '反応なし', num: true, help: 'deadClicks' }, { label: 'すぐ戻る', num: true, help: 'quickBacks' }, { label: 'つまずき率', num: true, help: 'uxRate' }],
+        rows, (r) => {
+          const tr = el('tr');
+          tr.append(pageCell(titleOf(r.key), r.key), td(fmtInt(r.sessions), true), cellScroll(r.scrollDepth), td(fmtDur(r.activeSec), true),
+            cellCount(r.rageClicks), cellCount(r.deadClicks), cellCount(r.quickBacks), cellRate(r.issueRate, 0.15, 0.3));
+          return tr;
+        }
+      ) : el('div', 'empty', '訪問 3 回以上のページがまだありません'));
+    }
+
+    // ---- 端末別・流入元別
+    const segTable = (title, helpKey, rows, labelOf) => {
+      const card = el('div', 'card');
+      card.append(h3(title, helpKey));
+      if (!rows.length) { card.appendChild(el('div', 'empty', '次回の更新（翌朝 5〜6 時）から表示されます')); return card; }
+      card.appendChild(table(
+        [{ label: '' }, { label: '訪問', num: true }, { label: '読まれた深さ', num: true, help: 'scrollDepth' }, { label: '操作時間', num: true, help: 'activeTime' },
+         { label: '怒り', num: true, help: 'rageClicks' }, { label: '反応なし', num: true, help: 'deadClicks' }, { label: 'すぐ戻る率', num: true, help: 'quickBackRate' }],
+        rows.sort((a, b) => b.sessions - a.sessions), (r) => {
+          const tr = el('tr');
+          const name = td(labelOf(r.key)); name.classList.add('nowrap');
+          tr.append(name, td(fmtInt(r.sessions), true), cellScroll(r.scrollDepth), td(fmtDur(r.activeSec), true), cellCount(r.rageClicks), cellCount(r.deadClicks), cellRate(r.quickBackRate, 0.15, 0.25));
+          return tr;
+        }
+      ));
+      return card;
+    };
+    segBox.append(
+      segTable('端末別', 'clDevice', devAgg.filter((r) => r.sessions > 0), (k) => deviceJa[k] || k),
+      segTable('流入元別', 'clChannel', chAgg.filter((r) => r.sessions > 0), (k) => channelJa[k] || k)
+    );
+
+    // ---- 気づき（ルールベースの仮説）
+    const hints = [];
+    const label = (r) => titleOf(r.key) || r.key;
+    const s7 = avg(last7, 'scrollDepth');
+    if (s7 != null && last7.length >= 3 && s7 < 40) hints.push(['サイト全体で、ページの 4 割くらいまでしか読まれていません', `直近 ${last7.length} 日の平均スクロール深度 ${pct(s7)}。電話番号・住所・診療時間など大事な情報がページの上のほうにあるか確認します。`]);
+    for (const r of urlAgg.filter((x) => x.sessions >= 5).sort((a, b) => b.issues - a.issues).slice(0, 5)) {
+      if (r.issueRate >= 0.3) hints.push([`「${label(r)}」は訪問の ${fmtPct(r.issueRate, 0)} で何かにつまずいています`, `訪問 ${fmtInt(r.sessions)} 回のうち、怒り ${r.rageClicks}・反応なし ${r.deadClicks}・すぐ戻る ${r.quickBacks}。録画をこのページの URL で絞って見ます。`]);
+      if (r.deadClicks >= 3 && rate(r.deadClicks, r.sessions) >= 0.1) hints.push([`「${label(r)}」にリンクに見えてリンクでない場所がありそうです`, `反応しないクリックが ${r.deadClicks} 件。下線つきの文字・写真・見出しなど、押されても何も起きない場所をヒートマップ（クリック）で探します。`]);
+      if (r.rageClicks >= 2) hints.push([`「${label(r)}」で同じ場所が連打されています`, `怒りクリックが ${r.rageClicks} 件。押しても反応が遅い・開かないボタンやメニューがないか確認します。`]);
+      if (r.quickBacks >= 3 && r.quickBackRate >= 0.2) hints.push([`「${label(r)}」は開いてすぐ戻る人が多いです`, `訪問の ${fmtPct(r.quickBackRate, 0)}。検索結果や広告に出ている文言と、ページの最初に見える内容が合っているか確認します。`]);
+      if (r.scrollDepth != null && r.scrollDepth < 30 && r.sessions >= 10) hints.push([`「${label(r)}」はほとんど上のほうしか読まれていません`, `平均スクロール深度 ${pct(r.scrollDepth)}。最初の画面で要点が伝わっているか、下に続きがあると分かるかを確認します。`]);
+    }
+    const mob = devAgg.find((r) => r.key === 'Mobile'), pc = devAgg.find((r) => r.key === 'PC');
+    if (mob && pc && mob.sessions >= 10 && pc.sessions >= 5 && mob.scrollDepth != null && pc.scrollDepth != null && pc.scrollDepth - mob.scrollDepth >= 15) {
+      hints.push(['スマホのほうがパソコンより読まれる深さがかなり浅いです', `スマホ ${pct(mob.scrollDepth)}・パソコン ${pct(pc.scrollDepth)}。スマホで文字が小さい・画像が重い・最初の画面が写真だけ、などがないか実機で確認します。`]);
+    }
+    if (mob && mob.sessions >= 10 && rate(mob.rageClicks + mob.deadClicks, mob.sessions) >= 0.15) {
+      hints.push(['スマホで押しても反応しない操作が目立ちます', `スマホの訪問 ${fmtInt(mob.sessions)} 回に対して、怒り ${mob.rageClicks}・反応なし ${mob.deadClicks}。ボタンが小さい・指で押しにくい位置にないか確認します。`]);
+    }
+    for (const r of chAgg.filter((x) => x.sessions >= 5)) {
+      const isAd = /paid|cpc|ads|広告/i.test(r.key);
+      if (isAd && r.quickBackRate >= 0.2) hints.push([`広告から来た人の ${fmtPct(r.quickBackRate, 0)} がすぐ戻っています`, `流入元「${channelJa[r.key] || r.key}」の訪問 ${fmtInt(r.sessions)} 回。広告文で約束した内容が着地ページの最初の画面にあるか確認します。広告費のムダに直結します。`]);
+      else if (!isAd && r.quickBackRate >= 0.3) hints.push([`「${channelJa[r.key] || r.key}」から来た人の ${fmtPct(r.quickBackRate, 0)} がすぐ戻っています`, `訪問 ${fmtInt(r.sessions)} 回。検索結果のタイトル・説明文と中身のずれがないか確認します。`]);
+    }
+    const se7 = sum(last7, 'scriptErrors'), ex7 = sum(last7, 'excessiveScroll');
+    if (se7 >= 3) hints.push(['ページの中でプログラムのエラーが起きています', `直近 ${last7.length} 日で ${fmtInt(se7)} 件。Clarity の録画を「JavaScript エラー」で絞り込むと、どのページ・どの操作で起きたか分かります。`]);
+    if (ex7 >= 3) hints.push(['探しものが見つからずスクロールし続けた訪問があります', `直近 ${last7.length} 日で ${fmtInt(ex7)} 件。目次や「診療時間・アクセス」への近道が目立つ位置にあるか確認します。`]);
+    if (!hints.length) {
+      hintsBox.appendChild(el('div', 'empty', urlDaysN ? '今のところ目立つつまずきはありません。データがたまると、ここに「直すべき場所」の仮説が出ます' : 'ページ別・端末別のデータがたまると、ここに「直すべき場所」の仮説が出ます'));
+    } else {
+      const ul = el('ul', 'hints');
+      for (const [head, detail] of hints.slice(0, 8)) { const li = el('li'); li.append(el('b', null, head), el('br'), el('span', 'dim', detail)); ul.appendChild(li); }
+      hintsBox.appendChild(ul);
+      const note = el('p', 'desc'); note.style.marginTop = '8px';
+      note.append('直したあとは、このページの「つまずき率」と「読まれた深さ」が 1〜2 週間で変わるかを見ます。', ' ', clLink('Clarity の画面を開く', 'dashboard'));
+      hintsBox.appendChild(note);
+    }
   })();
 
   // ---------------------------------------------------------- 記事公開と指標の相関

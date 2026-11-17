@@ -241,7 +241,7 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 - Google 広告: GA4 と Google 広告のリンク経由で費用・クリック・キャンペーン別を取得（Google Ads API は使わない）
 - Google マップ（ビジネスプロフィール）: 通話・経路検索・サイトクリック・表示回数の日別と、店舗が出た検索キーワード（Business Profile Performance API）
 - 流れの図: 流入チャネル → 最初に着いたページ → 成果（電話 / LINE / 地図 / 何もせず）のサンキー図
-- Microsoft Clarity: スクロール深度・操作時間・怒りクリック・反応しないクリック・すぐ戻った訪問（連携後）
+- Microsoft Clarity（「UX 改善」ページ）: スクロール深度・操作時間・怒りクリック・反応しないクリック・すぐ戻った訪問・スクリプトエラーの日別推移に加え、ページ（URL）別・端末別・流入元別の内訳と、数値から自動で出す「気づき」（直すべきページの仮説）
 - 記事の公開と数字の関係: 日別グラフに公開日の縦線、記事ごとの公開前後 7 日比較
 - 手動実行: GitHubの Actions タブ → 集客ダッシュボードの更新 → Run workflow
 - データは GitHub Actions 上で AES-256-GCM で暗号化して `dashboard/data.enc` に保存する（リポジトリが公開のため）。ページを開くとパスワード入力が出て、ブラウザの中だけで復号して表示する。パスワードは GitHub Secrets の `DASHBOARD_PASSWORD`
@@ -261,7 +261,8 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
    - 店舗が複数ある場合は GitHub の Variables に `GBP_LOCATION_ID` を設定（未設定なら自動で選ぶ）
 6. Microsoft Clarity（ページの使われ方: スクロール深度・怒りクリック・録画・ヒートマップ）を出すには
    - https://clarity.microsoft.com でプロジェクトを作り、サイトの全ページ（index.html・templates/*.html）に Clarity のタグを入れる
-   - Clarity の Settings → Data Export → API トークンを発行し、GitHub Secrets に `CLARITY_API_TOKEN` を登録。毎朝、前日分を取得して履歴を蓄積する（API は 1 日 10 回・直近 3 日分までの制限）
+   - Clarity の Settings → Data Export → API トークンを発行し、GitHub Secrets に `CLARITY_API_TOKEN` を登録。毎朝、前日分を取得して履歴を蓄積する（API は 1 日 10 回・直近 3 日分までの制限。毎朝 4 回使う: 全体 + URL 別 + 端末別 + 流入元別。同じ日の分を取り込み済みなら呼ばないので、手動実行を繰り返しても上限に当たらない）
+   - 履歴の保持: 全体・端末別は 90 日、URL 別（上位 30 ページ）・流入元別は 28 日。Data Export API は過去にさかのぼれないので、取りこぼした日は欠けたままになる
 7. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
 8. 毎朝 5〜6 時に確実に更新するための Vercel 側の設定（Vercel プロジェクト → Settings → Environment Variables、Production）
    - `GITHUB_PUBLISH_TOKEN`: GitHub の Fine-grained personal access token（https://github.com/settings/personal-access-tokens/new 。Repository access は minoru-dental のみ、Permissions は Contents: Read and write と Pull requests: Read and write、期限は最長の 1 年）。`api/review.js` と共用
