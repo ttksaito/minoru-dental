@@ -231,6 +231,12 @@
   .bar .v { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
   td.ux-bad { color: var(--bad); font-weight: 600; }
   td.nowrap { white-space: nowrap; }
+  td.flow { font-size: 12px; line-height: 1.5; min-width: 220px; }
+  details.day { border-top: 1px solid var(--border); padding: 6px 0; }
+  details.day summary { cursor: pointer; font-size: 13px; padding: 6px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.day summary::before { content: '▸'; color: var(--muted); font-size: 11px; }
+  details.day[open] summary::before { content: '▾'; }
+  details.day summary .dim { font-size: 12px; }
   td.ux-warn { color: var(--warn, #b7791f); font-weight: 600; }
   .hints { margin: 0; padding-left: 18px; }
   .hints li { margin: 6px 0; line-height: 1.6; }
@@ -420,6 +426,10 @@
     <h2>端末・流入元ごとの使われ方 <span class="sub">同じ期間の合算。スマホだけ・広告だけで起きている問題を見つけます</span></h2>
     <div class="grid" id="clarity-segments"></div>
 
+    <h2>セッションごとの動き <span class="sub" id="clarity-sessions-range"></span></h2>
+    <div class="grid two" id="clarity-session-stats"></div>
+    <div class="card" id="clarity-sessions" style="margin-top:12px"></div>
+
     <h2>気づき <span class="sub">数値から自動で出した仮説です。Clarity の録画で確かめてから直します</span></h2>
     <div class="card" id="clarity-hints"></div>
   </div>
@@ -517,6 +527,10 @@ window.HELP = {
   clDevice: 'Clarity が判定した端末。スマートフォン・パソコン・タブレット。',
   clChannel: 'Clarity が判定した流入元。検索・広告・直接アクセスなど。GA4 の分類と少し違うことがあります。',
   quickBackRate: 'すぐ戻った訪問 ÷ 訪問。広告や検索から来て「違った」と思われた割合の目安です。',
+  refHost: 'サイトに来る直前に見ていたサイト（参照元）。Google 検索と Google 広告（検索結果の広告）はどちらも Google 検索と出ます。「Google 広告（提携サイト）」は Google 以外の提携サイトに出た広告からの訪問です。',
+  loadTime: 'ページが表示されるまでにかかった時間の平均。3 秒を超えると離脱が増えると言われています。',
+  perfScore: 'Clarity が付けた表示速度の点数（100 点満点）。おおむね 80 以上なら問題ありません。',
+  hourOfDay: '訪問が始まった時刻（日本時間）ごとの回数。',
 };
 (function () {
   const tip = document.getElementById('help-tip');
@@ -1708,6 +1722,125 @@ window.HELP = {
       segTable('流入元別', 'clChannel', chAgg.filter((r) => r.sessions > 0), (k) => channelJa[k] || k)
     );
 
+    // ---- セッションごとの動き（公式 MCP サーバーの内部 API から取得。ドキュメント外なので止まることがある）
+    const sessions = cl.sessions || [], sstats = cl.sessionStats || [];
+    const sessRange = $('#clarity-sessions-range'), sessStatsBox = $('#clarity-session-stats'), sessBox = $('#clarity-sessions');
+    const refJa = (h) => {
+      if (!h) return '直接アクセス';
+      if (/syndicatedsearch\.goog|googleadservices|googlesyndication|doubleclick/.test(h)) return 'Google 広告（提携サイト）';
+      if (/^google\.|^www\.google\./.test(h)) return 'Google 検索';
+      if (/maps\.google|maps\.app\.goo\.gl|^goo\.gl/.test(h)) return 'Google マップ';
+      if (/bing\.com/.test(h)) return 'Bing 検索';
+      if (/yahoo\.co\.jp|yahoo\.com/.test(h)) return 'Yahoo! 検索';
+      if (/duckduckgo/.test(h)) return 'DuckDuckGo 検索';
+      if (/line\.me|liff\.line|lin\.ee/.test(h)) return 'LINE';
+      if (/instagram/.test(h)) return 'Instagram';
+      if (/facebook|fb\.com|l\.facebook/.test(h)) return 'Facebook';
+      if (/^t\.co$|twitter\.com|^x\.com$/.test(h)) return 'X（Twitter）';
+      if (/chatgpt|openai|perplexity|gemini\.google|copilot\.microsoft|claude\.ai/.test(h)) return `AI アシスタント（${h}）`;
+      if (/minoru-dental\.jp|github\.io/.test(h)) return 'サイト内';
+      if (/epark|ekiten|caloo|haisha-yoyaku|dentalbook|byoinnavi|hospita/.test(h)) return `医院の口コミ・予約サイト（${h}）`;
+      return h;
+    };
+    const hourBars = (counts) => {
+      const NS = 'http://www.w3.org/2000/svg';
+      const W = 480, H = 96, pad = 16, bw = W / 24, max = Math.max(1, ...counts);
+      const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', '時間帯別の訪問数'); svg.style.width = '100%'; svg.style.height = 'auto'; svg.style.display = 'block';
+      counts.forEach((n, i) => {
+        const h = Math.max(n > 0 ? 2 : 0, ((H - pad - 8) * n) / max);
+        const r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', i * bw + 2); r.setAttribute('y', H - pad - h); r.setAttribute('width', bw - 4); r.setAttribute('height', h); r.setAttribute('rx', 2);
+        r.setAttribute('fill', 'var(--series-1)'); if (!n) { r.setAttribute('height', 2); r.setAttribute('y', H - pad - 2); r.setAttribute('opacity', '0.2'); }
+        const t = document.createElementNS(NS, 'title'); t.textContent = `${i}時台: ${n} 回`; r.appendChild(t);
+        svg.appendChild(r);
+        if (i % 3 === 0) { const tx = document.createElementNS(NS, 'text'); tx.setAttribute('x', i * bw + 2); tx.setAttribute('y', H - 3); tx.setAttribute('font-size', '10'); tx.setAttribute('fill', 'var(--muted)'); tx.textContent = `${i}時`; svg.appendChild(tx); }
+      });
+      return svg;
+    };
+    const describeSession = (s) => {
+      const titles = (s.timeline || []).map((p) => (p.title || titleOf(p.path) || p.path || '').replace(/\s*[|｜].*$/, ''));
+      const flow = titles.slice(0, 4).join(' → ') + (titles.length > 4 ? ' → …' : '');
+      const evs = (s.timeline || []).flatMap((p) => p.events || []);
+      const flags = [];
+      if (evs.some((e) => /rage/i.test(e))) flags.push('同じ場所を連打');
+      if (evs.some((e) => /dead/i.test(e))) flags.push('反応しない場所をクリック');
+      if (evs.some((e) => /quick ?back/i.test(e))) flags.push('すぐ戻った');
+      if (evs.some((e) => /error/i.test(e))) flags.push('エラー発生');
+      const clicked = evs.map((e) => (String(e).match(/^(?:click|tap)[^:]*:\s*(.+)$/i) || [])[1]).filter(Boolean).slice(0, 2);
+      if (clicked.length) flags.push(`「${clicked.join('」「')}」をクリック`);
+      let t = `${refJa(s.referrer)}から ${flow || '不明なページ'} を ${fmtDur(s.totalSec)}`;
+      t += s.activeSec < 5 ? '（ほぼ操作なし）' : `（操作 ${fmtDur(s.activeSec)}）`;
+      t += s.pages <= 1 ? '。他のページへ移らず終了' : `。${s.pages} ページ見て終了`;
+      if (flags.length) t += '。' + flags.join('、');
+      return t;
+    };
+    const deviceShort = { Mobile: 'スマホ', PC: 'PC', Tablet: 'タブレット', Other: 'その他' };
+    if (!sessions.length && !sstats.length) {
+      sessStatsBox.remove();
+      sessBox.appendChild(el('div', 'empty', 'セッション一覧は次回の更新（翌朝 5〜6 時）から表示されます'));
+    } else {
+      const st7 = sstats.slice(-7);
+      const tot = (k) => st7.reduce((a, d) => a + (d[k] || 0), 0);
+      sessRange.textContent = `直近 ${st7.length} 日: ${fmtInt(tot('sessions'))} セッション、1 ページだけで終了 ${fmtPct(rate(tot('singlePage'), tot('sessions')), 0)}、スマホ ${fmtPct(rate(tot('mobile'), tot('sessions')), 0)}`;
+      const hours = new Array(24).fill(0);
+      for (const d of st7) (d.byHour || []).forEach((n, i) => { hours[i] += n; });
+      const hc = el('div', 'card');
+      hc.append(h3('見られている時間帯', 'hourOfDay'), el('p', 'desc', `直近 ${st7.length} 日の合計（日本時間）。診療時間外に多ければ、Web 予約や LINE の案内が効きます`));
+      hc.appendChild(hourBars(hours));
+      const refMap = new Map();
+      for (const d of st7) for (const r of d.referrers || []) refMap.set(r.host, (refMap.get(r.host) || 0) + r.n);
+      const refRows = [...refMap.entries()].map(([host, n]) => ({ host, n })).sort((a, b) => b.n - a.n).slice(0, 10);
+      const rc = el('div', 'card');
+      barTable(rc, ['どこから来たか（参照元）', 'refHost'], `直近 ${st7.length} 日。サイトに来る直前に見ていたサイト`, refRows, (r) => refJa(r.host), (r) => r.n);
+      const pm = new Map();
+      for (const d of sstats.slice(-28)) for (const p of d.pages || []) {
+        const a = pm.get(p.path) || { path: p.path, n: 0, ls: 0, ln: 0, ss: 0, sn: 0 };
+        a.n += p.n; if (p.loadSec != null) { a.ls += p.loadSec * p.n; a.ln += p.n; } if (p.score != null) { a.ss += p.score * p.n; a.sn += p.n; }
+        pm.set(p.path, a);
+      }
+      const slow = [...pm.values()].filter((a) => a.ln >= 3).map((a) => ({ path: a.path, n: a.n, loadSec: a.ls / a.ln, score: a.sn ? a.ss / a.sn : null })).sort((a, b) => b.loadSec - a.loadSec).slice(0, 8);
+      const lc = el('div', 'card');
+      lc.append(h3('読み込みに時間がかかるページ', 'loadTime'), el('p', 'desc', '直近 28 日。表示 3 回以上のページを遅い順に。3 秒を超えると離脱が増えます'));
+      lc.appendChild(slow.length ? table(
+        [{ label: 'ページ' }, { label: '表示', num: true }, { label: '読み込み', num: true, help: 'loadTime' }, { label: '速度スコア', num: true, help: 'perfScore' }],
+        slow, (r) => {
+          const tr = el('tr');
+          const ld = td(r.loadSec.toFixed(1) + ' 秒', true); if (r.loadSec >= 3) ld.classList.add('ux-bad'); else if (r.loadSec >= 2) ld.classList.add('ux-warn');
+          const sc = td(r.score == null ? '–' : String(Math.round(r.score)), true); if (r.score != null && r.score < 50) sc.classList.add('ux-bad'); else if (r.score != null && r.score < 80) sc.classList.add('ux-warn');
+          tr.append(pageCell(titleOf(r.path), r.path), td(fmtInt(r.n), true), ld, sc);
+          return tr;
+        }) : el('div', 'empty', 'データがたまると表示されます'));
+      sessStatsBox.append(hc, rc, lc);
+
+      // 一覧（日ごとに折りたたみ。最新の日だけ開く）
+      const desc = el('p', 'desc');
+      desc.append('1 行が 1 回の訪問です。「動き」は見たページの順番と滞在時間から機械的に作った説明で、Clarity の画面で出る AI の分析文は API で取れないため代わりに置いています。録画は 30 日で消えます。');
+      sessBox.append(h3('セッション一覧'), desc);
+      const byDate = new Map();
+      for (const s of sessions) { if (!byDate.has(s.date)) byDate.set(s.date, []); byDate.get(s.date).push(s); }
+      const dates = [...byDate.keys()].sort((a, b) => b.localeCompare(a)).slice(0, 7);
+      if (!dates.length) sessBox.appendChild(el('div', 'empty', 'まだセッションがありません'));
+      dates.forEach((date, idx) => {
+        const list = byDate.get(date).sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+        const det = el('details', 'day'); if (idx === 0) det.open = true;
+        const sm = el('summary'); sm.append(el('b', null, fmtDateWd(date)), ` ${list.length} 件`, el('span', 'dim', `　スマホ ${list.filter((s) => s.device === 'Mobile').length} / PC ${list.filter((s) => s.device === 'PC').length}　1 ページだけ ${list.filter((s) => s.pages <= 1).length}`));
+        det.appendChild(sm);
+        det.appendChild(table(
+          [{ label: '時刻' }, { label: '端末', help: 'clDevice' }, { label: '動き' }, { label: '滞在', num: true }, { label: '操作', num: true, help: 'activeTime' }, { label: 'ページ', num: true }, { label: 'クリック', num: true }, { label: '' }],
+          list, (s) => {
+            const tr = el('tr');
+            const time = (() => { try { return new Date(s.ts).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } })();
+            const flowCell = el('td', 'flow', describeSession(s));
+            const link = el('td'); link.classList.add('nowrap');
+            if (s.link) { const a = el('a', null, '録画'); a.href = s.link; a.target = '_blank'; a.rel = 'noopener'; link.appendChild(a); }
+            const tm = td(time); tm.classList.add('nowrap');
+            tr.append(tm, td(deviceShort[s.device] || '不明'), flowCell, td(fmtDur(s.totalSec), true), td(fmtDur(s.activeSec), true), td(fmtInt(s.pages), true), td(fmtInt(s.clicks), true), link);
+            return tr;
+          }));
+        sessBox.appendChild(det);
+      });
+    }
+
     // ---- 気づき（ルールベースの仮説）
     const hints = [];
     const label = (r) => titleOf(r.key) || r.key;
@@ -1731,6 +1864,13 @@ window.HELP = {
       const isAd = /paid|cpc|ads|広告/i.test(r.key);
       if (isAd && r.quickBackRate >= 0.2) hints.push([`広告から来た人の ${fmtPct(r.quickBackRate, 0)} がすぐ戻っています`, `流入元「${channelJa[r.key] || r.key}」の訪問 ${fmtInt(r.sessions)} 回。広告文で約束した内容が着地ページの最初の画面にあるか確認します。広告費のムダに直結します。`]);
       else if (!isAd && r.quickBackRate >= 0.3) hints.push([`「${channelJa[r.key] || r.key}」から来た人の ${fmtPct(r.quickBackRate, 0)} がすぐ戻っています`, `訪問 ${fmtInt(r.sessions)} 回。検索結果のタイトル・説明文と中身のずれがないか確認します。`]);
+    }
+    if (sstats.length) {
+      const st7 = sstats.slice(-7), n7 = st7.reduce((a, d) => a + (d.sessions || 0), 0), sp7 = st7.reduce((a, d) => a + (d.singlePage || 0), 0);
+      if (n7 >= 20 && rate(sp7, n7) >= 0.7) hints.push(['ほとんどの人が 1 ページだけ見て帰っています', `直近 ${st7.length} 日の ${fmtInt(n7)} 回のうち ${fmtPct(rate(sp7, n7), 0)}。最初に開いたページから「診療時間・アクセス」「電話」「LINE」へ 1 タップで行けるか確認します。`]);
+      const pm2 = new Map();
+      for (const d of sstats.slice(-28)) for (const p of d.pages || []) { const a = pm2.get(p.path) || { n: 0, ls: 0, ln: 0 }; a.n += p.n; if (p.loadSec != null) { a.ls += p.loadSec * p.n; a.ln += p.n; } pm2.set(p.path, a); }
+      for (const [path, a] of pm2) if (a.ln >= 5 && a.ls / a.ln >= 3) hints.push([`「${titleOf(path) || path}」の表示に時間がかかっています`, `平均 ${(a.ls / a.ln).toFixed(1)} 秒（表示 ${fmtInt(a.n)} 回）。画像の大きさを減らすのが一番効きます。`]);
     }
     const se7 = sum(last7, 'scriptErrors'), ex7 = sum(last7, 'excessiveScroll');
     if (se7 >= 3) hints.push(['ページの中でプログラムのエラーが起きています', `直近 ${last7.length} 日で ${fmtInt(se7)} 件。Clarity の録画を「JavaScript エラー」で絞り込むと、どのページ・どの操作で起きたか分かります。`]);

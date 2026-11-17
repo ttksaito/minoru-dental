@@ -20,7 +20,7 @@
  *   DASHBOARD_PASSWORD … 指定すると dashboard/data.enc に暗号化して書き出す（公開リポジトリ向け）。
  *                        未指定なら dashboard/data.json に平文で書く（ローカル確認用）
  *   CLARITY_API_TOKEN … Microsoft Clarity の Data Export API トークン。指定すると前日分の
- *                        使われ方（スクロール深度・怒りクリック等）を取得し、履歴として蓄積する
+ *                        使われ方（スクロール深度・怒りクリック等）とセッション一覧を取得し、履歴として蓄積する
  */
 
 const fs = require('fs');
@@ -857,12 +857,166 @@ function appendClarityDay(list, day, keepDays) {
   return [...prev, day].sort((a, b) => a.date.localeCompare(b.date)).slice(-keepDays);
 }
 
+// ---- セッション一覧（公式 MCP サーバーが使っている内部 API。ドキュメント外なので壊れたら前回分を表示し続ける）
+const CLARITY_MCP_BASE = 'https://clarity.microsoft.com/mcp';
+const CLARITY_SESSION_DAYS = 14; // セッション一覧を保持する日数（録画自体の保存期間は 30 日）
+const CLARITY_SESSIONS_PER_DAY = 60; // 1 日あたり保存する最大件数（新しい順）
+const CLARITY_SESSION_STATS_DAYS = 90; // 時間帯別・参照元などの日別集計の保持日数
+
+async function clarityMcp(path, body) {
+  const res = await fetch(`${CLARITY_MCP_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${CLARITY_TOKEN}` },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (res.status === 401 || res.status === 403) throw new Error(`Clarity 内部 API ${res.status}: トークンが無効か、この API で使えなくなりました`);
+  if (res.status === 429) throw new Error('Clarity 内部 API 429: 呼び出し上限に達しました。翌日に再取得します');
+  if (!res.ok) throw new Error(`Clarity 内部 API ${res.status}: ${text.slice(0, 200)}`);
+  try { return JSON.parse(text); } catch (e) { throw new Error('Clarity 内部 API: JSON でない応答'); }
+}
+
+/** "00:01:05" / 65 / "65" → 秒 */
+function parseDurationSec(v) {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  const s = String(v).trim();
+  let m = s.match(/^(\d+):(\d{1,2}):(\d{1,2})(?:\.\d+)?$/);
+  if (m) return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
+  m = s.match(/^(\d+):(\d{1,2})(?:\.\d+)?$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  const n = Number(s);
+  return Number.isNaN(n) ? 0 : n;
+}
+function jstParts(ts) {
+  const t = new Date(ts);
+  if (Number.isNaN(t.getTime())) return null;
+  const j = new Date(t.getTime() + 9 * 60 * 60 * 1000);
+  return { date: j.toISOString().slice(0, 10), hour: j.getUTCHours() };
+}
+function hostOf(u) {
+  if (!u) return '';
+  try { return new URL(String(u)).hostname.replace(/^www\./, ''); } catch (e) { return String(u).replace(/^https?:\/\//, '').split('/')[0].replace(/^www\./, ''); }
+}
+/** timelineEvents の 1 件を短い文字列に（構造が公開されていないので、ありそうな項目名を順に見る） */
+function summarizeTimelineEvent(e) {
+  if (e == null) return null;
+  if (typeof e === 'string') return e.slice(0, 60);
+  if (typeof e !== 'object') return String(e).slice(0, 60);
+  const type = e.type || e.eventType || e.event || e.name || e.kind || e.category || '';
+  const text = e.text || e.clickedText || e.label || e.target || e.selector || e.message || e.url || '';
+  const out = [type, text].filter(Boolean).map((x) => String(x).slice(0, 60)).join(': ');
+  return out || Object.keys(e).slice(0, 3).join(',');
+}
+/** API のセッション 1 件 → 保存用の小さな形 */
+function compactClaritySession(s, device) {
+  const parts = jstParts(s.timestamp);
+  const timeline = Array.isArray(s.timeline) ? s.timeline : [];
+  const totalSec = parseDurationSec(s.totalDuration);
+  const activeSec = parseDurationSec(s.activeDuration);
+  // timeline[].duration の単位が不明（秒かミリ秒か）なので、合計が滞在時間の 50 倍を超えていたらミリ秒とみなす
+  const rawSum = timeline.reduce((a, p) => a + (Number(p.duration) || 0), 0);
+  const msScale = totalSec > 0 && rawSum > totalSec * 50 ? 1000 : 1;
+  const pages = timeline.map((p) => {
+    const path = clarityDimensionValue('URL', { URL: p.url || '' });
+    const events = (Array.isArray(p.timelineEvents) ? p.timelineEvents : []).map(summarizeTimelineEvent).filter(Boolean).slice(0, 12);
+    const load = Number(p.pageLoadTime);
+    return {
+      path, title: p.displayTitle ? String(p.displayTitle).slice(0, 80) : '',
+      sec: Math.round(((Number(p.duration) || 0) / msScale) * 10) / 10,
+      loadSec: Number.isFinite(load) ? Math.round((load > 1000 ? load / 1000 : load) * 100) / 100 : null, // 1000 超はミリ秒とみなす
+      score: Number.isFinite(Number(p.score)) ? Number(p.score) : null,
+      events,
+    };
+  });
+  const referrer = timeline.length ? hostOf(timeline[0].referrerUrl) : '';
+  return {
+    id: String(s.link || '').slice(0, 300),
+    link: String(s.link || '').slice(0, 300),
+    ts: s.timestamp,
+    date: parts ? parts.date : daysAgo(1),
+    hour: parts ? parts.hour : null,
+    device,
+    totalSec, activeSec,
+    pages: Number(s.pagesCount) || pages.length,
+    clicks: Number(s.sessionClickCount) || 0,
+    referrer,
+    timeline: pages.slice(0, 12),
+  };
+}
+/** その日のセッション群 → 日別の集計 1 件 */
+function clarityDayStats(date, sessions) {
+  const byHour = new Array(24).fill(0);
+  const refs = new Map(), pages = new Map();
+  let single = 0, mobile = 0, pc = 0;
+  for (const s of sessions) {
+    if (s.hour != null) byHour[s.hour] += 1;
+    if (s.pages <= 1) single += 1;
+    if (s.device === 'Mobile') mobile += 1; else if (s.device === 'PC') pc += 1;
+    refs.set(s.referrer || '', (refs.get(s.referrer || '') || 0) + 1);
+    for (const p of s.timeline) {
+      if (!pages.has(p.path)) pages.set(p.path, { path: p.path, n: 0, loadSum: 0, loadN: 0, scoreSum: 0, scoreN: 0 });
+      const a = pages.get(p.path); a.n += 1;
+      if (p.loadSec != null && p.loadSec > 0) { a.loadSum += p.loadSec; a.loadN += 1; }
+      if (p.score != null) { a.scoreSum += p.score; a.scoreN += 1; }
+    }
+  }
+  return {
+    date, sessions: sessions.length, singlePage: single, mobile, pc, byHour,
+    referrers: [...refs.entries()].map(([host, n]) => ({ host, n })).sort((a, b) => b.n - a.n).slice(0, 15),
+    pages: [...pages.values()].sort((a, b) => b.n - a.n).slice(0, 30).map((a) => ({ path: a.path, n: a.n, loadSec: a.loadN ? Math.round((a.loadSum / a.loadN) * 100) / 100 : null, score: a.scoreN ? Math.round(a.scoreSum / a.scoreN) : null })),
+  };
+}
+
+/** 直近 48 時間のセッション一覧を取り込み、前回分と合わせて返す */
+async function fetchClaritySessions(prev) {
+  const end = new Date();
+  const start = new Date(end.getTime() - 48 * 60 * 60 * 1000);
+  const date = { start: start.toISOString(), end: end.toISOString() };
+  const base = { sortBy: 0, start: date.start, end: date.end, count: 250 };
+  const warnings = [];
+  const all = await clarityMcp('/recordings/sample', { ...base, filters: { date } });
+  if (!Array.isArray(all)) throw new Error('Clarity 内部 API: セッション一覧が配列ではありません');
+  // 端末は本文に無いので、端末で絞った一覧と突き合わせる（失敗しても「不明」で続ける）
+  const deviceSets = {};
+  for (const dev of ['Mobile', 'PC']) {
+    try {
+      const list = await clarityMcp('/recordings/sample', { ...base, filters: { date, deviceType: [dev] } });
+      deviceSets[dev] = new Set((Array.isArray(list) ? list : []).map((s) => s.link));
+    } catch (e) { warnings.push(`端末 ${dev} の絞り込み: ${e.message.slice(0, 120)}`); }
+  }
+  const deviceOf = (link) => (deviceSets.Mobile && deviceSets.Mobile.has(link) ? 'Mobile' : deviceSets.PC && deviceSets.PC.has(link) ? 'PC' : deviceSets.Mobile && deviceSets.PC ? 'Other' : '');
+  const fetched = all.map((s) => compactClaritySession(s, deviceOf(s.link)));
+
+  // セッション一覧: リンクで重複を除き、日ごとに新しい順で上限まで、保持日数ぶんだけ残す
+  const byId = new Map((prev.sessions || []).map((s) => [s.id, s]));
+  for (const s of fetched) byId.set(s.id, s);
+  const cutoff = daysAgo(CLARITY_SESSION_DAYS);
+  const perDay = new Map();
+  for (const s of byId.values()) { if (s.date < cutoff) continue; if (!perDay.has(s.date)) perDay.set(s.date, []); perDay.get(s.date).push(s); }
+  const sessions = [];
+  for (const list of perDay.values()) { list.sort((a, b) => String(b.ts).localeCompare(String(a.ts))); sessions.push(...list.slice(0, CLARITY_SESSIONS_PER_DAY)); }
+  sessions.sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+
+  // 日別集計: 今回取れた日付ぶんを作り直す（当日分は翌朝また作り直される）
+  const fetchedByDate = new Map();
+  for (const s of fetched) { if (!fetchedByDate.has(s.date)) fetchedByDate.set(s.date, []); fetchedByDate.get(s.date).push(s); }
+  let stats = (prev.sessionStats || []).filter((d) => !fetchedByDate.has(d.date));
+  for (const [d, list] of fetchedByDate) stats.push(clarityDayStats(d, list));
+  stats = stats.sort((a, b) => a.date.localeCompare(b.date)).slice(-CLARITY_SESSION_STATS_DAYS);
+
+  return { sessions, sessionStats: stats, sessionsFetchedOn: daysAgo(0), sessionWarnings: warnings };
+}
+
 async function fetchClarity() {
   const date = daysAgo(1);
   const prev = loadPreviousClarity() || {};
-  // 同じ日の分をすでに取り込み済みなら API を呼ばない（1 日 10 回の上限を手動実行で使い切らないため）
   const hasToday = (list) => Array.isArray(list) && list.some((d) => d.date === date);
-  if (prev.latest && prev.latest.date === date && CLARITY_DIMENSIONS.every((d) => hasToday(prev[d.key]))) {
+  // 同じ日の分をすでに取り込み済みなら API を呼ばない（1 日 10 回の上限を手動実行で使い切らないため）
+  const needBase = !(prev.latest && prev.latest.date === date);
+  const needDims = CLARITY_DIMENSIONS.filter((d) => !hasToday(prev[d.key]));
+  const needSessions = prev.sessionsFetchedOn !== daysAgo(0);
+  if (!needBase && !needDims.length && !needSessions) {
     console.log(`  ${date} 分は取得済みのため API 呼び出しを省略しました`);
     return { ...prev, warnings: [] };
   }
@@ -874,11 +1028,14 @@ async function fetchClarity() {
     byUrl: prev.byUrl || [],
     byDevice: prev.byDevice || [],
     byChannel: prev.byChannel || [],
+    sessions: prev.sessions || [],
+    sessionStats: prev.sessionStats || [],
+    sessionsFetchedOn: prev.sessionsFetchedOn || null,
     warnings: [],
   };
 
   // 1) サイト全体（失敗したら例外。呼び出し元が前回分で表示を続ける）
-  if (!(prev.latest && prev.latest.date === date)) {
+  if (needBase) {
     const { snapshot, breakdown } = claritySnapshot(await clarityRequest({}), date);
     out.latest = snapshot;
     out.breakdown = breakdown;
@@ -886,14 +1043,25 @@ async function fetchClarity() {
   }
 
   // 2) 内訳（URL / 端末 / 流入元）。1 つ失敗しても他は続ける
-  for (const d of CLARITY_DIMENSIONS) {
-    if (hasToday(out[d.key])) continue;
+  for (const d of needDims) {
     try {
       const rows = clarityDimensionRows(await clarityRequest({ dimension1: d.dim }), d.dim, d.limit);
       out[d.key] = appendClarityDay(out[d.key], { date, rows }, d.keepDays);
     } catch (e) {
       console.warn(`  Clarity ${d.dim} 別の取得に失敗: ${e.message.slice(0, 160)}`);
       out.warnings.push(`${d.dim} 別: ${e.message.slice(0, 160)}`);
+    }
+  }
+
+  // 3) セッション一覧（内部 API。失敗しても前回分を残す）
+  if (needSessions) {
+    try {
+      const r = await fetchClaritySessions(prev);
+      Object.assign(out, { sessions: r.sessions, sessionStats: r.sessionStats, sessionsFetchedOn: r.sessionsFetchedOn });
+      out.warnings.push(...r.sessionWarnings.map((w) => `セッション一覧: ${w}`));
+    } catch (e) {
+      console.warn(`  Clarity セッション一覧の取得に失敗: ${e.message.slice(0, 160)}`);
+      out.warnings.push(`セッション一覧: ${e.message.slice(0, 160)}`);
     }
   }
   return out;
@@ -969,7 +1137,7 @@ async function main() {
     try {
       output.clarity = await fetchClarity();
       const c = output.clarity;
-      console.log(`  前日: セッション ${c.latest.sessions} / スクロール深度 ${c.latest.scrollDepth}% / 怒りクリック ${c.latest.rageClicks}（履歴 ${c.history.length} 日分、URL 別 ${c.byUrl.length} 日分、端末別 ${c.byDevice.length} 日分、流入元別 ${c.byChannel.length} 日分）`);
+      console.log(`  前日: セッション ${c.latest.sessions} / スクロール深度 ${c.latest.scrollDepth}% / 怒りクリック ${c.latest.rageClicks}（履歴 ${c.history.length} 日分、URL 別 ${c.byUrl.length} 日分、端末別 ${c.byDevice.length} 日分、流入元別 ${c.byChannel.length} 日分、セッション一覧 ${(c.sessions || []).length} 件）`);
       if (c.warnings && c.warnings.length) output.errors.clarityBreakdown = c.warnings.join(' / ').slice(0, 500);
     } catch (e) {
       console.error(`Clarity の取得に失敗: ${e.message}`);

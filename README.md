@@ -242,6 +242,8 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 - Google マップ（ビジネスプロフィール）: 通話・経路検索・サイトクリック・表示回数の日別と、店舗が出た検索キーワード（Business Profile Performance API）
 - 流れの図: 流入チャネル → 最初に着いたページ → 成果（電話 / LINE / 地図 / 何もせず）のサンキー図
 - Microsoft Clarity（「UX 改善」ページ）: スクロール深度・操作時間・怒りクリック・反応しないクリック・すぐ戻った訪問・スクリプトエラーの日別推移に加え、ページ（URL）別・端末別・流入元別の内訳と、数値から自動で出す「気づき」（直すべきページの仮説）
+- Clarity のセッション一覧（同ページ）: 1 回の訪問ごとの時刻・端末・見たページの順番と滞在時間・参照元・録画リンクと、そこから作る日本語の説明。集計として時間帯別の訪問数、参照元、ページごとの読み込み速度。公式 MCP サーバー（`@microsoft/clarity-mcp-server`）が使う内部 API `POST https://clarity.microsoft.com/mcp/recordings/sample` を同じトークンで呼ぶ（ドキュメント外。壊れたら前回分を表示し続け、画面に注意書きが出る）。端末は本文に無いので Mobile / PC で絞った一覧と突き合わせる（毎朝 3 回）。保持はセッション一覧 14 日・1 日 60 件まで、日別集計 90 日。AI の「セッションの分析情報」は Microsoft が共有・ダウンロード非対応としていて取れない
+- 疎通確認: GitHub Actions「Clarity API の疎通確認（手動）」（`clarity-api-probe.yml`）。応答の項目名だけを出す（値は出さない）
 - 記事の公開と数字の関係: 日別グラフに公開日の縦線、記事ごとの公開前後 7 日比較
 - 手動実行: GitHubの Actions タブ → 集客ダッシュボードの更新 → Run workflow
 - データは GitHub Actions 上で AES-256-GCM で暗号化して `dashboard/data.enc` に保存する（リポジトリが公開のため）。ページを開くとパスワード入力が出て、ブラウザの中だけで復号して表示する。パスワードは GitHub Secrets の `DASHBOARD_PASSWORD`
@@ -263,6 +265,7 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
    - https://clarity.microsoft.com でプロジェクトを作り、サイトの全ページ（index.html・templates/*.html）に Clarity のタグを入れる
    - Clarity の Settings → Data Export → API トークンを発行し、GitHub Secrets に `CLARITY_API_TOKEN` を登録。毎朝、前日分を取得して履歴を蓄積する（API は 1 日 10 回・直近 3 日分までの制限。毎朝 4 回使う: 全体 + URL 別 + 端末別 + 流入元別。同じ日の分を取り込み済みなら呼ばないので、手動実行を繰り返しても上限に当たらない）
    - 履歴の保持: 全体・端末別は 90 日、URL 別（上位 30 ページ）・流入元別は 28 日。Data Export API は過去にさかのぼれないので、取りこぼした日は欠けたままになる
+   - 毎朝の Clarity 呼び出しは合計 7 回（Data Export 4 回 + セッション一覧 3 回）。内部 API の上限は不明なので、増やすときは疎通確認ワークフローで様子を見る
 7. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
 8. 毎朝 5〜6 時に確実に更新するための Vercel 側の設定（Vercel プロジェクト → Settings → Environment Variables、Production）
    - `GITHUB_PUBLISH_TOKEN`: GitHub の Fine-grained personal access token（https://github.com/settings/personal-access-tokens/new 。Repository access は minoru-dental のみ、Permissions は Contents: Read and write と Pull requests: Read and write、期限は最長の 1 年）。`api/review.js` と共用
