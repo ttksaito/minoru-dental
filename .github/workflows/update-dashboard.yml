@@ -71,6 +71,10 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
           CLARITY_API_TOKEN: ${{ secrets.CLARITY_API_TOKEN }}
+          # ビジネスプロフィールは運営者アカウントの OAuth で取得（docs/ops/gbp-oauth-setup.md）。未設定ならサービスアカウントで試みる
+          GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+          GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+          GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
         run: node scripts/fetch-dashboard-data.js
 
       - name: パスワード未設定なら中断（公開リポジトリに平文データを置かない）

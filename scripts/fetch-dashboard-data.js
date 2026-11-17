@@ -88,11 +88,11 @@ function fillDates(rows, startDate, endDate, zero) {
   return out;
 }
 
-async function callApi(url, body) {
+async function callApiWith(token, url, body) {
   const res = await fetch(url, {
     method: body ? 'POST' : 'GET',
     headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -103,6 +103,35 @@ async function callApi(url, body) {
   }
   return text ? JSON.parse(text) : {};
 }
+const callApi = (url, body) => callApiWith(ACCESS_TOKEN, url, body);
+
+// ---------------------------------------------------------------- ビジネスプロフィール用のトークン
+// サービスアカウントはビジネスプロフィールの招待を承諾できない（API が FAILED_PRECONDITION を返す既知の制限）ため、
+// 運営者の Google アカウントで一度 OAuth 認可したリフレッシュトークンがあればそちらを使う。
+// 手順: docs/ops/gbp-oauth-setup.md（scripts/gbp-oauth-setup.js で取得し、GitHub Secrets に登録）
+const GBP_CLIENT_ID = process.env.GBP_CLIENT_ID || '';
+const GBP_CLIENT_SECRET = process.env.GBP_CLIENT_SECRET || '';
+const GBP_REFRESH_TOKEN = process.env.GBP_REFRESH_TOKEN || '';
+let gbpToken = null;
+async function getGbpToken() {
+  if (gbpToken) return gbpToken;
+  if (GBP_CLIENT_ID && GBP_CLIENT_SECRET && GBP_REFRESH_TOKEN) {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: GBP_CLIENT_ID, client_secret: GBP_CLIENT_SECRET, refresh_token: GBP_REFRESH_TOKEN, grant_type: 'refresh_token' }),
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`ビジネスプロフィール用 OAuth トークンの更新に失敗: ${res.status}: ${text.slice(0, 300)}`);
+    gbpToken = JSON.parse(text).access_token;
+    console.log('ビジネスプロフィール: 運営者アカウントの OAuth トークンで取得します');
+  } else {
+    gbpToken = ACCESS_TOKEN;
+    console.log('ビジネスプロフィール: サービスアカウントで取得します（GBP_REFRESH_TOKEN 未設定）');
+  }
+  return gbpToken;
+}
+const gbpApi = async (url, body) => callApiWith(await getGbpToken(), url, body);
 
 // ---------------------------------------------------------------- GA4
 
@@ -593,16 +622,16 @@ async function acceptPendingGbpInvitations(accounts) {
   for (const a of accounts) {
     let inv;
     try {
-      inv = await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations?filter=target_type=ACCOUNTS_AND_LOCATIONS`);
+      inv = await gbpApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations?filter=target_type=ACCOUNTS_AND_LOCATIONS`);
     } catch (e) {
-      try { inv = await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations`); } catch (e2) { continue; }
+      try { inv = await gbpApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${a.name}/invitations`); } catch (e2) { continue; }
     }
     if ((inv.invitations || []).length === 0) console.log(`保留中の招待はありません（${a.name}）`);
     for (const i of inv.invitations || []) {
       const target = (i.targetLocation && i.targetLocation.locationName) || (i.targetAccount && i.targetAccount.accountName) || '-';
       console.log(`招待を確認: ${i.name} 役割 ${i.role || '-'} 種別 ${i.targetType || '-'} 対象 ${target}`);
       try {
-        await callApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${i.name}:accept`, {});
+        await gbpApi(`https://mybusinessaccountmanagement.googleapis.com/v1/${i.name}:accept`, {});
         accepted++;
         const target = (i.targetLocation && i.targetLocation.locationName) || (i.targetAccount && i.targetAccount.accountName) || i.name;
         console.log(`ビジネスプロフィールの招待を承諾しました: ${target}（役割 ${i.role || '-'}）`);
@@ -616,11 +645,11 @@ async function acceptPendingGbpInvitations(accounts) {
 
 async function resolveGbpLocation() {
   if (GBP_LOCATION_ID) return GBP_LOCATION_ID.replace(/^locations\//, '');
-  const acc = await callApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
+  const acc = await gbpApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
   let accounts = acc.accounts || [];
   // 保留中の招待があれば承諾してから、アカウント一覧を取り直す
   if (await acceptPendingGbpInvitations(accounts)) {
-    const again = await callApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
+    const again = await gbpApi('https://mybusinessaccountmanagement.googleapis.com/v1/accounts');
     accounts = again.accounts || accounts;
   }
   if (accounts.length === 0) throw new Error('ビジネスプロフィールのアカウントが見つかりません（サービスアカウントを店舗の管理者に追加してください）');
@@ -660,7 +689,7 @@ async function fetchGbp() {
   metrics.forEach((m) => params.append('dailyMetrics', m));
   params.set('dailyRange.start_date.year', s.year); params.set('dailyRange.start_date.month', s.month); params.set('dailyRange.start_date.day', s.day);
   params.set('dailyRange.end_date.year', e.year); params.set('dailyRange.end_date.month', e.month); params.set('dailyRange.end_date.day', e.day);
-  const res = await callApi(
+  const res = await gbpApi(
     `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries?${params}`
   );
 
@@ -707,7 +736,7 @@ async function fetchGbp() {
       'monthlyRange.end_month.year': m1.getUTCFullYear(), 'monthlyRange.end_month.month': m1.getUTCMonth() + 1,
       pageSize: 50,
     });
-    const kw = await callApi(`https://businessprofileperformance.googleapis.com/v1/locations/${locationId}/searchkeywords/impressions/monthly?${kp}`);
+    const kw = await gbpApi(`https://businessprofileperformance.googleapis.com/v1/locations/${locationId}/searchkeywords/impressions/monthly?${kp}`);
     keywords = (kw.searchKeywordsCounts || []).map((k) => ({
       keyword: k.searchKeyword,
       // 少数は threshold（15 未満）として値が無い場合がある
