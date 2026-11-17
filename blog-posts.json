@@ -1,6 +1,17 @@
 {
   "posts": [
     {
+      "id": "higashimatsuyama-dental-checkup",
+      "title": "東松山市の無料歯科健診まとめ｜歯周疾患検診・ファミリー歯科健診",
+      "date": "2026-11-17",
+      "tags": [
+        "定期検診",
+        "予防歯科"
+      ],
+      "summary": "東松山市では保健センターで、20歳以上の方向けの歯周疾患検診や、年齢を問わず受けられるファミリー歯科健診などが無料で行われています。対象・時間・申し込み方法・今年度の残り日程を、市の公式ページをもとに整理しました。",
+      "image": "blog/uploads/higashimatsuyama-dental-checkup.png"
+    },
+    {
       "id": "sunday-dentist-higashimatsuyama",
       "title": "東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先",
       "date": "2026-11-15",
