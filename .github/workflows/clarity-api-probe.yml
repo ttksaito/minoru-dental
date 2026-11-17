@@ -1,0 +1,46 @@
+name: Clarity API の疎通確認（手動）
+
+# Microsoft Clarity の API がトークンで呼べるか、応答の「項目名」だけを出す（値は出さない。ログは公開されるため）。
+# 新しい取得項目を足す前の確認用。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: セッション一覧 API（/mcp/recordings/sample）を呼んで項目名だけ表示
+        env:
+          CLARITY_API_TOKEN: ${{ secrets.CLARITY_API_TOKEN }}
+        run: |
+          node - <<'JS'
+          const token = process.env.CLARITY_API_TOKEN;
+          if (!token) { console.log('CLARITY_API_TOKEN が未設定'); process.exit(1); }
+          // 値を出さずに構造だけを表示する
+          const shape = (v, depth = 0) => {
+            if (depth > 4) return '…';
+            if (Array.isArray(v)) return v.length ? [`array(${v.length})`, shape(v[0], depth + 1)] : 'array(0)';
+            if (v && typeof v === 'object') { const o = {}; for (const [k, x] of Object.entries(v)) o[k] = shape(x, depth + 1); return o; }
+            return typeof v;
+          };
+          const end = new Date(); const start = new Date(end.getTime() - 3 * 86400000);
+          const call = async (path, body) => {
+            const res = await fetch(`https://clarity.microsoft.com/mcp${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+            const text = await res.text();
+            console.log(`\n== POST ${path} → HTTP ${res.status}`);
+            for (const h of ['x-ratelimit-limit', 'x-ratelimit-remaining', 'retry-after', 'x-request-id']) if (res.headers.get(h)) console.log(`  ${h}: ${res.headers.get(h)}`);
+            if (!res.ok) { console.log('  本文（先頭 200 文字、値を含む可能性があるため機械的に数字を伏せる）:', text.slice(0, 200).replace(/[0-9]{3,}/g, '###')); return; }
+            let data; try { data = JSON.parse(text); } catch (e) { console.log('  JSON でない応答'); return; }
+            console.log('  構造:', JSON.stringify(shape(data), null, 1));
+          };
+          (async () => {
+            await call('/recordings/sample', { sortBy: 0, start: start.toISOString(), end: end.toISOString(), filters: { date: { start: start.toISOString(), end: end.toISOString() } }, count: 3 });
+            await call('/dashboard/query', { query: 'sessions by day for the last 7 days' });
+          })();
+          JS
