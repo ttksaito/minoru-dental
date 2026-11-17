@@ -779,7 +779,7 @@ window.HELP = {
       modalBody.appendChild(el('div', 'empty', sr.empty || '日別のデータがありません'));
       modalChart = null;
     } else {
-      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事の公開日', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
+      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事の公開日', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, dotSize: sr.dotSize, dotLabel: sr.dotLabel, avg: sr.avg, band: sr.band, width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
       modalBody.appendChild(modalChart.card);
       modalChart.render(modalDays());
     }
@@ -811,7 +811,7 @@ window.HELP = {
       tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: postMarkers } }),
       tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: postMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
       tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position',
-        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: postMarkers, desc: '1 日ごとの平均掲載順位。上が 1 位で、線が上にあるほど上位。表示があった日だけ描いています' } })
+        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: postMarkers, desc: '上が 1 位。点は 1 日ごとの平均順位で、表示回数が少ない日は小さく描いています（1 件だけで大きく跳ねるため）。線は表示回数で重みづけした 7 日移動平均で、こちらが実際の傾向です' } })
     );
   }
   if (ads && ads.linked) {
@@ -855,7 +855,19 @@ window.HELP = {
     const render = (sub) => {
       box.replaceChildren();
       if (!sub || sub.length === 0) { box.appendChild(el('div', 'empty', 'データがありません')); return; }
-      if (series.length > 1) {
+      const band = opts.band || null; // 背景の帯 {from, to, label}（例: 1〜10 位 = 1 ページ目）
+      // 点＋移動平均モード（順位用）: opts.dotSize = 点の大きさにする列、opts.avg = { window: 日数, weight: 重みの列 }
+      const dotMode = !!(opts.dotSize || opts.avg);
+      const avgWin = opts.avg ? opts.avg.window || 7 : 0;
+      if (dotMode) {
+        const lg = el('div', 'legend');
+        const a = el('span'); const ai = el('i', 'mk'); ai.style.background = series[0].color; ai.style.opacity = '0.5';
+        a.append(ai, opts.dotSize ? `日ごとの値（点が大きいほど${opts.dotLabel || '件数'}が多い）` : '日ごとの値');
+        lg.appendChild(a);
+        if (opts.avg) { const b = el('span'); const bi = el('i'); bi.style.background = series[0].color; b.append(bi, `${avgWin}日移動平均${opts.avg.weight ? `（${opts.dotLabel || '件数'}で重みづけ）` : ''}`); lg.appendChild(b); }
+        if (band && band.label) { const c = el('span'); const ci = el('i', 'rect'); ci.style.background = series[0].color; ci.style.opacity = '0.15'; c.append(ci, band.label); lg.appendChild(c); }
+        box.appendChild(lg);
+      } else if (series.length > 1) {
         const lg = el('div', 'legend');
         for (const s of series) {
           const it = el('span');
@@ -871,8 +883,22 @@ window.HELP = {
       const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': title });
       const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
       const n = sub.length;
-      const maxRaw = Math.max(1, ...sub.flatMap((r) => series.map((s) => r[s.key] || 0)));
+      const maxRaw = Math.max(1, band ? band.to : 0, ...sub.flatMap((r) => series.map((s) => r[s.key] || 0)));
       const invert = !!opts.invert; // 順位: 上端を 1 位に固定し、下に行くほど順位が下がる
+      // 移動平均は表示範囲の前の日も使うので、全行から日付で引く
+      const avgAt = (r0, key) => {
+        if (!opts.avg) return null;
+        const end = new Date(r0.date + 'T00:00:00Z'), start = new Date(end); start.setUTCDate(start.getUTCDate() - (avgWin - 1));
+        const s0 = start.toISOString().slice(0, 10);
+        let num = 0, den = 0;
+        for (const r of rows) {
+          if (r.date < s0 || r.date > r0.date) continue;
+          const w = opts.avg.weight ? (r[opts.avg.weight] || 0) : 1;
+          if (!w || r[key] == null) continue;
+          num += r[key] * w; den += w;
+        }
+        return den ? num / den : null;
+      };
       const ticks = invert ? 4 : ymaxTicks(niceMax(maxRaw));
       // 反転時は目盛りが整数になるように、1 からの幅を目盛り本数で割り切れる値に丸める
       const ymax = invert ? 1 + ticks * Math.max(1, Math.ceil((maxRaw - 1) / ticks)) : niceMax(maxRaw);
@@ -880,6 +906,14 @@ window.HELP = {
       const y = invert
         ? (v) => PAD.t + ((Math.max(1, v) - 1) / (ymax - 1)) * ih
         : (v) => PAD.t + ih - (v / ymax) * ih;
+      if (band) {
+        const y1 = Math.min(y(band.from), y(band.to)), y2 = Math.max(y(band.from), y(band.to));
+        svg.appendChild(svgEl('rect', { x: PAD.l, y: y1, width: iw, height: Math.max(0, y2 - y1), fill: series[0].color, 'fill-opacity': 0.07 }));
+        if (band.label) {
+          const bl = svgEl('text', { x: PAD.l + 6, y: y2 - 6, 'text-anchor': 'start', class: 'axis', style: 'font-size:11px' }); // 左端に置く（右端は最新値のラベルと重なりやすい）
+          bl.textContent = band.label; const g = svgEl('g', { class: 'axis' }); g.appendChild(bl); svg.appendChild(g);
+        }
+      }
       // gridlines + y ticks
       for (let k = 0; k <= ticks; k++) {
         const v = invert ? 1 + ((ymax - 1) / ticks) * k : (ymax / ticks) * k;
@@ -911,6 +945,27 @@ window.HELP = {
             svg.appendChild(svgEl('path', { d: path, fill: s.color }));
           });
         });
+      } else if (dotMode) {
+        const s = series[0];
+        const sizes = sub.map((r) => (opts.dotSize ? r[opts.dotSize] || 0 : 1));
+        const maxSize = Math.max(1, ...sizes);
+        // 移動平均の線（先に描き、点を上に重ねる）
+        const avgs = sub.map((r) => avgAt(r, s.key));
+        if (opts.avg) {
+          let d = '';
+          sub.forEach((r, i) => { if (avgs[i] == null) return; d += (d ? ' L' : 'M') + x(i).toFixed(1) + ',' + y(avgs[i]).toFixed(1); });
+          if (d) svg.appendChild(svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+        }
+        sub.forEach((r, i) => {
+          const v = r[s.key]; if (v == null) return;
+          const rr = 3 + 6 * Math.sqrt(sizes[i] / maxSize);
+          svg.appendChild(svgEl('circle', { cx: x(i), cy: y(v), r: rr, fill: s.color, 'fill-opacity': 0.35, stroke: s.color, 'stroke-width': 1 }));
+        });
+        // 直接ラベル: 移動平均の最新値（なければ最新の点）
+        const li = avgs.length - 1, lv = avgs[li] != null ? avgs[li] : (sub[n - 1][s.key] || 0);
+        const t = svgEl('text', { x: x(n - 1), y: y(lv) + (invert ? 18 : -10), 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
+        t.textContent = (opts.avg ? `${avgWin}日平均 ` : '') + fmt(lv);
+        svg.appendChild(t);
       } else {
         series.forEach((s) => {
           const pts = sub.map((r, i) => [x(i), y(r[s.key] || 0)]);
@@ -970,6 +1025,11 @@ window.HELP = {
           hoverDots[k].setAttribute('cx', x(i)); hoverDots[k].setAttribute('cy', y(r[s.key] || 0));
           hoverDots[k].style.display = kind === 'bar' ? 'none' : 'block';
         });
+        if (dotMode) {
+          if (opts.dotSize) { const row = el('div', 'row'); row.append(el('span', null, opts.dotLabel || '件数'), el('b', null, fmtInt(r[opts.dotSize] || 0))); tip.appendChild(row); }
+          const av = avgAt(r, series[0].key);
+          if (av != null) { const row = el('div', 'row'); row.append(el('span', null, `${avgWin}日平均`), el('b', null, fmt(av))); tip.appendChild(row); }
+        }
         tip.style.display = 'block';
         const rect = svg.getBoundingClientRect();
         const px = (x(i) / W) * rect.width;
