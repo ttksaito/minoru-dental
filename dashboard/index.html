@@ -27,6 +27,7 @@
     --bad: #d03b3b;
     --tip-bg: #ffffff;
     --marker: #8a5cf6;
+    --marker-2: #d6336c; /* サイト改修のマーカー */
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -48,6 +49,7 @@
       --bad: #e66767;
       --tip-bg: #262624;
       --marker: #a78bfa;
+      --marker-2: #f06595;
     }
   }
   * { box-sizing: border-box; }
@@ -704,7 +706,9 @@ window.HELP = {
   // サイト改修の履歴（dashboard/changes.json）。順位のグラフでは記事公開ではなく改修日を縦線にする
   let changes = [];
   try { const r = await fetch('changes.json', { cache: 'no-store' }); if (r.ok) changes = (await r.json()).changes || []; } catch (e) { /* 任意 */ }
-  const changeMarkers = changes.filter((c) => c.kind === 'site').map((c) => ({ date: c.date, label: c.label, tag: 'サイト改修' })).sort((a, b) => a.date.localeCompare(b.date));
+  const changeMarkers = changes.filter((c) => c.kind === 'site').map((c) => ({ date: c.date, label: c.label, tag: 'サイト改修', color: 'var(--marker-2)' })).sort((a, b) => a.date.localeCompare(b.date));
+  // タイルのモーダルでは記事公開（紫）とサイト改修（赤）を両方出す
+  const allMarkers = [...postMarkers.map((m) => ({ ...m, tag: '記事公開', color: 'var(--marker)' })), ...changeMarkers].sort((a, b) => a.date.localeCompare(b.date));
   const gen = new Date(data.generatedAt);
   $('#side-generated').replaceChildren(
     el('div', null, `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`),
@@ -783,7 +787,7 @@ window.HELP = {
       modalBody.appendChild(el('div', 'empty', sr.empty || '日別のデータがありません'));
       modalChart = null;
     } else {
-      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事の公開日', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, dotSize: sr.dotSize, dotLabel: sr.dotLabel, avg: sr.avg, band: sr.band, width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
+      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事公開（紫）とサイト改修（赤）の日。上の点に触れると内容が出ます', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, dotSize: sr.dotSize, dotLabel: sr.dotLabel, avg: sr.avg, band: sr.band, width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
       modalBody.appendChild(modalChart.card);
       modalChart.render(modalDays());
     }
@@ -801,21 +805,21 @@ window.HELP = {
   if (ga) {
     const c = ga.summary.current, p = ga.summary.previous;
     $('#tiles-ga').append(
-      tile('ユーザー数', fmtInt(c.users), '人', c.users, p.users, { help: 'users', series: { rows: ga.daily, key: 'users', markers: postMarkers } }),
-      tile('セッション（訪問回数）', fmtInt(c.sessions), '回', c.sessions, p.sessions, { help: 'sessions', series: { rows: ga.daily, key: 'sessions', markers: postMarkers } }),
-      tile('ページ表示回数', fmtInt(c.pageViews), '回', c.pageViews, p.pageViews, { help: 'pageViews', series: { rows: ga.daily, key: 'pageViews', markers: postMarkers } }),
+      tile('ユーザー数', fmtInt(c.users), '人', c.users, p.users, { help: 'users', series: { rows: ga.daily, key: 'users', markers: allMarkers } }),
+      tile('セッション（訪問回数）', fmtInt(c.sessions), '回', c.sessions, p.sessions, { help: 'sessions', series: { rows: ga.daily, key: 'sessions', markers: allMarkers } }),
+      tile('ページ表示回数', fmtInt(c.pageViews), '回', c.pageViews, p.pageViews, { help: 'pageViews', series: { rows: ga.daily, key: 'pageViews', markers: allMarkers } }),
       tile('エンゲージメント率', fmtPct(c.engagementRate, 0), '', c.engagementRate, p.engagementRate, { fmtPrev: (v) => fmtPct(v, 0), help: 'engagementRate',
-        series: { rows: ga.daily.some((r) => r.engagementRate != null) ? ga.daily : [], key: 'engagementRate', fmt: (v) => fmtPct(v, 0), markers: postMarkers, empty: '日別のエンゲージメント率は次回の更新（翌朝 5〜6 時）から表示されます' } })
+        series: { rows: ga.daily.some((r) => r.engagementRate != null) ? ga.daily : [], key: 'engagementRate', fmt: (v) => fmtPct(v, 0), markers: allMarkers, empty: '日別のエンゲージメント率は次回の更新（翌朝 5〜6 時）から表示されます' } })
     );
   }
   if (gsc) {
     const c = gsc.current, p = gsc.previous;
     $('#tiles-gsc').append(
-      tile('検索クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'gscClicks', series: { rows: gsc.daily, key: 'clicks', kind: 'bar', markers: postMarkers } }),
-      tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: postMarkers } }),
-      tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: postMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
+      tile('検索クリック数', fmtInt(c.clicks), '回', c.clicks, p.clicks, { help: 'gscClicks', series: { rows: gsc.daily, key: 'clicks', kind: 'bar', markers: allMarkers } }),
+      tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: allMarkers } }),
+      tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: allMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
       tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position',
-        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: changeMarkers, desc: '上が 1 位。点は 1 日ごとの平均順位で、表示回数が少ない日は小さく描いています（1 件だけで大きく跳ねるため）。線は表示回数で重みづけした 7 日移動平均で、こちらが実際の傾向です。縦線はサイト改修の日で、点に触れると内容が出ます' } })
+        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: allMarkers, desc: '上が 1 位。点は 1 日ごとの平均順位で、表示回数が少ない日は小さく描いています（1 件だけで大きく跳ねるため）。線は表示回数で重みづけした 7 日移動平均で、こちらが実際の傾向です。縦線は記事公開（紫）とサイト改修（赤）の日で、上の点に触れると内容が出ます' } })
     );
   }
   if (ads && ads.linked) {
@@ -993,16 +997,28 @@ window.HELP = {
         let i = sub.findIndex((r) => r.date >= m.date);
         if (i < 0 || sub[i].date > sub[n - 1].date) continue;
         if (!markerAt.has(i)) markerAt.set(i, []);
-        markerAt.get(i).push(`${m.tag || '記事公開'}: ${m.label}`);
+        markerAt.get(i).push({ text: `${m.tag || '記事公開'}: ${m.label}`, tag: m.tag || '記事公開', color: m.color || 'var(--marker)' });
       }
-      for (const [i, labels] of markerAt.entries()) {
+      for (const [i, items] of markerAt.entries()) {
         const mx = x(i);
         const g = svgEl('g', { class: 'marker' });
-        g.appendChild(svgEl('line', { x1: mx, x2: mx, y1: PAD.t, y2: PAD.t + ih, stroke: 'var(--marker)', 'stroke-width': 1 }));
-        const dot = svgEl('circle', { cx: mx, cy: PAD.t, r: 4, fill: 'var(--marker)', stroke: 'var(--surface)', 'stroke-width': 2 });
-        dot.appendChild(svgEl('title')).textContent = labels.join(' / ');
-        g.appendChild(dot);
+        // 同じ日に複数あれば、線は最初の色、点は種別ごとに少しずらして重ねる
+        g.appendChild(svgEl('line', { x1: mx, x2: mx, y1: PAD.t, y2: PAD.t + ih, stroke: items[0].color, 'stroke-width': 1 }));
+        const colors = [...new Set(items.map((it) => it.color))];
+        colors.forEach((color, k) => {
+          const dot = svgEl('circle', { cx: mx, cy: PAD.t + k * 9, r: 4, fill: color, stroke: 'var(--surface)', 'stroke-width': 2 });
+          dot.appendChild(svgEl('title')).textContent = items.filter((it) => it.color === color).map((it) => it.text).join(' / ');
+          g.appendChild(dot);
+        });
         svg.appendChild(g);
+      }
+      // 凡例に縦線の意味（表示範囲にある種別だけ）
+      if (markerAt.size) {
+        const tags = new Map();
+        for (const items of markerAt.values()) for (const it of items) if (!tags.has(it.tag)) tags.set(it.tag, it.color);
+        let lg = box.querySelector('.legend');
+        if (!lg) { lg = el('div', 'legend'); box.appendChild(lg); }
+        for (const [tag, color] of tags) { const sp = el('span'); const i = el('i', 'mk'); i.style.background = color; sp.append(i, `縦線: ${tag}`); lg.appendChild(sp); }
       }
       // hover layer
       const cross = svgEl('line', { x1: 0, x2: 0, y1: PAD.t, y2: PAD.t + ih, class: 'crosshair' });
@@ -1019,7 +1035,7 @@ window.HELP = {
         const r = sub[i];
         cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.display = 'block';
         tip.replaceChildren(el('div', 'd', fmtDateWd(r.date)));
-        if (markerAt.has(i)) { for (const label of markerAt.get(i)) { const mk = el('div', 'd'); mk.style.color = 'var(--marker)'; mk.textContent = label; tip.appendChild(mk); } }
+        if (markerAt.has(i)) { for (const it of markerAt.get(i)) { const mk = el('div', 'd'); mk.style.color = it.color; mk.textContent = it.text; tip.appendChild(mk); } }
         series.forEach((s, k) => {
           const row = el('div', 'row');
           const left = el('span');
