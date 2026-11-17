@@ -701,6 +701,10 @@ window.HELP = {
   let posts = [];
   try { const r = await fetch('/blog-posts.json', { cache: 'no-store' }); if (r.ok) posts = (await r.json()).posts || []; } catch (e) { /* 任意 */ }
   const postMarkers = posts.map((p) => ({ date: p.date, label: p.title })).sort((a, b) => a.date.localeCompare(b.date));
+  // サイト改修の履歴（dashboard/changes.json）。順位のグラフでは記事公開ではなく改修日を縦線にする
+  let changes = [];
+  try { const r = await fetch('changes.json', { cache: 'no-store' }); if (r.ok) changes = (await r.json()).changes || []; } catch (e) { /* 任意 */ }
+  const changeMarkers = changes.filter((c) => c.kind === 'site').map((c) => ({ date: c.date, label: c.label, tag: 'サイト改修' })).sort((a, b) => a.date.localeCompare(b.date));
   const gen = new Date(data.generatedAt);
   $('#side-generated').replaceChildren(
     el('div', null, `最終更新: ${gen.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`),
@@ -811,7 +815,7 @@ window.HELP = {
       tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: postMarkers } }),
       tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: postMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
       tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position',
-        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: postMarkers, desc: '上が 1 位。点は 1 日ごとの平均順位で、表示回数が少ない日は小さく描いています（1 件だけで大きく跳ねるため）。線は表示回数で重みづけした 7 日移動平均で、こちらが実際の傾向です' } })
+        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: changeMarkers, desc: '上が 1 位。点は 1 日ごとの平均順位で、表示回数が少ない日は小さく描いています（1 件だけで大きく跳ねるため）。線は表示回数で重みづけした 7 日移動平均で、こちらが実際の傾向です。縦線はサイト改修の日で、点に触れると内容が出ます' } })
     );
   }
   if (ads && ads.linked) {
@@ -985,17 +989,18 @@ window.HELP = {
       // 記事公開日のマーカー（縦の細線＋上部の点）
       const markerAt = new Map();
       for (const m of markers || []) {
+        if (m.date < sub[0].date) continue; // 表示範囲より前の出来事は左端に張り付かせない
         let i = sub.findIndex((r) => r.date >= m.date);
         if (i < 0 || sub[i].date > sub[n - 1].date) continue;
         if (!markerAt.has(i)) markerAt.set(i, []);
-        markerAt.get(i).push(m.label);
+        markerAt.get(i).push(`${m.tag || '記事公開'}: ${m.label}`);
       }
       for (const [i, labels] of markerAt.entries()) {
         const mx = x(i);
         const g = svgEl('g', { class: 'marker' });
         g.appendChild(svgEl('line', { x1: mx, x2: mx, y1: PAD.t, y2: PAD.t + ih, stroke: 'var(--marker)', 'stroke-width': 1 }));
         const dot = svgEl('circle', { cx: mx, cy: PAD.t, r: 4, fill: 'var(--marker)', stroke: 'var(--surface)', 'stroke-width': 2 });
-        dot.appendChild(svgEl('title')).textContent = `記事公開: ${labels.join(' / ')}`;
+        dot.appendChild(svgEl('title')).textContent = labels.join(' / ');
         g.appendChild(dot);
         svg.appendChild(g);
       }
@@ -1014,7 +1019,7 @@ window.HELP = {
         const r = sub[i];
         cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.display = 'block';
         tip.replaceChildren(el('div', 'd', fmtDateWd(r.date)));
-        if (markerAt.has(i)) { const mk = el('div', 'd'); mk.style.color = 'var(--marker)'; mk.textContent = '記事公開: ' + markerAt.get(i).join(' / '); tip.appendChild(mk); }
+        if (markerAt.has(i)) { for (const label of markerAt.get(i)) { const mk = el('div', 'd'); mk.style.color = 'var(--marker)'; mk.textContent = label; tip.appendChild(mk); } }
         series.forEach((s, k) => {
           const row = el('div', 'row');
           const left = el('span');
