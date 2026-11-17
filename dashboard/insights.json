@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-17T14:58:32.105Z",
+  "generatedAt": "2026-11-17T20:16:23.788Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
-    "start": "2026-10-19",
-    "end": "2026-11-15"
+    "start": "2026-10-20",
+    "end": "2026-11-16"
   },
   "searchQueries": [
     {
@@ -39,8 +39,8 @@
     {
       "query": "東松山市 一般歯科",
       "clicks": 0,
-      "impressions": 9,
-      "position": 24.8
+      "impressions": 8,
+      "position": 24.1
     },
     {
       "query": "東松山市 歯科",
@@ -144,29 +144,22 @@
       "page": "/",
       "title": null,
       "clicks": 7,
-      "impressions": 172,
-      "position": 11.6
+      "impressions": 168,
+      "position": 11.7
     },
     {
       "page": "/blog/denture-chewing-power/",
       "title": "入れ歯になると、どのくらい噛めなくなる？",
       "clicks": 1,
-      "impressions": 5,
-      "position": 5.6
-    },
-    {
-      "page": "/blog.html",
-      "title": null,
-      "clicks": 0,
-      "impressions": 8,
-      "position": 3.9
+      "impressions": 3,
+      "position": 6
     },
     {
       "page": "/blog/proper-brushing/",
       "title": "正しい歯磨きの方法と注意点",
       "clicks": 0,
-      "impressions": 8,
-      "position": 44.1
+      "impressions": 7,
+      "position": 49.4
     },
     {
       "page": "/blog/first-visit-questions/",
@@ -176,18 +169,25 @@
       "position": 17.5
     },
     {
-      "page": "/blog/best-brushing-timing/",
-      "title": "歯を磨くベストなタイミングはいつ？",
+      "page": "/blog.html",
+      "title": null,
       "clicks": 0,
-      "impressions": 3,
-      "position": 4.7
+      "impressions": 5,
+      "position": 4.2
     },
     {
       "page": "/blog/child-dental-care/",
       "title": "お子様の歯を守るために知っておきたいこと",
       "clicks": 0,
-      "impressions": 3,
-      "position": 4.7
+      "impressions": 2,
+      "position": 3.5
+    },
+    {
+      "page": "/blog/best-brushing-timing/",
+      "title": "歯を磨くベストなタイミングはいつ？",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 2
     }
   ],
   "blogPageViews": [
