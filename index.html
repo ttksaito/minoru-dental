@@ -77,7 +77,7 @@
               "name": "初診の場合、予約は必要ですか？",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "はい、当院は予約制となっております。お電話（0493-24-9080）またはWebからご予約ください。初診の方も安心してお越しいただけるよう、丁寧にカウンセリングいたします。"
+                "text": "はい、当院は予約制となっております。お電話（0493-24-9080）または公式LINEからご予約ください。初診の方も安心してお越しいただけるよう、丁寧にカウンセリングいたします。"
               }
             },
             {
@@ -355,6 +355,23 @@
             padding: 5px 14px;
             font-size: 14px;
             font-weight: bold;
+        }
+        .hero-points li a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        /* ヒーローと基本情報の予約ボタン（電話・LINE の 2 つ） */
+        .hero-cta, .info-cta {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .info-cta { margin-top: 16px; }
+        .cta-button.cta-line {
+            background: linear-gradient(135deg, #06C755 0%, #00B448 100%);
+            box-shadow: 0 4px 15px rgba(6, 199, 85, 0.3);
         }
         
         .local-intro {
@@ -715,6 +732,33 @@
         .equipment-item p {
             font-size: 14px;
         }
+        /* 設備カードはタップで補足説明が開く（写真がタップされても何も起きない状態をなくす） */
+        button.equipment-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 0;
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+        }
+        .equipment-item .equipment-more {
+            display: none;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #ddd;
+            color: #555;
+        }
+        .equipment-item[aria-expanded="true"] .equipment-more { display: block; }
+        .equipment-item .equipment-hint {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--accent-color);
+        }
+        .equipment-item .equipment-hint::before { content: '▸ '; }
+        .equipment-item[aria-expanded="true"] .equipment-hint::before { content: '▾ '; }
+        .equipment-item[aria-expanded="true"] .equipment-hint { visibility: hidden; }
         
         .contact-content {
             text-align: center;
@@ -1476,12 +1520,15 @@
         <h1>東松山市沢口町の歯医者<br>みのる歯科</h1>
         <p>痛みの少ない治療と予防歯科に力を入れ、<br class="pc-only">小さなお子様からご高齢の方まで、東松山市の皆様のお口の健康をサポートします。</p>
         <ul class="hero-points" aria-label="当院の特徴">
-            <li>予約制</li>
+            <li><a href="#contact">予約制</a></li>
             <li>土曜も診療</li>
             <li>駐車場4台</li>
             <li>平成元年開業</li>
         </ul>
-        <a href="#contact" class="cta-button">ご予約・お問い合わせ</a>
+        <div class="hero-cta">
+            <a href="tel:0493-24-9080" class="cta-button">電話で予約 0493-24-9080</a>
+            <a href="https://lin.ee/zFdXAeb" class="cta-button cta-line" target="_blank" rel="noopener noreferrer">LINEで予約・相談</a>
+        </div>
     </section>
 
     <section class="local-intro">
@@ -1569,7 +1616,11 @@
                     </table>
                 </div>
                 <p>※木曜日・日曜日・祝日は休診となります</p>
-                <p>※予約制となっておりますので、お電話またはWEBよりご予約ください</p>
+                <p>※予約制となっておりますので、お電話または公式LINEよりご予約ください</p>
+                <div class="info-cta">
+                    <a href="tel:0493-24-9080" class="cta-button">電話で予約 0493-24-9080</a>
+                    <a href="https://lin.ee/zFdXAeb" class="cta-button cta-line" target="_blank" rel="noopener noreferrer">LINEで予約・相談</a>
+                </div>
             </div>
             
             <div class="info-item">
@@ -1691,16 +1742,20 @@
                     <h4>口腔内スキャナー</h4>
                     <p>型取りの不快感なく、精密な3Dデータを取得できます</p>
                 </div> -->
-                <div class="equipment-item">
+                <button type="button" class="equipment-item" aria-expanded="false">
                     <img src="image/3986831_s.webp" alt="歯科用レーザー治療器 - 痛みの少ない歯茎治療に使用" loading="lazy" decoding="async">
                     <h4>レーザー治療器</h4>
                     <p>痛みを抑えた治療や、歯茎の治療に活用しています</p>
-                </div>
-                <div class="equipment-item">
+                    <p class="equipment-more">歯茎の腫れや口内炎の処置などに使います。切る・削る処置に比べて出血や痛みを抑えやすく、治りも早いのが特長です。</p>
+                    <span class="equipment-hint">タップで詳しく</span>
+                </button>
+                <button type="button" class="equipment-item" aria-expanded="false">
                     <img src="image/katarzyna-zygnerska-rubu_NvklJE-unsplash.webp" alt="高圧蒸気滅菌器 - 治療器具の徹底した衛生管理" loading="lazy" decoding="async">
                     <h4>高圧蒸気滅菌器</h4>
                     <p>全ての器具は厳格な滅菌処理を行っています</p>
-                </div>
+                    <p class="equipment-more">治療に使った器具は、患者さんごとに高温・高圧の蒸気で滅菌してから次の方に使います。使い捨てにできるものは毎回新しいものに替えています。</p>
+                    <span class="equipment-hint">タップで詳しく</span>
+                </button>
             </div>
         </div>
     </section>
@@ -1883,6 +1938,12 @@
     <!-- ハンバーガーメニュー用JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 設備カード: タップで補足説明を開閉
+            document.querySelectorAll('button.equipment-item').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    b.setAttribute('aria-expanded', b.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
+                });
+            });
             const menuToggle = document.getElementById('menuToggle');
             const navigation = document.getElementById('navigation');
             

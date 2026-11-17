@@ -938,7 +938,7 @@ function compactClaritySession(s, device) {
     return {
       path, title: p.displayTitle ? String(p.displayTitle).slice(0, 80) : '',
       sec: Math.round(((Number(p.duration) || 0) / msScale) * 10) / 10,
-      loadSec: Number.isFinite(load) ? Math.round((load > 1000 ? load / 1000 : load) * 100) / 100 : null, // 1000 超はミリ秒とみなす
+      loadSec: Number.isFinite(load) ? Math.round((load / 1000) * 100) / 100 : null, // pageLoadTime はミリ秒（1000 未満も秒ではない）
       score: Number.isFinite(Number(p.score)) ? Number(p.score) : null,
       events,
     };
@@ -1003,7 +1003,10 @@ async function fetchClaritySessions(prev) {
   const fetched = all.map((s) => compactClaritySession(s, deviceOf(s.link)));
 
   // セッション一覧: リンクで重複を除き、日ごとに新しい順で上限まで、保持日数ぶんだけ残す
-  const byId = new Map((prev.sessions || []).map((s) => [s.id, s]));
+  // 2026-11-17 以前に保存した分は読み込み時間を秒と誤認していた（実際はミリ秒）。100 秒超はミリ秒とみなして直す
+  const fixLoad = (v) => (v != null && v > 100 ? Math.round((v / 1000) * 100) / 100 : v);
+  const fixSession = (s) => ({ ...s, timeline: (s.timeline || []).map((t) => ({ ...t, loadSec: fixLoad(t.loadSec) })) });
+  const byId = new Map((prev.sessions || []).map((s) => [s.id, fixSession(s)]));
   for (const s of fetched) byId.set(s.id, s);
   const cutoff = daysAgo(CLARITY_SESSION_DAYS);
   const perDay = new Map();
@@ -1015,7 +1018,8 @@ async function fetchClaritySessions(prev) {
   // 日別集計: 今回取れた日付ぶんを作り直す（当日分は翌朝また作り直される）
   const fetchedByDate = new Map();
   for (const s of fetched) { if (!fetchedByDate.has(s.date)) fetchedByDate.set(s.date, []); fetchedByDate.get(s.date).push(s); }
-  let stats = (prev.sessionStats || []).filter((d) => !fetchedByDate.has(d.date));
+  let stats = (prev.sessionStats || []).filter((d) => !fetchedByDate.has(d.date))
+    .map((d) => ({ ...d, pages: (d.pages || []).map((p) => ({ ...p, loadSec: fixLoad(p.loadSec) })) }));
   for (const [d, list] of fetchedByDate) stats.push(clarityDayStats(d, list));
   stats = stats.sort((a, b) => a.date.localeCompare(b.date)).slice(-CLARITY_SESSION_STATS_DAYS);
 

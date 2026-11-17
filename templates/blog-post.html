@@ -376,6 +376,21 @@
             margin-left: 6px;
         }
 
+        /* 記事末尾の医院情報＋予約導線 */
+        .blog-clinic-cta {
+            margin: 30px 0;
+            padding: 24px 20px;
+            background: var(--secondary-color);
+            border-radius: 12px;
+            text-align: center;
+        }
+        .blog-clinic-cta h3 { color: var(--accent-color); font-size: 17px; margin: 0 0 10px; }
+        .blog-clinic-cta p { font-size: 14px; line-height: 1.7; margin: 0 0 14px; }
+        .blog-clinic-cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .blog-clinic-cta .cta-button.cta-line { background-color: #06C755; }
+        .blog-clinic-cta .cta-button.cta-line:hover { background-color: #00B448; }
+        .blog-clinic-cta-sub { margin: 14px 0 0 !important; font-size: 13px; }
+        .blog-clinic-cta-sub a { color: var(--accent-color); }
         .blog-disclosure {
             border-top: 1px solid #e0e0e0;
             padding-top: 15px;
@@ -785,6 +800,16 @@
                 <div class="blog-disclosure">
                     <p>{{DISCLOSURE}}</p>
                     <p>記事の内容は一般的な情報提供を目的としたもので、個別の診断や治療に代わるものではありません。症状やお口の状態には個人差がありますので、気になることがあれば歯科医院にご相談ください。</p>
+                </div>
+
+                <div class="blog-clinic-cta">
+                    <h3>記事を書いているのは、東松山市沢口町の「みのる歯科」です</h3>
+                    <p>気になる症状があれば、記事を読むだけで済ませずにご相談ください。平日は 18:30 まで、土曜は 17:00 まで診療しています（木曜・日曜・祝日は休診）。予約制です。</p>
+                    <div class="blog-clinic-cta-buttons">
+                        <a href="tel:0493-24-9080" class="cta-button">電話で予約 0493-24-9080</a>
+                        <a href="https://lin.ee/zFdXAeb" class="cta-button cta-line" target="_blank" rel="noopener noreferrer">LINEで予約・相談</a>
+                    </div>
+                    <p class="blog-clinic-cta-sub"><a href="../../index.html#about">医院紹介</a> ／ <a href="../../index.html#contact">診療時間・アクセス（駐車場4台）</a></p>
                 </div>
 
                 <div class="blog-related-posts">
