@@ -163,6 +163,7 @@
   .modal-head h3 { font-size: 18px; }
   .modal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .modal-head h3 { font-size: 16px; font-weight: 700; margin: 0; flex: 1; }
+  .modal-help { margin: -4px 0 12px; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
   .modal-close { appearance: none; border: 1px solid var(--border); background: var(--page); color: var(--ink-2); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 18px; line-height: 1; }
   .modal-close:hover { color: var(--ink); }
   .modal .card { border: 0; padding: 0; }
@@ -756,7 +757,7 @@ window.HELP = {
     t.appendChild(d);
     if (opts.series) {
       t.classList.add('clickable'); t.tabIndex = 0; t.setAttribute('role', 'button'); t.title = 'クリックすると日別の推移を表示します';
-      const open = () => openTrend(label, opts.series);
+      const open = () => openTrend(label, opts.series, opts.help);
       t.addEventListener('click', open);
       t.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(); } });
     }
@@ -766,10 +767,13 @@ window.HELP = {
   const modal = $('#modal'), modalBody = $('#modal-body'), modalTitle = $('#modal-title');
   let modalChart = null, lastFocus = null;
   const modalDays = () => Number(modal.querySelector('#modal-range button[aria-pressed="true"]')?.dataset.days || 28);
-  function openTrend(label, sr) {
+  function openTrend(label, sr, helpKey) {
     lastFocus = document.activeElement;
     modalTitle.textContent = label + ' の推移';
     modalBody.replaceChildren();
+    // タイルの「?」と同じ用語説明を、モーダルの先頭にも出す
+    const helpText = helpKey && window.HELP ? window.HELP[helpKey] : null;
+    if (helpText) modalBody.appendChild(el('p', 'desc modal-help', helpText));
     modal.hidden = false; // 先に表示しないと幅が 0 のまま描いてしまう
     if (!sr.rows || !sr.rows.length) {
       modalBody.appendChild(el('div', 'empty', sr.empty || '日別のデータがありません'));
