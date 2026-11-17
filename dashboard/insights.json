@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-11-16T01:20:54.798Z",
+  "generatedAt": "2026-11-17T00:17:19.122Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
-    "start": "2026-10-18",
-    "end": "2026-11-14"
+    "start": "2026-10-19",
+    "end": "2026-11-15"
   },
   "searchQueries": [
     {
       "query": "みのる歯科",
       "clicks": 1,
-      "impressions": 35,
-      "position": 5.8
+      "impressions": 36,
+      "position": 6
     },
     {
       "query": "みのるしか",
       "clicks": 1,
-      "impressions": 3,
-      "position": 3
+      "impressions": 4,
+      "position": 3.3
     },
     {
       "query": "みのる歯科医院",
@@ -27,8 +27,8 @@
     {
       "query": "東松山市 歯医者",
       "clicks": 0,
-      "impressions": 19,
-      "position": 22.2
+      "impressions": 18,
+      "position": 22.6
     },
     {
       "query": "東松山 歯医者",
@@ -61,6 +61,12 @@
       "position": 15.6
     },
     {
+      "query": "みのる歯科 予約",
+      "clicks": 0,
+      "impressions": 3,
+      "position": 14
+    },
+    {
       "query": "明日歯医者",
       "clicks": 0,
       "impressions": 3,
@@ -83,12 +89,6 @@
       "clicks": 0,
       "impressions": 1,
       "position": 4
-    },
-    {
-      "query": "みのる歯科 予約",
-      "clicks": 0,
-      "impressions": 1,
-      "position": 8
     },
     {
       "query": "東松山 歯医者 ランキング 高 評価",
@@ -138,8 +138,8 @@
       "page": "/",
       "title": null,
       "clicks": 7,
-      "impressions": 155,
-      "position": 12.3
+      "impressions": 163,
+      "position": 11.8
     },
     {
       "page": "/blog/denture-chewing-power/",
@@ -152,15 +152,22 @@
       "page": "/blog.html",
       "title": null,
       "clicks": 0,
-      "impressions": 7,
-      "position": 4.1
+      "impressions": 8,
+      "position": 3.9
     },
     {
       "page": "/blog/proper-brushing/",
       "title": "正しい歯磨きの方法と注意点",
       "clicks": 0,
-      "impressions": 6,
-      "position": 55.7
+      "impressions": 7,
+      "position": 49.3
+    },
+    {
+      "page": "/blog/first-visit-questions/",
+      "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
+      "clicks": 0,
+      "impressions": 4,
+      "position": 23
     },
     {
       "page": "/blog/best-brushing-timing/",
@@ -175,25 +182,18 @@
       "clicks": 0,
       "impressions": 2,
       "position": 6.5
-    },
-    {
-      "page": "/blog/first-visit-questions/",
-      "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
-      "clicks": 0,
-      "impressions": 2,
-      "position": 44.5
     }
   ],
   "blogPageViews": [
     {
-      "path": "/blog/regular-checkup/",
-      "title": "定期検診の重要性について",
+      "path": "/blog/denture-chewing-power/",
+      "title": "入れ歯になると、どのくらい噛めなくなる？",
       "pageViews": 4
     },
     {
-      "path": "/blog/denture-chewing-power/",
-      "title": "入れ歯になると、どのくらい噛めなくなる？",
-      "pageViews": 3
+      "path": "/blog/regular-checkup/",
+      "title": "定期検診の重要性について",
+      "pageViews": 4
     },
     {
       "path": "/blog/best-brushing-timing/",
