@@ -10,5 +10,11 @@
       "destination": "https://www.minoru-dental.jp/$1",
       "permanent": true
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/update-dashboard",
+      "schedule": "0 20 * * *"
+    }
   ]
 }

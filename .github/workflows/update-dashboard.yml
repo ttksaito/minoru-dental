@@ -2,9 +2,15 @@ name: 集客ダッシュボードの更新
 
 # GA4 と Search Console からデータを取得して dashboard/data.json を更新する。
 # Google 広告の数値は GA4 とのリンク経由で取得する（Ads API は使わない）。
+# 起動は 3 通り:
+#   1. repository_dispatch … Vercel Cron（api/cron/update-dashboard.js）が毎朝 5:00〜5:59 JST に叩く（本命）
+#   2. schedule            … 予備。GitHub の定期実行は混雑で 2〜6 時間遅れるので、1 が動いた日は check ジョブでスキップする
+#   3. workflow_dispatch   … 手動
 on:
+  repository_dispatch:
+    types: [update-dashboard]
   schedule:
-    - cron: '0 21 * * *' # 毎日 6:00 JST
+    - cron: '0 21 * * *' # 6:00 JST 指定だが実際は 8〜12 時ごろに動く（予備）
   workflow_dispatch:
 
 permissions:
@@ -12,7 +18,31 @@ permissions:
   id-token: write
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.recent.outputs.skip }}
+    steps:
+      - name: 予備の定期実行なら、直近 12 時間以内に更新済みかを確認
+        id: recent
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=$(gh api "repos/${{ github.repository }}/commits?path=dashboard/data.enc&per_page=1" --jq '.[0].commit.committer.date')
+          last_ts=$(date -d "$last" +%s)
+          age_h=$(( ( $(date +%s) - last_ts ) / 3600 ))
+          echo "dashboard/data.enc の最終更新: $last（${age_h} 時間前）"
+          if [ "$age_h" -lt 12 ]; then
+            echo "Vercel Cron 経由で更新済みのため、予備の定期実行はスキップします。"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   update-dashboard:
+    needs: check
+    if: needs.check.outputs.skip != 'true'
     runs-on: ubuntu-latest
 
     steps:

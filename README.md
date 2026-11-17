@@ -99,7 +99,7 @@ git push
 │   ├── index.html
 │   ├── config.yml          # CMSの設定（コレクション・フィールド定義）
 │   └── tag-keywords.json   # タグ自動判定のキーワード表（CMSとbuild-blog.jsで共用）
-├── api/                    # Vercelサーバーレス関数（CMSのGitHub OAuth用）
+├── api/                    # Vercelサーバーレス関数（CMSのGitHub OAuth用、cron/ はダッシュボード更新の起動）
 │   ├── auth.js             # 認証開始（GitHubへリダイレクト）
 │   ├── callback.js         # コールバック（トークン交換）
 │   └── review.js           # 記事下書きのスマホ確認・公開（メールの署名付きリンクから）
@@ -107,7 +107,7 @@ git push
 │   ├── build-blog.yml      # 記事md変更時のブログ自動ビルド
 │   ├── update-popular-posts.yml  # GA4集計の定期実行（毎日6:00 JST）
 │   ├── draft-article.yml         # cms/blog/* ブランチの下書きに仮サムネ生成・PR作成
-│   └── update-dashboard.yml      # ダッシュボード集計の定期実行（毎日6:00 JST）
+│   └── update-dashboard.yml      # ダッシュボード集計（毎朝 5〜6 時 JST に Vercel Cron から起動）
 ├── vercel.json             # Vercel設定（api/ 以外は本番ドメインへリダイレクト）
 ├── package.json
 └── TODO.md                 # サイト改善・集客施策のタスク管理
@@ -231,7 +231,9 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
 
 ## 集客ダッシュボード
 
-`https://www.minoru-dental.jp/dashboard/` で、GA4・Search Console・Google 広告の数値を1ページで確認できます。GitHub Actions（`.github/workflows/update-dashboard.yml`）が毎日6:00 JSTに `dashboard/data.json` を更新します。
+`https://www.minoru-dental.jp/dashboard/` で、GA4・Search Console・Google 広告の数値を1ページで確認できます。GitHub Actions（`.github/workflows/update-dashboard.yml`）が毎朝 5〜6 時 JST に `dashboard/data.enc` を更新します。
+
+起動は Vercel Cron（`vercel.json` の `crons` → `api/cron/update-dashboard.js` → GitHub の `repository_dispatch`）で行います。GitHub Actions の `schedule` だけだと混雑で 2〜6 時間遅れて 8〜12 時ごろになるため（2026-10〜11 の実測）。`schedule` は予備として残してあり、その日すでに更新済みなら自動でスキップします。Vercel Hobby プランの cron は ±59 分の精度なので「5:00 指定 → 5:00〜5:59 に実行」です。
 
 - 認証: 人気記事ランキングと同じサービスアカウント（`ga4-popular-posts@minoru-dental.iam.gserviceaccount.com`）＋ Workload Identity Federation
 - GA4: 直近28日と前28日の比較、日別推移（90日）、流入チャネル、端末、ページ別、キーイベント
@@ -261,6 +263,11 @@ GitHub Actions（`.github/workflows/update-popular-posts.yml`）が毎日6:00 JS
    - https://clarity.microsoft.com でプロジェクトを作り、サイトの全ページ（index.html・templates/*.html）に Clarity のタグを入れる
    - Clarity の Settings → Data Export → API トークンを発行し、GitHub Secrets に `CLARITY_API_TOKEN` を登録。毎朝、前日分を取得して履歴を蓄積する（API は 1 日 10 回・直近 3 日分までの制限）
 7. 電話タップなどを「成果」として数えるには GA4 の 管理 → イベント で対象イベントをキーイベントにする
+8. 毎朝 5〜6 時に確実に更新するための Vercel 側の設定（Vercel プロジェクト → Settings → Environment Variables、Production）
+   - `GITHUB_PUBLISH_TOKEN`: GitHub の Fine-grained personal access token（https://github.com/settings/personal-access-tokens/new 。Repository access は minoru-dental のみ、Permissions は Contents: Read and write と Pull requests: Read and write、期限は最長の 1 年）。`api/review.js` と共用
+   - `CRON_SECRET`: ランダムな長い文字列（`openssl rand -hex 32`）。Vercel Cron がこの値を `Authorization: Bearer` に付けて `/api/cron/update-dashboard` を叩く。無いと起動を拒否する
+   - 設定後に再デプロイ（main に push すれば自動）。動作確認: `curl -H "Authorization: Bearer <CRON_SECRET>" https://minoru-dental.vercel.app/api/cron/update-dashboard` → `{"ok":true}` が返り、GitHub の Actions タブに「集客ダッシュボードの更新」（repository_dispatch）が走る
+   - トークンの期限が切れると朝の更新が予備の GitHub 定期実行（8〜12 時）に戻るだけで、止まりはしない。Vercel のログ（Logs → /api/cron/update-dashboard）に 502 が出ていたら作り直す
 
 ## デプロイ方法
 

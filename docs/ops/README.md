@@ -28,5 +28,5 @@ Google カレンダーに登録した定期タスクには、Claude Code に貼�
   DASHBOARD_PASSWORD='パスワード' node scripts/decrypt-dashboard-data.js
   ```
   復号結果は `dashboard/data.json`（git 管理外）に出る。要点はコマンドの出力にも表示される
-- ダッシュボードのデータは毎朝 6:00 JST に更新。手動更新は GitHub Actions「集客ダッシュボードの更新」→ Run workflow（`gh workflow run update-dashboard.yml`）
+- ダッシュボードのデータは毎朝 5〜6 時 JST に更新（Vercel Cron → GitHub Actions。GitHub の定期実行だけだと 8〜12 時にずれ込むため）。手動更新は GitHub Actions「集客ダッシュボードの更新」→ Run workflow（`gh workflow run update-dashboard.yml`）
 - 優先順位の全体像は `TODO.md` の先頭セクション

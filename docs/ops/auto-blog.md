@@ -24,7 +24,7 @@ GitHub Actions（draft-article.yml）
 main にマージ → build-blog.yml が記事 HTML・一覧・sitemap を生成 → 本番に反映
    │
    ▼
-翌朝 6:00 ダッシュボード更新。2〜4 週間後に「検索から来られたページ」で効果が見える
+翌朝 5〜6 時にダッシュボード更新。2〜4 週間後に「検索から来られたページ」で効果が見える
 ```
 
 エージェントは Google カレンダーに「記事チェック: <タイトル>」の予定（翌日 10:00）も入れる。
@@ -116,7 +116,7 @@ Google カレンダーに予定を 1 件作る: 翌日 10:00〜10:15（Asia/Toky
 | GitHub Secrets | `MAIL_APP_PASSWORD` | その Gmail の「アプリ パスワード」（Google アカウント → セキュリティ → 2 段階認証プロセス → アプリ パスワード） |
 | GitHub Secrets | `MAIL_TO` | 受け取るメールアドレス（スマホで見るもの） |
 | Vercel 環境変数 | `REVIEW_SECRET` | （将来用）GitHub と同じ値 |
-| Vercel 環境変数 | `GITHUB_PUBLISH_TOKEN` | （将来用）GitHub の Fine-grained personal access token。対象リポジトリ minoru-dental のみ、権限は Contents: Read and write、Pull requests: Read and write |
+| Vercel 環境変数 | `GITHUB_PUBLISH_TOKEN` | GitHub の Fine-grained personal access token。対象リポジトリ minoru-dental のみ、権限は Contents: Read and write、Pull requests: Read and write。ダッシュボードの朝の起動（`api/cron/update-dashboard.js`）と共用 |
 
 Vercel の 2 つを設定し、`draft-article.yml` のメール本文のボタン先を `https://minoru-dental.vercel.app/api/review?pr=<PR>&t=<HMAC>` に戻せば、GitHub を開かずにメールのリンク先だけで公開・没ができる（`api/review.js` は実装済み）。
 
