@@ -779,7 +779,7 @@ window.HELP = {
       modalBody.appendChild(el('div', 'empty', sr.empty || '日別のデータがありません'));
       modalChart = null;
     } else {
-      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事の公開日', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
+      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事の公開日', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
       modalBody.appendChild(modalChart.card);
       modalChart.render(modalDays());
     }
@@ -811,7 +811,7 @@ window.HELP = {
       tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: postMarkers } }),
       tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: postMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
       tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position',
-        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', fmt: (v) => v.toFixed(1) + '位', markers: postMarkers, desc: '1 日ごとの平均掲載順位。小さいほど上位。表示があった日だけ描いています' } })
+        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: postMarkers, desc: '1 日ごとの平均掲載順位。上が 1 位で、線が上にあるほど上位。表示があった日だけ描いています' } })
     );
   }
   if (ads && ads.linked) {
@@ -837,6 +837,7 @@ window.HELP = {
     for (const k in attrs) e.setAttribute(k, attrs[k]);
     return e;
   };
+  const ymaxTicks = (ymax) => (ymax >= 4 ? 4 : Math.max(1, Math.round(ymax))); // 最大値が小さいときは目盛りが同じ数字で重複しないように本数を減らす
   function niceMax(v) {
     if (v <= 0) return 1;
     const p = Math.pow(10, Math.floor(Math.log10(v)));
@@ -871,13 +872,17 @@ window.HELP = {
       const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
       const n = sub.length;
       const maxRaw = Math.max(1, ...sub.flatMap((r) => series.map((s) => r[s.key] || 0)));
-      const ymax = niceMax(maxRaw);
+      const invert = !!opts.invert; // 順位: 上端を 1 位に固定し、下に行くほど順位が下がる
+      const ticks = invert ? 4 : ymaxTicks(niceMax(maxRaw));
+      // 反転時は目盛りが整数になるように、1 からの幅を目盛り本数で割り切れる値に丸める
+      const ymax = invert ? 1 + ticks * Math.max(1, Math.ceil((maxRaw - 1) / ticks)) : niceMax(maxRaw);
       const x = (i) => PAD.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw);
-      const y = (v) => PAD.t + ih - (v / ymax) * ih;
+      const y = invert
+        ? (v) => PAD.t + ((Math.max(1, v) - 1) / (ymax - 1)) * ih
+        : (v) => PAD.t + ih - (v / ymax) * ih;
       // gridlines + y ticks
-      const ticks = ymax >= 4 ? 4 : Math.max(1, Math.round(ymax)); // 最大値が小さいときは目盛りが同じ数字で重複しないように本数を減らす
       for (let k = 0; k <= ticks; k++) {
-        const v = (ymax / ticks) * k;
+        const v = invert ? 1 + ((ymax - 1) / ticks) * k : (ymax / ticks) * k;
         const yy = y(v);
         svg.appendChild(svgEl(k === 0 ? 'line' : 'line', { x1: PAD.l, x2: W - PAD.r, y1: yy, y2: yy, class: k === 0 ? 'baseline' : 'gridline' }));
         const t = svgEl('text', { x: PAD.l - 6, y: yy + 4, 'text-anchor': 'end', class: 'axis' });
@@ -910,7 +915,7 @@ window.HELP = {
         series.forEach((s) => {
           const pts = sub.map((r, i) => [x(i), y(r[s.key] || 0)]);
           const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-          svg.appendChild(svgEl('path', { d: `${d} L${pts[n - 1][0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`, fill: s.color, 'fill-opacity': 0.1 }));
+          if (!invert) svg.appendChild(svgEl('path', { d: `${d} L${pts[n - 1][0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`, fill: s.color, 'fill-opacity': 0.1 }));
           svg.appendChild(svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
           const last = pts[n - 1];
           svg.appendChild(svgEl('circle', { cx: last[0], cy: last[1], r: 6, fill: 'var(--surface)' }));
@@ -918,7 +923,7 @@ window.HELP = {
         });
         // 直接ラベル: 最新値のみ
         const lastRow = sub[n - 1];
-        const t = svgEl('text', { x: x(n - 1), y: y(lastRow[series[0].key] || 0) - 10, 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
+        const t = svgEl('text', { x: x(n - 1), y: y(lastRow[series[0].key] || 0) + (invert ? 18 : -10), 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
         t.textContent = fmt(lastRow[series[0].key] || 0);
         svg.appendChild(t);
       }
