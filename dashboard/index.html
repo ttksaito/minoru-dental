@@ -830,7 +830,7 @@ window.HELP = {
       tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: allMarkers } }),
       tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: allMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
       tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position',
-        series: { rows: gsc.daily.filter((r) => r.impressions > 0), key: 'position', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位', markers: allMarkers, desc: '上が 1 位。点は 1 日ごとの平均順位で、表示回数が少ない日は小さく描いています（1 件だけで大きく跳ねるため）。線は表示回数で重みづけした 7 日移動平均で、こちらが実際の傾向です。縦線は記事公開（紫）とサイト改修（赤）の日で、上の点に触れると内容が出ます' } })
+        series: searchTrend(gsc.daily.map((r) => (r.impressions > 0 ? r : { ...r, position: null })), { subject: 'サイト全体が', what: 'サイト全体の順位は、その日に表示されたキーワードの構成でも変わります（改修の効果はキーワード別の表の行から見るほうが確かです）。', rest: {} }) })
     );
   }
   if (ads && ads.linked) {
@@ -883,7 +883,7 @@ window.HELP = {
         const a = el('span'); const ai = el('i', 'mk'); ai.style.background = series[0].color; ai.style.opacity = '0.5';
         a.append(ai, opts.dotSize ? `日ごとの値（点が大きいほど${opts.dotLabel || '件数'}が多い）` : '日ごとの値');
         lg.appendChild(a);
-        if (opts.avg) { const b = el('span'); const bi = el('i'); bi.style.background = series[0].color; b.append(bi, `${avgWin}日移動平均${opts.avg.weight ? `（${opts.dotLabel || '件数'}で重みづけ）` : ''}`); lg.appendChild(b); }
+        if (opts.avg) { const b = el('span'); const bi = el('i'); bi.style.background = series[0].color; b.append(bi, opts.avg.weight ? `${avgWin}日移動平均（${opts.dotLabel || '件数'}で重みづけ）` : `過去${avgWin}日の平均`); lg.appendChild(b); }
         if (band && band.label) { const c = el('span'); const ci = el('i', 'rect'); ci.style.background = series[0].color; ci.style.opacity = '0.15'; c.append(ci, band.label); lg.appendChild(c); }
         box.appendChild(lg);
       } else if (series.length > 1) {
@@ -977,7 +977,7 @@ window.HELP = {
         }
         sub.forEach((r, i) => {
           const v = r[s.key]; if (v == null) return;
-          const rr = 3 + 6 * Math.sqrt(sizes[i] / maxSize);
+          const rr = opts.dotSize ? 3 + 6 * Math.sqrt(sizes[i] / maxSize) : 4.5;
           svg.appendChild(svgEl('circle', { cx: x(i), cy: y(v), r: rr, fill: s.color, 'fill-opacity': 0.35, stroke: s.color, 'stroke-width': 1 }));
         });
         // 直接ラベル: 移動平均の最新値（なければ最新の点）
@@ -1674,19 +1674,32 @@ window.HELP = {
     });
   })();
 
-  // 検索キーワード 1 語の日別推移（順位＋表示・クリック）。日付はサイト全体の日別に合わせ、表示 0 回の日は順位なしで埋める
+  // 検索の推移モーダル（上: 順位、下: 表示・クリック → CTR）。
+  // 順位は Google が何位に置いたかだけを見たいので、表示回数で重みづけせず日ごとの単純平均にする（表示回数は検索した人の数や 2 ページ目まで見たかで変わるため）
+  function searchTrend(rows, o) {
+    const posFmt = (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位';
+    return {
+      rows, key: 'position', seriesLabel: '順位', invert: true, avg: { window: 7 },
+      band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: posFmt, markers: allMarkers,
+      desc: `上が 1 位。点はその日の平均順位、線は過去 7 日の点の単純平均（その日を含む 7 日分を足して日数で割る。少し遅れて動きます）。${o.what}点がない日は検索結果に表示されなかった日です。縦線は記事公開（紫）とサイト改修（赤）`,
+      extra: [
+        { title: '表示回数とクリック', desc: `${o.subject}検索結果に表示された回数と、クリックされた回数`, series: [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }, { key: 'clicks', label: 'クリック', color: 'var(--series-1)' }] },
+        { title: 'CTR', desc: '表示のうちクリックされた割合（クリック ÷ 表示）。表示が少ない日は大きく上下します', series: [{ key: 'ctr', label: 'CTR', color: 'var(--series-2)', fmt: (v) => fmtPct(v) }], fmt: (v) => fmtPct(v, 0) },
+      ],
+      ...o.rest,
+    };
+  }
+  // 検索キーワード 1 語の日別推移。日付はサイト全体の日別に合わせ、表示 0 回の日は順位なしで埋める
   function openQueryTrend(q) {
     const days = new Map((q.daily || []).map((d) => [d.date, d]));
-    const rows = q.daily ? gsc.daily.map((d) => { const v = days.get(d.date); return v ? { ...v } : { date: d.date, clicks: 0, impressions: 0, position: null }; }) : [];
-    const posFmt = (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位';
-    openTrend(`「${q.query}」`, {
-      rows, key: 'position', seriesLabel: '順位', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' },
-      band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: posFmt, markers: allMarkers,
-      intro: `直近28日: クリック ${fmtInt(q.clicks)} / 表示 ${fmtInt(q.impressions)} / 平均 ${q.position.toFixed(1)} 位。`,
-      desc: '上が 1 位。点はその日の平均順位（大きいほど表示回数が多い）、線は表示回数で重みづけした 7 日移動平均。点がない日はこの言葉で表示されなかった日です。縦線は記事公開（紫）とサイト改修（赤）',
-      empty: 'キーワード別の日別データは次回の更新（翌朝 5〜6 時）から表示されます',
-      extra: [{ title: '表示回数とクリック', desc: 'この言葉で検索結果に表示された回数と、クリックされた回数', series: [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }, { key: 'clicks', label: 'クリック', color: 'var(--series-1)' }] }],
-    });
+    const rows = q.daily ? gsc.daily.map((d) => { const v = days.get(d.date); return v ? { ...v, ctr: v.impressions ? v.clicks / v.impressions : 0 } : { date: d.date, clicks: 0, impressions: 0, ctr: 0, position: null }; }) : [];
+    openTrend(`「${q.query}」`, searchTrend(rows, {
+      subject: 'この言葉で', what: '',
+      rest: {
+        intro: `直近28日: クリック ${fmtInt(q.clicks)} / 表示 ${fmtInt(q.impressions)} / 平均 ${q.position.toFixed(1)} 位（この 3 つは Search Console の定義どおり、28 日間の全表示の平均）。`,
+        empty: 'キーワード別の日別データは次回の更新（翌朝 5〜6 時）から表示されます',
+      },
+    }));
   }
 
   if (gsc) {
