@@ -54,3 +54,5 @@ if (gbp) {
 } else if (data.errors && data.errors.gbp) {
   console.log(`ビジネスプロフィール: 未取得（${data.errors.gbp.slice(0, 120)}）`);
 }
+// 最後の行で成否が分かるようにする（上の「未取得」などは取得時の API エラーで、復号の失敗ではない）
+console.log('復号成功: dashboard/data.json を読んでください（上に API エラーが出ていても、それは取得時のもので復号は成功しています）');

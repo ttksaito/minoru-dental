@@ -39,7 +39,7 @@ main にマージ → build-blog.yml が記事 HTML・一覧・sitemap を生成
 3. 未公開の下書きが溜まっていないか確認する: `gh api 'repos/ttksaito/minoru-dental/pulls?state=open&per_page=50' --jq '[.[] | select(.head.ref | startswith("cms/blog/"))] | length'` が 3 以上なら、**新しい記事は作らず終了**する（その旨だけ出力）。閉じた PR のブランチが残っていても数えない。新しい記事のテーマ重複チェックも、この「開いている PR」の一覧で行う
 
 ### 1. ネタを選ぶ（1 つ）
-まずダッシュボードの全データを読む: 環境変数 `DASHBOARD_PASSWORD` があれば `node scripts/decrypt-dashboard-data.js` を実行すると `dashboard/data.json` ができる（訪問者数・流入チャネル・検索キーワード・ページ別・地域・広告・キーイベント）。このファイルとパスワードは絶対にコミット・出力・記事や調査メモへ転記しない（data.json は .gitignore 済み）。環境変数がない・復号できないときは `dashboard/insights.json`（検索キーワード・記事別閲覧数だけの平文）で進める。
+まずダッシュボードの全データを読む: 環境変数 `DASHBOARD_PASSWORD` があれば `node scripts/decrypt-dashboard-data.js` を実行すると `dashboard/data.json` ができる（訪問者数・流入チャネル・検索キーワード・ページ別・地域・広告・キーイベント）。このファイルとパスワードは絶対にコミット・出力・記事や調査メモへ転記しない（data.json は .gitignore 済み）。環境変数がない・復号できないときは `dashboard/insights.json`（検索キーワード・記事別閲覧数だけの平文）で進める。復号の成否は終了コード（0 なら成功）と出力の最後の行「復号成功」で判断する。要約の途中に出る `429` などのエラー（例: ビジネスプロフィール未取得）は集計時の API エラーで、復号の失敗ではない（2026-11-17 の実行で、これを復号失敗と読み違えて insights.json だけで進めた）。
 
 読むもの: 復号した `dashboard/data.json`（または `insights.json`）、`blog-posts.json`（公開済み記事）、`content/blog/*.md`（公開済み本文）、`docs/aieo-seo/topics.md`（2026-10 に作ったテーマ一覧。骨子と想定検索語つき）、`git ls-remote --heads origin 'cms/blog/*'`（作成中）
 
