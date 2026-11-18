@@ -830,7 +830,7 @@ window.HELP = {
       tile('検索表示回数', fmtInt(c.impressions), '回', c.impressions, p.impressions, { help: 'gscImpressions', series: { rows: gsc.daily, key: 'impressions', color: 'var(--series-3)', markers: allMarkers } }),
       tile('検索CTR', fmtPct(c.ctr), '', c.ctr, p.ctr, { fmtPrev: (v) => fmtPct(v), help: 'ctr', series: { rows: gsc.daily, key: 'ctr', fmt: (v) => fmtPct(v), markers: allMarkers, desc: '1 日ごとの CTR（クリック ÷ 表示）。表示が少ない日は大きく上下します' } }),
       tile('平均掲載順位', c.position ? c.position.toFixed(1) : '–', '位', c.position, p.position, { lowerIsBetter: true, fmtPrev: (v) => v.toFixed(1) + '位', help: 'position',
-        series: searchTrend(gsc.daily.map((r) => (r.impressions > 0 ? r : { ...r, position: null })), { subject: 'サイト全体が', what: 'サイト全体の順位は、その日に表示されたキーワードの構成でも変わります（改修の効果はキーワード別の表の行から見るほうが確かです）。', rest: {} }) })
+        series: searchTrend(gsc.daily.map((r) => (r.impressions > 0 ? r : { ...r, position: null, ctr: null })), { subject: 'サイト全体が', what: 'サイト全体の順位は、その日に表示されたキーワードの構成でも変わります（改修の効果はキーワード別の表の行から見るほうが確かです）。', rest: {} }) })
     );
   }
   if (ads && ads.linked) {
@@ -850,6 +850,7 @@ window.HELP = {
 
   // ---------------------------------------------------------- charts
   const W0 = 520, H0 = 200, PAD = { t: 10, r: 14, b: 26, l: 40 };
+  const PAD_L = PAD, PAD_R = { ...PAD, r: 46 }; // 右目盛りの系列（right: true）があるときは右に余白をとる
   const SVGNS = 'http://www.w3.org/2000/svg';
   const svgEl = (tag, attrs = {}) => {
     const e = document.createElementNS(SVGNS, tag);
@@ -873,6 +874,9 @@ window.HELP = {
     card.appendChild(box);
     const render = (sub) => {
       box.replaceChildren();
+      // 右目盛りの系列（例: 棒グラフの上に重ねる CTR の線）。左の目盛りの最大値には含めない
+      const rightS = series.filter((s) => s.right), leftS = series.filter((s) => !s.right);
+      const PAD = rightS.length ? PAD_R : PAD_L;
       if (!sub || sub.length === 0) { box.appendChild(el('div', 'empty', 'データがありません')); return; }
       const band = opts.band || null; // 背景の帯 {from, to, label}（例: 1〜10 位 = 1 ページ目）
       // 点＋移動平均モード（順位用）: opts.dotSize = 点の大きさにする列、opts.avg = { window: 日数, weight: 重みの列 }
@@ -890,9 +894,9 @@ window.HELP = {
         const lg = el('div', 'legend');
         for (const s of series) {
           const it = el('span');
-          const i = el('i', kind === 'bar' ? 'rect' : '');
+          const i = el('i', kind === 'bar' && !s.right ? 'rect' : '');
           i.style.background = s.color;
-          it.append(i, s.label);
+          it.append(i, s.right ? `${s.label}（線・右の目盛り）` : s.label);
           lg.appendChild(it);
         }
         box.appendChild(lg);
@@ -902,7 +906,7 @@ window.HELP = {
       const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': title });
       const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
       const n = sub.length;
-      const maxRaw = Math.max(1, band ? band.to : 0, ...sub.flatMap((r) => series.map((s) => r[s.key] || 0)));
+      const maxRaw = Math.max(1, band ? band.to : 0, ...sub.flatMap((r) => leftS.map((s) => r[s.key] || 0)));
       const invert = !!opts.invert; // 順位: 上端を 1 位に固定し、下に行くほど順位が下がる
       // 移動平均は表示範囲の前の日も使うので、全行から日付で引く
       const avgAt = (r0, key) => {
@@ -925,6 +929,10 @@ window.HELP = {
       const y = invert
         ? (v) => PAD.t + ((Math.max(1, v) - 1) / (ymax - 1)) * ih
         : (v) => PAD.t + ih - (v / ymax) * ih;
+      // 右目盛り: 左と同じ本数の目盛りで、きりのよい刻みにする
+      const ymax2 = rightS.length ? niceMax(Math.max(0.01, ...sub.flatMap((r) => rightS.map((s) => r[s.key] || 0))) / ticks) * ticks : 1;
+      const y2 = (v) => PAD.t + ih - (v / ymax2) * ih;
+      const ys = (s) => (s.right ? y2 : y);
       if (band) {
         const y1 = Math.min(y(band.from), y(band.to)), y2 = Math.max(y(band.from), y(band.to));
         svg.appendChild(svgEl('rect', { x: PAD.l, y: y1, width: iw, height: Math.max(0, y2 - y1), fill: series[0].color, 'fill-opacity': 0.07 }));
@@ -941,6 +949,11 @@ window.HELP = {
         const t = svgEl('text', { x: PAD.l - 6, y: yy + 4, 'text-anchor': 'end', class: 'axis' });
         t.textContent = fmt(v);
         const g = svgEl('g', { class: 'axis' }); g.appendChild(t); svg.appendChild(g);
+        if (rightS.length) {
+          const t2 = svgEl('text', { x: W - PAD.r + 6, y: yy + 4, 'text-anchor': 'start', class: 'axis' });
+          t2.textContent = (rightS[0].axisFmt || rightS[0].fmt || fmt)((ymax2 / ticks) * (ticks - k));
+          const g2 = svgEl('g', { class: 'axis' }); g2.appendChild(t2); svg.appendChild(g2);
+        }
       }
       // x ticks（最大6本）
       const step = Math.max(1, Math.ceil(n / 6));
@@ -953,7 +966,7 @@ window.HELP = {
       if (kind === 'bar') {
         const slot = iw / n;
         const bw = Math.min(24, Math.max(2, slot - 2));
-        series.forEach((s) => {
+        leftS.forEach((s) => {
           sub.forEach((r, i) => {
             const v = r[s.key] || 0;
             const h = Math.max(0, y(0) - y(v));
@@ -988,7 +1001,7 @@ window.HELP = {
           svg.appendChild(t);
         }
       } else {
-        series.forEach((s) => {
+        leftS.forEach((s) => {
           const pts = sub.map((r, i) => [x(i), y(r[s.key] || 0)]);
           const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
           if (!invert) svg.appendChild(svgEl('path', { d: `${d} L${pts[n - 1][0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`, fill: s.color, 'fill-opacity': 0.1 }));
@@ -1002,6 +1015,16 @@ window.HELP = {
         const t = svgEl('text', { x: x(n - 1), y: y(lastRow[series[0].key] || 0) + (invert ? 18 : -10), 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
         t.textContent = fmt(lastRow[series[0].key] || 0);
         svg.appendChild(t);
+      }
+      // 右目盛りの線（値がない日は線を切る）
+      for (const s of rightS) {
+        let d = '', pen = false;
+        sub.forEach((r, i) => {
+          if (r[s.key] == null) { pen = false; return; }
+          d += (pen ? ' L' : (d ? ' M' : 'M')) + x(i).toFixed(1) + ',' + y2(r[s.key]).toFixed(1); pen = true;
+        });
+        if (d) svg.appendChild(svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+        sub.forEach((r, i) => { if (r[s.key] != null) svg.appendChild(svgEl('circle', { cx: x(i), cy: y2(r[s.key]), r: 2.5, fill: s.color })); });
       }
       // 記事公開日のマーカー（縦の細線＋上部の点）
       const markerAt = new Map();
@@ -1054,11 +1077,11 @@ window.HELP = {
           const left = el('span');
           const key = el('i'); key.style.background = s.color;
           left.append(key, s.label);
-          const missing = dotMode && r[s.key] == null; // 点モードで値がない日（表示 0 回など）は「—」
+          const missing = (dotMode || s.right) && r[s.key] == null; // 値がない日（表示 0 回の日の順位・CTR など）は「—」
           row.append(left, el('b', null, missing ? '—' : (s.fmt || fmt)(r[s.key] || 0)));
           tip.appendChild(row);
-          hoverDots[k].setAttribute('cx', x(i)); hoverDots[k].setAttribute('cy', y(r[s.key] || 0));
-          hoverDots[k].style.display = kind === 'bar' || missing ? 'none' : 'block';
+          hoverDots[k].setAttribute('cx', x(i)); hoverDots[k].setAttribute('cy', ys(s)(r[s.key] || 0));
+          hoverDots[k].style.display = (kind === 'bar' && !s.right) || missing ? 'none' : 'block';
         });
         if (dotMode) {
           if (opts.dotSize) { const row = el('div', 'row'); row.append(el('span', null, opts.dotLabel || '件数'), el('b', null, fmtInt(r[opts.dotSize] || 0))); tip.appendChild(row); }
@@ -1682,17 +1705,17 @@ window.HELP = {
       rows, key: 'position', seriesLabel: '順位', invert: true, avg: { window: 7 },
       band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: posFmt, markers: allMarkers,
       desc: `上が 1 位。点はその日の平均順位、線は過去 7 日の点の単純平均（その日を含む 7 日分を足して日数で割る。少し遅れて動きます）。${o.what}点がない日は検索結果に表示されなかった日です。縦線は記事公開（紫）とサイト改修（赤）`,
-      extra: [
-        { title: '表示回数とクリック', desc: `${o.subject}検索結果に表示された回数と、クリックされた回数`, series: [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }, { key: 'clicks', label: 'クリック', color: 'var(--series-1)' }] },
-        { title: 'CTR', desc: '表示のうちクリックされた割合（クリック ÷ 表示）。表示が少ない日は大きく上下します', series: [{ key: 'ctr', label: 'CTR', color: 'var(--series-2)', fmt: (v) => fmtPct(v) }], fmt: (v) => fmtPct(v, 0) },
-      ],
+      extra: [{
+        title: '表示回数・クリック・CTR', desc: `棒は${o.subject}検索結果に表示された回数とクリックされた回数（左の目盛り）。線は CTR = クリック ÷ 表示（右の目盛り）で、表示が少ない日は大きく上下します。表示 0 回の日は線を切っています`,
+        series: [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }, { key: 'clicks', label: 'クリック', color: 'var(--series-1)' }, { key: 'ctr', label: 'CTR', color: 'var(--series-2)', right: true, fmt: (v) => fmtPct(v) }],
+      }],
       ...o.rest,
     };
   }
   // 検索キーワード 1 語の日別推移。日付はサイト全体の日別に合わせ、表示 0 回の日は順位なしで埋める
   function openQueryTrend(q) {
     const days = new Map((q.daily || []).map((d) => [d.date, d]));
-    const rows = q.daily ? gsc.daily.map((d) => { const v = days.get(d.date); return v ? { ...v, ctr: v.impressions ? v.clicks / v.impressions : 0 } : { date: d.date, clicks: 0, impressions: 0, ctr: 0, position: null }; }) : [];
+    const rows = q.daily ? gsc.daily.map((d) => { const v = days.get(d.date); return v ? { ...v, ctr: v.impressions ? v.clicks / v.impressions : null } : { date: d.date, clicks: 0, impressions: 0, ctr: null, position: null }; }) : [];
     openTrend(`「${q.query}」`, searchTrend(rows, {
       subject: 'この言葉で', what: '',
       rest: {
