@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-11-18T01:40:24.062Z",
+  "generatedAt": "2026-11-18T20:16:24.499Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
-    "start": "2026-10-20",
-    "end": "2026-11-16"
+    "start": "2026-10-21",
+    "end": "2026-11-17"
   },
   "searchQueries": [
     {
       "query": "みのる歯科",
       "clicks": 1,
-      "impressions": 40,
+      "impressions": 36,
       "position": 6.2
     },
     {
@@ -33,20 +33,20 @@
     {
       "query": "東松山 歯医者",
       "clicks": 0,
-      "impressions": 14,
-      "position": 17
-    },
-    {
-      "query": "東松山市 一般歯科",
-      "clicks": 0,
-      "impressions": 8,
-      "position": 24.1
+      "impressions": 15,
+      "position": 16.9
     },
     {
       "query": "東松山市 歯科",
       "clicks": 0,
-      "impressions": 8,
-      "position": 22.6
+      "impressions": 7,
+      "position": 24
+    },
+    {
+      "query": "東松山市 一般歯科",
+      "clicks": 0,
+      "impressions": 6,
+      "position": 22.8
     },
     {
       "query": "東松山市 口腔外科",
@@ -73,16 +73,22 @@
       "position": 10
     },
     {
+      "query": "こども 虫歯 予防",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 5.5
+    },
+    {
+      "query": "東松山 歯医者 ランキング 高 評価",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 8
+    },
+    {
       "query": "歯を磨く",
       "clicks": 0,
       "impressions": 2,
       "position": 58.5
-    },
-    {
-      "query": "こども 虫歯 予防",
-      "clicks": 0,
-      "impressions": 1,
-      "position": 6
     },
     {
       "query": "みのり歯科",
@@ -91,10 +97,10 @@
       "position": 4
     },
     {
-      "query": "東松山 歯医者 ランキング 高 評価",
+      "query": "みのる歯科 浮間舟渡",
       "clicks": 0,
       "impressions": 1,
-      "position": 4
+      "position": 52
     },
     {
       "query": "東松山 歯医者 日曜日",
@@ -127,6 +133,18 @@
       "position": 85
     },
     {
+      "query": "歯医者 東松山",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 1
+    },
+    {
+      "query": "歯医者 高評価",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 28
+    },
+    {
       "query": "歯医者近く",
       "clicks": 0,
       "impressions": 1,
@@ -137,6 +155,12 @@
       "clicks": 0,
       "impressions": 1,
       "position": 2
+    },
+    {
+      "query": "西尾歯科",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 1
     }
   ],
   "searchPages": [
@@ -144,8 +168,8 @@
       "page": "/",
       "title": null,
       "clicks": 7,
-      "impressions": 168,
-      "position": 11.7
+      "impressions": 167,
+      "position": 12.2
     },
     {
       "page": "/blog/denture-chewing-power/",
@@ -172,15 +196,15 @@
       "page": "/blog.html",
       "title": null,
       "clicks": 0,
-      "impressions": 5,
-      "position": 4.2
+      "impressions": 4,
+      "position": 5
     },
     {
       "page": "/blog/child-dental-care/",
       "title": "お子様の歯を守るために知っておきたいこと",
       "clicks": 0,
-      "impressions": 2,
-      "position": 3.5
+      "impressions": 3,
+      "position": 4
     },
     {
       "page": "/blog/best-brushing-timing/",
@@ -204,7 +228,17 @@
     {
       "path": "/blog/best-brushing-timing/",
       "title": "歯を磨くベストなタイミングはいつ？",
-      "pageViews": 2
+      "pageViews": 3
+    },
+    {
+      "path": "/blog/first-visit-questions/",
+      "title": "初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト",
+      "pageViews": 1
+    },
+    {
+      "path": "/blog/higashimatsuyama-dental-checkup/",
+      "title": "東松山市の無料歯科健診まとめ｜歯周疾患検診・ファミリー歯科健診",
+      "pageViews": 1
     },
     {
       "path": "/blog/proper-brushing/",
