@@ -227,6 +227,10 @@
   th { font-weight: 600; color: var(--ink-2); font-size: 12px; white-space: nowrap; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   tr:last-child td { border-bottom: 0; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover td, tr.clickable:focus-visible td { background: var(--page); }
+  tr.clickable:focus-visible { outline: 2px solid var(--ink-2); outline-offset: -2px; }
+  tr.clickable td:first-child::after { content: ' 推移 ›'; font-size: 11px; color: var(--muted); }
   tfoot td { font-weight: 600; border-top: 1px solid var(--grid); color: var(--ink-2); }
   #ads-table { overflow-x: auto; } /* キャンペーン表が横に長くてもページ全体が広がらないように */
   details.card summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--ink-2); }
@@ -771,9 +775,9 @@ window.HELP = {
     }
     return t;
   }
-  // サマリーのカードから開く推移グラフのモーダル。series: { rows, key, fmt, kind, desc, markers }
+  // サマリーのカードや表の行から開く推移グラフのモーダル。series: { rows, key, fmt, kind, desc, markers, intro, extra: [{ title, desc, series, kind }] }
   const modal = $('#modal'), modalBody = $('#modal-body'), modalTitle = $('#modal-title');
-  let modalChart = null, lastFocus = null;
+  let modalCharts = [], lastFocus = null;
   const modalDays = () => Number(modal.querySelector('#modal-range button[aria-pressed="true"]')?.dataset.days || 28);
   function openTrend(label, sr, helpKey) {
     lastFocus = document.activeElement;
@@ -782,25 +786,32 @@ window.HELP = {
     // タイルの「?」と同じ用語説明を、モーダルの先頭にも出す
     const helpText = helpKey && window.HELP ? window.HELP[helpKey] : null;
     if (helpText) modalBody.appendChild(el('p', 'desc modal-help', helpText));
+    if (sr.intro) modalBody.appendChild(el('p', 'desc modal-help', sr.intro));
     modal.hidden = false; // 先に表示しないと幅が 0 のまま描いてしまう
+    modalCharts = [];
     if (!sr.rows || !sr.rows.length) {
       modalBody.appendChild(el('div', 'empty', sr.empty || '日別のデータがありません'));
-      modalChart = null;
     } else {
-      modalChart = chartCard('', sr.desc || '1 日ごとの値。縦線は記事公開（紫）とサイト改修（赤）の日。上の点に触れると内容が出ます', sr.rows, [{ key: sr.key, label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, dotSize: sr.dotSize, dotLabel: sr.dotLabel, avg: sr.avg, band: sr.band, width: () => Math.max(320, modalBody.clientWidth), height: () => Math.round(Math.max(300, Math.min(560, window.innerHeight * 0.6))) });
-      modalBody.appendChild(modalChart.card);
-      modalChart.render(modalDays());
+      const width = () => Math.max(320, modalBody.clientWidth);
+      const extra = sr.extra || [];
+      // 下にグラフを足すときは、主グラフを低めにして 1 画面に収める
+      const mainH = () => Math.round(Math.max(extra.length ? 240 : 300, Math.min(560, window.innerHeight * (extra.length ? 0.4 : 0.6))));
+      modalCharts.push(chartCard('', sr.desc || '1 日ごとの値。縦線は記事公開（紫）とサイト改修（赤）の日。上の点に触れると内容が出ます', sr.rows, [{ key: sr.key, label: sr.seriesLabel || label, color: sr.color || 'var(--series-1)', fmt: sr.fmt }], sr.kind || 'line', sr.fmt || fmtInt, sr.markers || [], { invert: !!sr.invert, dotSize: sr.dotSize, dotLabel: sr.dotLabel, avg: sr.avg, band: sr.band, width, height: mainH }));
+      for (const ex of extra) {
+        modalCharts.push(chartCard(ex.title, ex.desc, sr.rows, ex.series, ex.kind || 'bar', ex.fmt || fmtInt, sr.markers || [], { width, height: () => Math.round(Math.max(180, Math.min(320, window.innerHeight * 0.25))) }));
+      }
+      for (const c of modalCharts) { modalBody.appendChild(c.card); c.render(modalDays()); }
     }
     $('#modal-close').focus();
   }
   const closeModal = () => { modal.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); };
-  window.addEventListener('resize', () => { if (!modal.hidden && modalChart) modalChart.render(modalDays()); });
+  window.addEventListener('resize', () => { if (!modal.hidden) for (const c of modalCharts) c.render(modalDays()); });
   $('#modal-close').addEventListener('click', closeModal);
   modal.addEventListener('click', (ev) => { if (ev.target === modal) closeModal(); });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !modal.hidden) closeModal(); });
   modal.querySelectorAll('#modal-range button').forEach((b) => b.addEventListener('click', () => {
     modal.querySelectorAll('#modal-range button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    if (modalChart) modalChart.render(modalDays());
+    for (const c of modalCharts) c.render(modalDays());
   }));
   if (ga) {
     const c = ga.summary.current, p = ga.summary.previous;
@@ -970,10 +981,12 @@ window.HELP = {
           svg.appendChild(svgEl('circle', { cx: x(i), cy: y(v), r: rr, fill: s.color, 'fill-opacity': 0.35, stroke: s.color, 'stroke-width': 1 }));
         });
         // 直接ラベル: 移動平均の最新値（なければ最新の点）
-        const li = avgs.length - 1, lv = avgs[li] != null ? avgs[li] : (sub[n - 1][s.key] || 0);
-        const t = svgEl('text', { x: x(n - 1), y: y(lv) + (invert ? 18 : -10), 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
-        t.textContent = (opts.avg ? `${avgWin}日平均 ` : '') + fmt(lv);
-        svg.appendChild(t);
+        const li = avgs.length - 1, lv = avgs[li] != null ? avgs[li] : sub[n - 1][s.key];
+        if (lv != null) { // 最後の数日に値がない（キーワードが表示されなかった）ときはラベルを出さない
+          const t = svgEl('text', { x: x(n - 1), y: y(lv) + (invert ? 18 : -10), 'text-anchor': 'end', style: 'font-size:11px;font-weight:600;fill:var(--ink)' });
+          t.textContent = (opts.avg ? `${avgWin}日平均 ` : '') + fmt(lv);
+          svg.appendChild(t);
+        }
       } else {
         series.forEach((s) => {
           const pts = sub.map((r, i) => [x(i), y(r[s.key] || 0)]);
@@ -1041,10 +1054,11 @@ window.HELP = {
           const left = el('span');
           const key = el('i'); key.style.background = s.color;
           left.append(key, s.label);
-          row.append(left, el('b', null, (s.fmt || fmt)(r[s.key] || 0)));
+          const missing = dotMode && r[s.key] == null; // 点モードで値がない日（表示 0 回など）は「—」
+          row.append(left, el('b', null, missing ? '—' : (s.fmt || fmt)(r[s.key] || 0)));
           tip.appendChild(row);
           hoverDots[k].setAttribute('cx', x(i)); hoverDots[k].setAttribute('cy', y(r[s.key] || 0));
-          hoverDots[k].style.display = kind === 'bar' ? 'none' : 'block';
+          hoverDots[k].style.display = kind === 'bar' || missing ? 'none' : 'block';
         });
         if (dotMode) {
           if (opts.dotSize) { const row = el('div', 'row'); row.append(el('span', null, opts.dotLabel || '件数'), el('b', null, fmtInt(r[opts.dotSize] || 0))); tip.appendChild(row); }
@@ -1660,13 +1674,35 @@ window.HELP = {
     });
   })();
 
+  // 検索キーワード 1 語の日別推移（順位＋表示・クリック）。日付はサイト全体の日別に合わせ、表示 0 回の日は順位なしで埋める
+  function openQueryTrend(q) {
+    const days = new Map((q.daily || []).map((d) => [d.date, d]));
+    const rows = q.daily ? gsc.daily.map((d) => { const v = days.get(d.date); return v ? { ...v } : { date: d.date, clicks: 0, impressions: 0, position: null }; }) : [];
+    const posFmt = (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + '位';
+    openTrend(`「${q.query}」`, {
+      rows, key: 'position', seriesLabel: '順位', invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' },
+      band: { from: 1, to: 10, label: '1 ページ目（1〜10 位）' }, fmt: posFmt, markers: allMarkers,
+      intro: `直近28日: クリック ${fmtInt(q.clicks)} / 表示 ${fmtInt(q.impressions)} / 平均 ${q.position.toFixed(1)} 位。`,
+      desc: '上が 1 位。点はその日の平均順位（大きいほど表示回数が多い）、線は表示回数で重みづけした 7 日移動平均。点がない日はこの言葉で表示されなかった日です。縦線は記事公開（紫）とサイト改修（赤）',
+      empty: 'キーワード別の日別データは次回の更新（翌朝 5〜6 時）から表示されます',
+      extra: [{ title: '表示回数とクリック', desc: 'この言葉で検索結果に表示された回数と、クリックされた回数', series: [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }, { key: 'clicks', label: 'クリック', color: 'var(--series-1)' }] }],
+    });
+  }
+
   if (gsc) {
     $('#gsc-range').textContent = `${gsc.range.start} 〜 ${gsc.range.end}（検索データは2日ほど遅れて確定します）`;
     const q = $('#queries');
     q.replaceChildren(el('h3', null, '検索キーワード'), el('p', 'desc', 'どんな言葉で検索して見つかったか（クリック数順）'));
     q.appendChild(gsc.queries.length ? table(
       [{ label: 'キーワード' }, { label: 'クリック', num: true, help: 'gscClicks' }, { label: '表示', num: true, help: 'gscImpressions' }, { label: 'CTR', num: true, help: 'ctr' }, { label: '順位', num: true, help: 'position' }],
-      gsc.queries, (r) => { const tr = el('tr'); tr.append(td(r.query), td(fmtInt(r.clicks), true), td(fmtInt(r.impressions), true), td(fmtPct(r.ctr), true), td(r.position.toFixed(1), true)); return tr; }
+      gsc.queries, (r) => {
+        const tr = el('tr', 'clickable'); tr.append(td(r.query), td(fmtInt(r.clicks), true), td(fmtInt(r.impressions), true), td(fmtPct(r.ctr), true), td(r.position.toFixed(1), true));
+        tr.tabIndex = 0; tr.title = 'クリックすると日別の推移を表示します';
+        const open = () => openQueryTrend(r);
+        tr.addEventListener('click', open);
+        tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(); } });
+        return tr;
+      }
     ) : el('div', 'empty', 'まだ検索データがありません'));
     const gp = $('#gsc-pages');
     gp.replaceChildren(el('h3', null, '検索から来られたページ'), el('p', 'desc', 'Google 検索結果に出たページ（クリック数順）'));

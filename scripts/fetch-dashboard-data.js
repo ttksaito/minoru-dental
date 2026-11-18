@@ -583,6 +583,24 @@ async function fetchGsc() {
     .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
     .slice(0, 50);
 
+  // キーワードごとの日別（表の行をクリックすると出る推移グラフ用）。表示があった日だけ持ち、0 の日はダッシュボード側で埋める
+  try {
+    const qdReport = await gscQuery(siteUrl, {
+      startDate: daysAgo(LAG + SERIES_DAYS - 1),
+      endDate: curEnd,
+      dimensions: ['date', 'query'],
+      rowLimit: 25000,
+    });
+    const byQuery = new Map(queries.map((q) => [q.query, (q.daily = [])]));
+    for (const r of gscRows(qdReport, ['date', 'query'])) {
+      const list = byQuery.get(r.query);
+      if (list) list.push({ date: r.date, clicks: r.clicks, impressions: r.impressions, position: Math.round(r.position * 10) / 10 });
+    }
+    for (const list of byQuery.values()) list.sort((a, b) => a.date.localeCompare(b.date));
+  } catch (e) {
+    console.warn(`キーワード別の日別データの取得をスキップ: ${e.message.slice(0, 200)}`);
+  }
+
   const pagesReport = await gscQuery(siteUrl, {
     startDate: curStart,
     endDate: curEnd,
