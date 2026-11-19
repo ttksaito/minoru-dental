@@ -70,6 +70,14 @@ patch('GA4 タグ', 'G-P8PPKGZVRT',
   '<body>\n<div id="stage">',
   `<body>
 <!-- Google Analytics（サイト共通） -->
+<script>
+  // 運営者の端末を計測から外す: ?noga=1 で一度開くと、この端末では GA4・Clarity に送らない（?noga=0 で解除）
+  try {
+    if (/[?&]noga=1/.test(location.search)) localStorage.setItem('noga', '1');
+    if (/[?&]noga=0/.test(location.search)) localStorage.removeItem('noga');
+    if (localStorage.getItem('noga') === '1') window['ga-disable-G-P8PPKGZVRT'] = window.noga = true;
+  } catch (e) {}
+</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-P8PPKGZVRT"></script>
 <script>
   window.dataLayer = window.dataLayer || [];

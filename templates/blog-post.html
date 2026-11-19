@@ -699,6 +699,14 @@
 </head>
 <body>
     <!-- Google Analytics -->
+    <script>
+      // 運営者の端末を計測から外す: ?noga=1 で一度開くと、この端末では GA4・Clarity に送らない（?noga=0 で解除）
+      try {
+        if (/[?&]noga=1/.test(location.search)) localStorage.setItem('noga', '1');
+        if (/[?&]noga=0/.test(location.search)) localStorage.removeItem('noga');
+        if (localStorage.getItem('noga') === '1') window['ga-disable-G-P8PPKGZVRT'] = window.noga = true;
+      } catch (e) {}
+    </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-P8PPKGZVRT"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -724,7 +732,7 @@
     </script>
     <!-- Microsoft Clarity（ページの使われ方: スクロール深度・ヒートマップ・録画） -->
     <script type="text/javascript">
-      (function(c,l,a,r,i,t,y){
+      if (!window.noga) (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
