@@ -1,16 +1,22 @@
 {
-  "generatedAt": "2026-11-18T20:16:24.499Z",
+  "generatedAt": "2026-11-19T20:16:21.990Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
-    "start": "2026-10-21",
-    "end": "2026-11-17"
+    "start": "2026-10-22",
+    "end": "2026-11-18"
   },
   "searchQueries": [
     {
+      "query": "みのる歯科医院",
+      "clicks": 2,
+      "impressions": 2,
+      "position": 1.5
+    },
+    {
       "query": "みのる歯科",
       "clicks": 1,
-      "impressions": 36,
-      "position": 6.2
+      "impressions": 40,
+      "position": 6.3
     },
     {
       "query": "みのるしか",
@@ -19,10 +25,10 @@
       "position": 3.3
     },
     {
-      "query": "みのる歯科医院",
-      "clicks": 1,
-      "impressions": 1,
-      "position": 2
+      "query": "東松山 歯医者",
+      "clicks": 0,
+      "impressions": 18,
+      "position": 17.6
     },
     {
       "query": "東松山市 歯医者",
@@ -31,16 +37,10 @@
       "position": 22.6
     },
     {
-      "query": "東松山 歯医者",
-      "clicks": 0,
-      "impressions": 15,
-      "position": 16.9
-    },
-    {
       "query": "東松山市 歯科",
       "clicks": 0,
-      "impressions": 7,
-      "position": 24
+      "impressions": 8,
+      "position": 21.1
     },
     {
       "query": "東松山市 一般歯科",
@@ -85,10 +85,28 @@
       "position": 8
     },
     {
+      "query": "東松山 歯科",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 26.5
+    },
+    {
       "query": "歯を磨く",
       "clicks": 0,
       "impressions": 2,
       "position": 58.5
+    },
+    {
+      "query": "歯医者 高坂",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 17.5
+    },
+    {
+      "query": "近くの歯医者",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 2.5
     },
     {
       "query": "みのり歯科",
@@ -109,12 +127,6 @@
       "position": 3
     },
     {
-      "query": "東松山 歯科",
-      "clicks": 0,
-      "impressions": 1,
-      "position": 34
-    },
-    {
       "query": "歯 磨く",
       "clicks": 0,
       "impressions": 1,
@@ -125,6 +137,12 @@
       "clicks": 0,
       "impressions": 1,
       "position": 8
+    },
+    {
+      "query": "歯医者",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 1
     },
     {
       "query": "歯医者 はじめて",
@@ -167,8 +185,8 @@
     {
       "page": "/",
       "title": null,
-      "clicks": 7,
-      "impressions": 167,
+      "clicks": 8,
+      "impressions": 183,
       "position": 12.2
     },
     {
@@ -197,7 +215,7 @@
       "title": null,
       "clicks": 0,
       "impressions": 4,
-      "position": 5
+      "position": 4.5
     },
     {
       "page": "/blog/child-dental-care/",
