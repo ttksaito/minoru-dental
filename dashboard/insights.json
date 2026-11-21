@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T06:08:27.480Z",
+  "generatedAt": "2026-11-21T07:31:40.071Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
     "start": "2026-10-23",
@@ -9,8 +9,8 @@
     {
       "query": "みのる歯科",
       "clicks": 2,
-      "impressions": 46,
-      "position": 6
+      "impressions": 49,
+      "position": 5.8
     },
     {
       "query": "みのる歯科医院",
@@ -21,7 +21,7 @@
     {
       "query": "東松山 歯医者",
       "clicks": 1,
-      "impressions": 20,
+      "impressions": 21,
       "position": 17.7
     },
     {
@@ -49,6 +49,12 @@
       "position": 22.8
     },
     {
+      "query": "東松山 歯医者 ランキング 高 評価",
+      "clicks": 0,
+      "impressions": 5,
+      "position": 8.6
+    },
+    {
       "query": "東松山市 口腔外科",
       "clicks": 0,
       "impressions": 5,
@@ -59,6 +65,12 @@
       "clicks": 0,
       "impressions": 5,
       "position": 15.6
+    },
+    {
+      "query": "こども 虫歯 予防",
+      "clicks": 0,
+      "impressions": 4,
+      "position": 6
     },
     {
       "query": "みのる歯科 予約",
@@ -73,28 +85,22 @@
       "position": 10
     },
     {
-      "query": "東松山 歯医者 ランキング 高 評価",
-      "clicks": 0,
-      "impressions": 3,
-      "position": 7.7
-    },
-    {
       "query": "うさぎ歯科",
       "clicks": 0,
       "impressions": 2,
       "position": 1
     },
     {
-      "query": "こども 虫歯 予防",
-      "clicks": 0,
-      "impressions": 2,
-      "position": 5.5
-    },
-    {
       "query": "みのる歯科 浮間舟渡",
       "clicks": 0,
       "impressions": 2,
       "position": 38
+    },
+    {
+      "query": "栄田歯科医院",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 1
     },
     {
       "query": "歯を磨く",
@@ -113,6 +119,12 @@
       "clicks": 0,
       "impressions": 2,
       "position": 17.5
+    },
+    {
+      "query": "歯医者近く",
+      "clicks": 0,
+      "impressions": 2,
+      "position": 1
     },
     {
       "query": "近くの歯医者",
@@ -181,10 +193,16 @@
       "position": 28
     },
     {
-      "query": "歯医者近く",
+      "query": "歯科医院",
       "clicks": 0,
       "impressions": 1,
       "position": 1
+    },
+    {
+      "query": "比企郡 歯医者",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 21
     },
     {
       "query": "滑川町 歯科医院",
@@ -210,8 +228,8 @@
       "page": "/",
       "title": null,
       "clicks": 12,
-      "impressions": 209,
-      "position": 11.4
+      "impressions": 225,
+      "position": 11
     },
     {
       "page": "/blog/denture-chewing-power/",
@@ -235,18 +253,18 @@
       "position": 17.5
     },
     {
+      "page": "/blog/child-dental-care/",
+      "title": "お子様の歯を守るために知っておきたいこと",
+      "clicks": 0,
+      "impressions": 5,
+      "position": 5
+    },
+    {
       "page": "/blog.html",
       "title": null,
       "clicks": 0,
       "impressions": 3,
       "position": 2.7
-    },
-    {
-      "page": "/blog/child-dental-care/",
-      "title": "お子様の歯を守るために知っておきたいこと",
-      "clicks": 0,
-      "impressions": 3,
-      "position": 4
     },
     {
       "page": "/blog/best-brushing-timing/",
