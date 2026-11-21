@@ -2241,8 +2241,9 @@ window.HELP = {
         list, ({ p, s }) => {
           const tr = el('tr', 'clickable'); tr.tabIndex = 0; tr.setAttribute('role', 'button'); tr.title = 'クリックすると日別の推移を表示します';
           const age = daysBetween(p.date, gaR.end);
+          const dateCell = td(p.date); dateCell.classList.add('nowrap');
           tr.append(
-            td(p.date), pageCell(p.title, p.path),
+            dateCell, pageCell(p.title, p.path),
             td(age >= 0 ? `${fmtInt(age)} 日` : '–', true),
             td(fmtInt(s.pv), true), td(s.engPer != null ? fmtDur(s.engPer) : '–', true),
             td(fmtInt(s.imp), true), td(fmtInt(s.cl), true), td(s.ctr != null ? fmtPct(s.ctr) : '–', true), td(posFmt0(s.pos), true)
