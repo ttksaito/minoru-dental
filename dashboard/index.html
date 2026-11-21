@@ -1953,7 +1953,7 @@ window.HELP = {
       const clicked = evs.map((e) => (String(e).match(/^(?:click|tap)[^:]*:\s*(.+)$/i) || [])[1]).filter(Boolean).slice(0, 2);
       if (clicked.length) flags.push(`「${clicked.join('」「')}」をクリック`);
       let t = `${refJa(s.referrer)}から ${flow || '不明なページ'} を ${fmtDur(s.totalSec)}`;
-      t += s.activeSec < 5 ? '（ほぼ操作なし）' : `（操作 ${fmtDur(s.activeSec)}）`;
+      if (s.activeSec != null) t += s.activeSec < 5 ? '（ほぼ操作なし）' : `（操作 ${fmtDur(s.activeSec)}）`;
       t += s.pages <= 1 ? '。他のページへ移らず終了' : `。${s.pages} ページ見て終了`;
       if (flags.length) t += '。' + flags.join('、');
       return t;

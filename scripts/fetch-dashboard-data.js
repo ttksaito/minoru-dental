@@ -948,7 +948,7 @@ async function clarityMcp(path, body) {
   try { return JSON.parse(text); } catch (e) { throw new Error('Clarity 内部 API: JSON でない応答'); }
 }
 
-/** "00:01:05" / 65 / "65" → 秒 */
+/** "41 seconds" / "1 minute 5 seconds" / "2 hours" / "00:01:05" / 65 / "65" → 秒（この API の totalDuration・activeDuration は "41 seconds" 形式。2026-11-21 確認） */
 function parseDurationSec(v) {
   if (v == null || v === '') return 0;
   if (typeof v === 'number') return v;
@@ -957,11 +957,31 @@ function parseDurationSec(v) {
   if (m) return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
   m = s.match(/^(\d+):(\d{1,2})(?:\.\d+)?$/);
   if (m) return Number(m[1]) * 60 + Number(m[2]);
+  if (/[a-z]/i.test(s)) {
+    let sec = 0, hit = false;
+    for (const [, num, unit] of s.matchAll(/(\d+(?:\.\d+)?)\s*(h(?:ours?|rs?)?|m(?:in(?:ute)?s?)?|s(?:ec(?:ond)?s?)?|ms)\b/gi)) {
+      hit = true;
+      const n = Number(num);
+      if (unit.toLowerCase() === 'ms') sec += n / 1000;
+      else if (/^h/i.test(unit)) sec += n * 3600;
+      else if (/^m/i.test(unit)) sec += n * 60;
+      else sec += n;
+    }
+    if (hit) return Math.round(sec * 10) / 10;
+  }
   const n = Number(s);
   return Number.isNaN(n) ? 0 : n;
 }
+/** API の timestamp（"2026-11-20 11:33:57"。タイムゾーン表記なしの UTC。2026-11-21 確認）→ ISO 文字列（末尾 Z） */
+function toUtcIso(ts) {
+  if (ts == null || ts === '') return '';
+  const s = String(ts).trim();
+  const noZone = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(s);
+  const t = new Date(noZone ? s.replace(' ', 'T') + 'Z' : s);
+  return Number.isNaN(t.getTime()) ? s : t.toISOString().replace(/\.000Z$/, 'Z');
+}
 function jstParts(ts) {
-  const t = new Date(ts);
+  const t = new Date(toUtcIso(ts));
   if (Number.isNaN(t.getTime())) return null;
   const j = new Date(t.getTime() + 9 * 60 * 60 * 1000);
   return { date: j.toISOString().slice(0, 10), hour: j.getUTCHours() };
@@ -986,9 +1006,8 @@ function compactClaritySession(s, device) {
   const timeline = Array.isArray(s.timeline) ? s.timeline : [];
   const totalSec = parseDurationSec(s.totalDuration);
   const activeSec = parseDurationSec(s.activeDuration);
-  // timeline[].duration の単位が不明（秒かミリ秒か）なので、合計が滞在時間の 50 倍を超えていたらミリ秒とみなす
-  const rawSum = timeline.reduce((a, p) => a + (Number(p.duration) || 0), 0);
-  const msScale = totalSec > 0 && rawSum > totalSec * 50 ? 1000 : 1;
+  // timeline[].duration はミリ秒（Clarity 画面の「期間 00:41」のセッションで 41197。2026-11-21 確認）
+  const msScale = 1000;
   const pages = timeline.map((p) => {
     const path = clarityDimensionValue('URL', { URL: p.url || '' });
     const events = (Array.isArray(p.timelineEvents) ? p.timelineEvents : []).map(summarizeTimelineEvent).filter(Boolean).slice(0, 12);
@@ -1005,7 +1024,7 @@ function compactClaritySession(s, device) {
   return {
     id: String(s.link || '').slice(0, 300),
     link: String(s.link || '').slice(0, 300),
-    ts: s.timestamp,
+    ts: toUtcIso(s.timestamp), // 末尾 Z 付きで保存する（ゾーン表記なしだとダッシュボード側のブラウザが日本時間と誤認する）
     date: parts ? parts.date : daysAgo(1),
     hour: parts ? parts.hour : null,
     device,
@@ -1063,7 +1082,17 @@ async function fetchClaritySessions(prev) {
   // セッション一覧: リンクで重複を除き、日ごとに新しい順で上限まで、保持日数ぶんだけ残す
   // 2026-11-17 以前に保存した分は読み込み時間を秒と誤認していた（実際はミリ秒）。100 秒超はミリ秒とみなして直す
   const fixLoad = (v) => (v != null && v > 100 ? Math.round((v / 1000) * 100) / 100 : v);
-  const fixSession = (s) => ({ ...s, timeline: (s.timeline || []).map((t) => ({ ...t, loadSec: fixLoad(t.loadSec) })) });
+  // 2026-11-21 以前に保存した分は、滞在・操作時間が "41 seconds" 形式を読めず 0 になり、ページ滞在はミリ秒のまま、時刻は UTC なのにゾーン表記なしだった。
+  // 再取得できない古い分は、ページ滞在をミリ秒→秒にして合計を滞在時間にし、操作時間は不明（null）にする
+  const fixSession = (s) => {
+    const legacy = !/Z$|[+-]\d{2}:\d{2}$/.test(String(s.ts || ''));
+    const timeline = (s.timeline || []).map((t) => ({ ...t, loadSec: fixLoad(t.loadSec) }));
+    if (!legacy) return { ...s, timeline };
+    const parts = jstParts(s.ts);
+    const scaled = timeline.map((t) => ({ ...t, sec: Math.round(((Number(t.sec) || 0) / 1000) * 10) / 10 }));
+    const sum = Math.round(scaled.reduce((a, t) => a + t.sec, 0));
+    return { ...s, ts: toUtcIso(s.ts), date: parts ? parts.date : s.date, hour: parts ? parts.hour : s.hour, timeline: scaled, totalSec: s.totalSec || sum, activeSec: s.activeSec || null };
+  };
   const byId = new Map((prev.sessions || []).map((s) => [s.id, fixSession(s)]));
   for (const s of fetched) byId.set(s.id, s);
   const cutoff = daysAgo(CLARITY_SESSION_DAYS);
