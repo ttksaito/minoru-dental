@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-21T07:31:40.071Z",
+  "generatedAt": "2026-11-21T20:16:22.229Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
-    "start": "2026-10-23",
-    "end": "2026-11-19"
+    "start": "2026-10-24",
+    "end": "2026-11-20"
   },
   "searchQueries": [
     {
@@ -33,8 +33,8 @@
     {
       "query": "東松山市 歯医者",
       "clicks": 0,
-      "impressions": 18,
-      "position": 22.6
+      "impressions": 17,
+      "position": 23.3
     },
     {
       "query": "東松山市 歯科",
@@ -227,16 +227,9 @@
     {
       "page": "/",
       "title": null,
-      "clicks": 12,
-      "impressions": 225,
+      "clicks": 11,
+      "impressions": 223,
       "position": 11
-    },
-    {
-      "page": "/blog/denture-chewing-power/",
-      "title": "入れ歯になると、どのくらい噛めなくなる？",
-      "clicks": 1,
-      "impressions": 3,
-      "position": 6
     },
     {
       "page": "/blog/proper-brushing/",
@@ -283,12 +276,12 @@
     {
       "path": "/blog/best-brushing-timing/",
       "title": "歯を磨くベストなタイミングはいつ？",
-      "pageViews": 3
+      "pageViews": 1
     },
     {
       "path": "/blog/denture-chewing-power/",
       "title": "入れ歯になると、どのくらい噛めなくなる？",
-      "pageViews": 3
+      "pageViews": 1
     },
     {
       "path": "/blog/first-visit-questions/",
