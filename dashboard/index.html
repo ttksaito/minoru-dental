@@ -446,19 +446,6 @@
       </div>
     </div>
     <div class="card" id="blog-table"></div>
-
-    <h2>記事ごとの推移 <span class="sub">新しい記事が上。同じ目盛りでそろえているので、高さをそのまま比べられます。縦線は公開日</span></h2>
-    <div class="filters">
-      <span class="lbl">指標</span>
-      <div class="seg" role="group" aria-label="指標" id="blog-metric">
-        <button type="button" data-bmetric="pv" aria-pressed="true">閲覧数</button>
-        <button type="button" data-bmetric="impressions" aria-pressed="false">検索表示</button>
-        <button type="button" data-bmetric="clicks" aria-pressed="false">検索クリック</button>
-        <button type="button" data-bmetric="position" aria-pressed="false">平均順位</button>
-      </div>
-    </div>
-    <p class="desc" id="blog-metric-desc" style="margin:-4px 0 12px"></p>
-    <div class="grid two" id="blog-posts"></div>
   </div>
   </section>
 
@@ -2196,23 +2183,9 @@ window.HELP = {
     const tableCard = $('#blog-table');
     const posFmt0 = (v) => (v == null ? '–' : (Number.isInteger(v) ? v : v.toFixed(1)) + '位');
     const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000);
-    // 小さな推移（日ごとの閲覧数の棒）。表の 1 セルに収める
-    const spark = (vals, color) => {
-      const w = 96, h = 22, n = vals.length, max = Math.max(1, ...vals);
-      const svg = svgEl('svg', { viewBox: `0 0 ${w} ${h}`, width: w, height: h, 'aria-hidden': 'true' });
-      svg.style.cssText = 'display:block;vertical-align:middle';
-      svg.appendChild(svgEl('line', { x1: 0, x2: w, y1: h - 0.5, y2: h - 0.5, class: 'baseline' }));
-      const bw = Math.max(1, Math.min(4, w / n - 0.5));
-      vals.forEach((v, i) => {
-        if (!v) return;
-        const bh = Math.max(1.5, (v / max) * (h - 2));
-        svg.appendChild(svgEl('rect', { x: (i / Math.max(1, n - 1)) * (w - bw), y: h - 1 - bh, width: bw, height: bh, fill: color }));
-      });
-      return svg;
-    };
     const openPostTrend = (p) => {
       openTrend(p.title, {
-        rows: p.rows, key: 'pv', seriesLabel: '閲覧数', kind: 'bar', markers: [{ date: p.date, label: p.title, tag: '記事公開', color: 'var(--marker)' }, ...changeMarkers],
+        rows: p.rows, key: 'pv', seriesLabel: '閲覧数', kind: 'line', markers: [{ date: p.date, label: p.title, tag: '記事公開', color: 'var(--marker)' }, ...changeMarkers],
         desc: `1 日あたりこの記事が表示された回数。紫の縦線が公開日（${p.date}）、赤はサイト改修`,
         extra: [{
           title: '検索結果への表示とクリック', kind: 'line', desc: 'Google 検索結果にこの記事が出た回数とクリックされた回数（Search Console、2 日遅れ）',
@@ -2227,17 +2200,17 @@ window.HELP = {
         const rows = rowsFor(p), gs = gsCut(rows);
         const pv = sum(rows, 'pv'), eng = sum(rows, 'engSec'), imp = sum(gs, 'impressions'), cl = sum(gs, 'clicks');
         const wpos = gs.reduce((a, r) => (r.position != null && r.impressions ? a + r.position * r.impressions : a), 0);
-        return { pv, users: sum(rows, 'users'), engPer: pv ? eng / pv : null, imp, cl, ctr: imp ? cl / imp : null, pos: imp ? wpos / imp : null, sparkVals: rows.map((r) => r.pv) };
+        return { pv, users: sum(rows, 'users'), engPer: pv ? eng / pv : null, imp, cl, ctr: imp ? cl / imp : null, pos: imp ? wpos / imp : null };
       };
       const list = [...posts].sort((a, b) => b.date.localeCompare(a.date)).map((p) => ({ p, s: stat(p) }));
       const total = list.reduce((a, { s }) => ({ pv: a.pv + s.pv, eng: a.eng + (s.engPer != null ? s.engPer * s.pv : 0), imp: a.imp + s.imp, cl: a.cl + s.cl, wpos: a.wpos + (s.pos != null ? s.pos * s.imp : 0) }), { pv: 0, eng: 0, imp: 0, cl: 0, wpos: 0 });
       const first = dates.slice(-days)[0];
       tableCard.replaceChildren(
         el('h3', null, '記事ごとの数字'),
-        el('p', 'desc', `${first}〜${gaR.end} の合計（検索の数字は ${gsR.end} まで）。新しい記事が上。「推移」は期間内の日ごとの閲覧数。行を押すと、その記事の日別のグラフが開きます`)
+        el('p', 'desc', `${first}〜${gaR.end} の合計（検索の数字は ${gsR.end} まで）。新しい記事が上。行を押すと、その記事の日別の折れ線グラフが開きます`)
       );
       const t = table(
-        [{ label: '公開日' }, { label: '記事' }, { label: '経過', num: true }, { label: '閲覧', num: true, help: 'pageViews' }, { label: '読んだ時間 / 回', num: true, help: 'engSec' }, { label: '検索表示', num: true, help: 'gscImpressions' }, { label: '検索クリック', num: true, help: 'gscClicks' }, { label: 'CTR', num: true, help: 'ctr' }, { label: '平均順位', num: true, help: 'position' }, { label: '推移' }],
+        [{ label: '公開日' }, { label: '記事' }, { label: '経過', num: true }, { label: '閲覧', num: true, help: 'pageViews' }, { label: '読んだ時間 / 回', num: true, help: 'engSec' }, { label: '検索表示', num: true, help: 'gscImpressions' }, { label: '検索クリック', num: true, help: 'gscClicks' }, { label: 'CTR', num: true, help: 'ctr' }, { label: '平均順位', num: true, help: 'position' }],
         list, ({ p, s }) => {
           const tr = el('tr', 'clickable'); tr.tabIndex = 0; tr.setAttribute('role', 'button'); tr.title = 'クリックすると日別の推移を表示します';
           const age = daysBetween(p.date, gaR.end);
@@ -2248,7 +2221,6 @@ window.HELP = {
             td(fmtInt(s.pv), true), td(s.engPer != null ? fmtDur(s.engPer) : '–', true),
             td(fmtInt(s.imp), true), td(fmtInt(s.cl), true), td(s.ctr != null ? fmtPct(s.ctr) : '–', true), td(posFmt0(s.pos), true)
           );
-          const sc = el('td'); sc.appendChild(spark(s.sparkVals, 'var(--series-1)')); tr.appendChild(sc);
           if (!s.pv && !s.imp) tr.classList.add('dim');
           const open = () => openPostTrend(p);
           tr.addEventListener('click', open);
@@ -2257,70 +2229,15 @@ window.HELP = {
         }
       );
       const tf = el('tfoot'); const tr = el('tr');
-      tr.append(td('合計'), td(`${list.length} 本`), td('', true), td(fmtInt(total.pv), true), td(total.pv ? fmtDur(total.eng / total.pv) : '–', true), td(fmtInt(total.imp), true), td(fmtInt(total.cl), true), td(total.imp ? fmtPct(total.cl / total.imp) : '–', true), td(total.imp ? posFmt0(total.wpos / total.imp) : '–', true), td(''));
+      tr.append(td('合計'), td(`${list.length} 本`), td('', true), td(fmtInt(total.pv), true), td(total.pv ? fmtDur(total.eng / total.pv) : '–', true), td(fmtInt(total.imp), true), td(fmtInt(total.cl), true), td(total.imp ? fmtPct(total.cl / total.imp) : '–', true), td(total.imp ? posFmt0(total.wpos / total.imp) : '–', true));
       tf.appendChild(tr); t.appendChild(tf);
       tableCard.appendChild(t);
     };
 
-    // ---- 下段: 記事ごとの小さなグラフ（指標を切り替え、目盛りは全記事でそろえる）
-    const posFmt = (v) => (v == null ? '–' : (Number.isInteger(v) ? v : v.toFixed(1)) + '位');
-    const metricDefs = {
-      pv: { label: '閲覧数', kind: 'bar', key: 'pv', color: 'var(--series-1)', fmt: fmtInt, legend: '棒は 1 日あたりの閲覧数。目盛りは全記事で共通。紫の縦線は公開日' },
-      impressions: { label: '検索表示', kind: 'line', key: 'impressions', color: 'var(--series-3)', fmt: fmtInt, legend: '線は 1 日あたり Google 検索結果に出た回数。目盛りは全記事で共通。紫の縦線は公開日' },
-      clicks: { label: '検索クリック', kind: 'bar', key: 'clicks', color: 'var(--series-1)', fmt: fmtInt, legend: '棒は 1 日あたり検索結果からクリックされた回数。目盛りは全記事で共通。紫の縦線は公開日' },
-      position: { label: '平均順位', kind: 'line', key: 'position', color: 'var(--series-2)', fmt: posFmt, legend: '上が 1 位。点はその日の平均順位（大きいほど表示回数が多い）、線は表示回数で重みづけした 7 日平均、薄い帯は 1 ページ目（1〜10 位）。点がない日は検索結果に出なかった日。順位だけは記事ごとの目盛り', opts: { invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目' } } },
-    };
-    const smallH = () => 150;
-    let postCharts = [];
-    const buildPosts = (metric, days) => {
-      const def = metricDefs[metric];
-      $('#blog-metric-desc').textContent = def.legend;
-      postsBox.replaceChildren();
-      postCharts = [];
-      const rowsFor = (p) => (metric === 'pv' ? p.rows : p.rows.filter((r) => r.date <= gsR.end));
-      // 目盛りをそろえる: 選んだ期間の最大値（順位は最も下の順位）
-      let yMax = 0;
-      for (const p of posts) for (const r of rowsFor(p).slice(-days)) if (r[def.key] != null) yMax = Math.max(yMax, r[def.key]);
-      for (const p of posts) {
-        const rows = rowsFor(p);
-        const inRange = rows.slice(-days);
-        const pv = sum(inRange, 'pv'), imp = sum(inRange, 'impressions'), cl = sum(inRange, 'clicks');
-        const since = p.date > dates[0] ? `${p.date} 公開` : `${p.date} 公開（期間より前）`;
-        const c = chartCard(p.title, `${since}。期間内: 閲覧 ${fmtInt(pv)} 回・検索表示 ${fmtInt(imp)} 回・クリック ${fmtInt(cl)} 回`, rows,
-          [{ key: def.key, label: def.label, color: def.color, fmt: def.fmt }], def.kind, def.fmt,
-          [{ date: p.date, label: p.title }], { ...(def.opts || {}), height: smallH, legend: false, yMax: metric === 'position' ? 0 : yMax }); // 順位だけは記事ごとの目盛り（共通にすると圏外の日に引っ張られて 1 ページ目がつぶれる）
-        c.card.classList.add('blog-post');
-        const link = el('a', 'p', p.path); link.href = p.path; link.target = '_blank'; link.rel = 'noopener'; link.style.cssText = 'font-size:11px;color:var(--muted);word-break:break-all';
-        c.card.insertBefore(link, c.card.querySelector('.desc'));
-        if (p.queries && p.queries.length) {
-          const det = el('details'); det.style.marginTop = '8px';
-          det.appendChild(el('summary', null, `この記事が出た検索キーワード（直近 90 日、上位 ${p.queries.length} 件）`));
-          det.appendChild(table(
-            [{ label: 'キーワード' }, { label: 'クリック', num: true, help: 'gscClicks' }, { label: '表示', num: true, help: 'gscImpressions' }, { label: '順位', num: true, help: 'position' }],
-            p.queries, (q) => { const tr = el('tr'); tr.append(td(q.query), td(fmtInt(q.clicks), true), td(fmtInt(q.impressions), true), td(posFmt(q.position), true)); return tr; }
-          ));
-          c.card.appendChild(det);
-        } else {
-          c.card.appendChild(el('p', 'dim', '直近 90 日に検索結果へ出たキーワードはまだありません。'));
-        }
-        postsBox.appendChild(c.card);
-        postCharts.push(c);
-      }
-      for (const c of postCharts) c.render(days);
-    };
-
     const rangeButtons = [...document.querySelectorAll('.seg button[data-brange]')];
-    const metricButtons = [...document.querySelectorAll('.seg button[data-bmetric]')];
     const currentDays = () => Number(rangeButtons.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.brange || 28);
-    const currentMetric = () => metricButtons.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.bmetric || 'pv';
-    const apply = () => {
-      const days = currentDays(), metric = currentMetric();
-      renderTable(days);
-      buildPosts(metric, days);
-    };
-    rangeButtons.forEach((b) => b.addEventListener('click', () => { rangeButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); apply(); }));
-    metricButtons.forEach((b) => b.addEventListener('click', () => { metricButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); buildPosts(currentMetric(), currentDays()); }));
-    apply();
+    rangeButtons.forEach((b) => b.addEventListener('click', () => { rangeButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); renderTable(currentDays()); }));
+    renderTable(currentDays());
   })();
 
   const adsBox = $('#ads-table');
