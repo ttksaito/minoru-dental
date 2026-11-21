@@ -23,6 +23,9 @@
     --series-1: #2a78d6;
     --series-2: #eb6834;
     --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
+    --series-6: #008300;
     --good: #006300;
     --bad: #d03b3b;
     --tip-bg: #ffffff;
@@ -45,6 +48,9 @@
       --series-1: #3987e5;
       --series-2: #d95926;
       --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+      --series-6: #008300;
       --good: #0ca30c;
       --bad: #e66767;
       --tip-bg: #262624;
@@ -334,6 +340,7 @@
     <a href="#region" data-page="region">地域分析<small>どこに住んでいる人か</small></a>
     <a href="#search" data-page="search">Google 検索<small>検索・マップでの見つかり方</small></a>
     <a href="#pages" data-page="pages">ページ分析<small>よく見られたページ・記事の効果</small></a>
+    <a href="#blog" data-page="blog">ブログ分析<small>記事ごとの時系列</small></a>
     <a href="#ux" data-page="ux">UX 改善<small>使いにくい場所を見つける</small></a>
     <a href="#ads" data-page="ads">Google 広告</a>
     <a href="#action" data-page="action">Action<small>成果につながる行動</small></a>
@@ -424,6 +431,35 @@
 
   <h2>記事の公開と数字の関係 <span class="tag">GA4 + Search Console</span> <span class="sub">公開前後 7 日の比較と、記事ごとの現在値</span></h2>
   <div class="card" id="post-impact"></div>
+  </section>
+
+  <section class="page" data-page="blog" hidden>
+  <h2>ブログ分析 <span class="tag">GA4 + Search Console</span> <span class="sub" id="blog-range"></span></h2>
+  <div id="blog-alert"></div>
+  <div id="blog-body">
+    <div class="filters">
+      <span class="lbl">期間</span>
+      <div class="seg" role="group" aria-label="期間">
+        <button type="button" data-brange="28" aria-pressed="true">直近28日</button>
+        <button type="button" data-brange="90" aria-pressed="false">直近90日</button>
+        <button type="button" data-brange="180" aria-pressed="false">直近180日</button>
+      </div>
+    </div>
+    <div class="grid tiles" id="blog-tiles"></div>
+    <div class="grid two" id="blog-charts" style="margin-top:12px"></div>
+
+    <h2>記事ごとの推移 <span class="sub">新しい記事が上。同じ目盛りでそろえているので、高さをそのまま比べられます。縦線は公開日</span></h2>
+    <div class="filters">
+      <span class="lbl">指標</span>
+      <div class="seg" role="group" aria-label="指標" id="blog-metric">
+        <button type="button" data-bmetric="pv" aria-pressed="true">閲覧数</button>
+        <button type="button" data-bmetric="impressions" aria-pressed="false">検索表示</button>
+        <button type="button" data-bmetric="clicks" aria-pressed="false">検索クリック</button>
+        <button type="button" data-bmetric="position" aria-pressed="false">平均順位</button>
+      </div>
+    </div>
+    <div class="grid two" id="blog-posts"></div>
+  </div>
   </section>
 
   <section class="page" data-page="ux" hidden>
@@ -555,6 +591,11 @@ window.HELP = {
   loadTime: 'ページが表示されるまでにかかった時間の平均。3 秒を超えると離脱が増えると言われています。',
   perfScore: 'Clarity が付けた表示速度の点数（100 点満点）。おおむね 80 以上なら問題ありません。',
   hourOfDay: '訪問が始まった時刻（日本時間）ごとの回数。',
+  blogPv: 'ブログ記事（/blog/ 配下）が表示された回数の合計。一覧ページ（blog.html）は含みません。',
+  blogUsers: 'ブログ記事を見た人の数。同じ人が別の日に別の記事を見ると、記事ごとに 1 人ずつ数えるので、合計は実人数より多めに出ます。',
+  blogImpressions: 'Google の検索結果にブログ記事が表示された回数の合計（Search Console）。',
+  blogClicks: 'Google の検索結果からブログ記事がクリックされた回数の合計（Search Console）。',
+  engSec: '記事を実際に読んでいた時間（タブを開いたまま放置した時間は除く）の合計を、閲覧数で割った 1 回あたりの平均。',
 };
 (function () {
   const tip = document.getElementById('help-tip');
@@ -906,7 +947,7 @@ window.HELP = {
       const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': title });
       const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
       const n = sub.length;
-      const maxRaw = Math.max(1, band ? band.to : 0, ...sub.flatMap((r) => leftS.map((s) => r[s.key] || 0)));
+      const maxRaw = Math.max(1, band ? band.to : 0, opts.yMax || 0, ...sub.flatMap((r) => leftS.map((s) => r[s.key] || 0))); // opts.yMax: 小さなグラフを並べるときに目盛りをそろえる
       const invert = !!opts.invert; // 順位: 上端を 1 位に固定し、下に行くほど順位が下がる
       // 移動平均は表示範囲の前の日も使うので、全行から日付で引く
       const avgAt = (r0, key) => {
@@ -1004,7 +1045,7 @@ window.HELP = {
         leftS.forEach((s) => {
           const pts = sub.map((r, i) => [x(i), y(r[s.key] || 0)]);
           const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-          if (!invert) svg.appendChild(svgEl('path', { d: `${d} L${pts[n - 1][0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`, fill: s.color, 'fill-opacity': 0.1 }));
+          if (!invert && opts.fill !== false) svg.appendChild(svgEl('path', { d: `${d} L${pts[n - 1][0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`, fill: s.color, 'fill-opacity': 0.1 }));
           svg.appendChild(svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
           const last = pts[n - 1];
           svg.appendChild(svgEl('circle', { cx: last[0], cy: last[1], r: 6, fill: 'var(--surface)' }));
@@ -2113,6 +2154,142 @@ window.HELP = {
     const i = el('i', 'mk'); i.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--marker);margin-right:6px;vertical-align:middle';
     lg.append(i, '「日別の推移」ページのグラフの縦線が記事の公開日です。線の上の点に触れると記事名が出ます。');
     box.appendChild(lg);
+  })();
+
+  // ---------------------------------------------------------- ブログ分析（記事ごとの時系列）
+  (function renderBlog() {
+    const blog = data.blog;
+    const alertBox = $('#blog-alert'), body = $('#blog-body');
+    if (!blog || !blog.posts || !blog.posts.length) {
+      body.hidden = true;
+      alertBox.appendChild(el('div', 'alert', '記事ごとの日別データは次回の更新（翌朝 5〜6 時）から表示されます。'));
+      return;
+    }
+    if (blog.warnings && blog.warnings.length) alertBox.appendChild(el('div', 'alert', `一部のデータを取得できませんでした: ${blog.warnings.join(' / ')}`));
+    const gaR = blog.range.ga, gsR = blog.range.gsc;
+    $('#blog-range').textContent = `閲覧は ${gaR.start}〜${gaR.end}、検索は ${gsR.start}〜${gsR.end}（Search Console は 2 日遅れ）`;
+
+    // 日付の並び（GA4 の範囲を軸にする。検索は 2 日遅れなので最後の 2 日は値なし）
+    const dates = [];
+    for (let d = new Date(gaR.start + 'T00:00:00Z'); d.toISOString().slice(0, 10) <= gaR.end; d.setUTCDate(d.getUTCDate() + 1)) dates.push(d.toISOString().slice(0, 10));
+    const shiftDate = (iso, n) => { const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+    // 記事 1 本の日別行（0 埋め。順位は表示のなかった日は null）
+    const rowsOf = (p) => {
+      const ga = new Map((p.ga || []).map((r) => [r.date, r])), gs = new Map((p.gsc || []).map((r) => [r.date, r]));
+      return dates.map((date) => {
+        const a = ga.get(date) || {}, g = gs.get(date) || {};
+        return { date, pv: a.pv || 0, users: a.users || 0, engSec: a.engSec || 0, clicks: g.clicks || 0, impressions: g.impressions || 0, position: g.position != null ? g.position : null };
+      });
+    };
+    const posts = blog.posts.map((p) => ({ ...p, rows: rowsOf(p), path: `/blog/${p.id}/` }));
+    // 全記事の合計（日別）
+    const totals = dates.map((date, i) => {
+      const t = { date, pv: 0, users: 0, engSec: 0, clicks: 0, impressions: 0 };
+      for (const p of posts) { const r = p.rows[i]; t.pv += r.pv; t.users += r.users; t.engSec += r.engSec; t.clicks += r.clicks; t.impressions += r.impressions; }
+      return t;
+    });
+    const sum = (rows, key) => rows.reduce((a, r) => a + (r[key] || 0), 0);
+
+    // ---- 上段: タイル（選んだ期間とその前の同じ長さを比べる）
+    const tilesBox = $('#blog-tiles'), chartsBox = $('#blog-charts'), postsBox = $('#blog-posts');
+    const renderTiles = (days) => {
+      const cur = totals.slice(-days), prev = totals.slice(-days * 2, -days);
+      const gsCur = cur.filter((r) => r.date <= gsR.end), gsPrev = prev.filter((r) => r.date <= gsR.end);
+      const prevLabel = `前の${days}日`;
+      const pvC = sum(cur, 'pv'), pvP = prev.length === days ? sum(prev, 'pv') : null;
+      const engC = pvC ? sum(cur, 'engSec') / pvC : null, engP = pvP ? sum(prev, 'engSec') / pvP : null;
+      const impC = sum(gsCur, 'impressions'), impP = prev.length === days ? sum(gsPrev, 'impressions') : null;
+      const clC = sum(gsCur, 'clicks'), clP = prev.length === days ? sum(gsPrev, 'clicks') : null;
+      tilesBox.replaceChildren(
+        tile('記事の閲覧数', fmtInt(pvC), '回', pvC, pvP, { help: 'blogPv', prevLabel, na: '前の期間のデータがありません' }),
+        tile('1 回あたりの読んだ時間', engC != null ? fmtDur(engC) : '–', '', engC, engP, { help: 'engSec', prevLabel, fmtPrev: fmtDur, na: '前の期間のデータがありません' }),
+        tile('検索結果への表示', fmtInt(impC), '回', impC, impP, { help: 'blogImpressions', prevLabel, na: '前の期間のデータがありません' }),
+        tile('検索からのクリック', fmtInt(clC), '回', clC, clP, { help: 'blogClicks', prevLabel, na: '前の期間のデータがありません' })
+      );
+    };
+
+    // ---- 中段: 全記事の合計の推移と、記事ごとの重ね描き
+    // 記事の色は「180 日の閲覧数が多い順」で固定し、期間を切り替えても同じ記事が同じ色になるようにする
+    const palette = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)', 'var(--series-6)'];
+    const ranked = [...posts].sort((a, b) => sum(b.rows, 'pv') - sum(a.rows, 'pv'));
+    const colorOf = new Map(ranked.slice(0, 5).map((p, i) => [p.id, palette[i]]));
+    const shortTitle = (t) => (t.length > 18 ? t.slice(0, 17) + '…' : t);
+    const overlayRows = dates.map((date, i) => {
+      const r = { date, other: 0 };
+      for (const p of posts) { if (colorOf.has(p.id)) r[p.id] = p.rows[i].pv; else r.other += p.rows[i].pv; }
+      return r;
+    });
+    const overlaySeries = [
+      ...ranked.slice(0, 5).map((p) => ({ key: p.id, label: shortTitle(p.title), color: colorOf.get(p.id) })),
+      ...(posts.length > 5 ? [{ key: 'other', label: `その他 ${posts.length - 5} 本`, color: palette[5] }] : []),
+    ];
+    const mainCharts = [
+      chartCard('記事の閲覧数（全記事の合計）', '1 日あたりブログ記事が表示された回数。縦線は記事の公開日', totals, [{ key: 'pv', label: '閲覧数', color: 'var(--series-1)' }], 'bar', fmtInt, postMarkers),
+      chartCard('記事ごとの閲覧数', '閲覧の多い上位 5 本を色分け。残りは「その他」にまとめています。線に触れると記事名と数字が出ます', overlayRows, overlaySeries, 'line', fmtInt, postMarkers, { fill: false }),
+      chartCard('検索結果への表示（全記事の合計）', '1 日あたり Google 検索結果にブログ記事が出た回数。公開から数週間かけて増えるのが普通です', totals.filter((r) => r.date <= gsR.end), [{ key: 'impressions', label: '表示回数', color: 'var(--series-3)' }], 'line', fmtInt, postMarkers),
+      chartCard('検索からのクリック（全記事の合計）', '1 日あたり検索結果からブログ記事がクリックされた回数', totals.filter((r) => r.date <= gsR.end), [{ key: 'clicks', label: 'クリック', color: 'var(--series-1)' }], 'bar', fmtInt, postMarkers),
+    ];
+    for (const c of mainCharts) chartsBox.appendChild(c.card);
+
+    // ---- 下段: 記事ごとの小さなグラフ（指標を切り替え、目盛りは全記事でそろえる）
+    const posFmt = (v) => (v == null ? '–' : (Number.isInteger(v) ? v : v.toFixed(1)) + '位');
+    const metricDefs = {
+      pv: { label: '閲覧数', kind: 'bar', key: 'pv', color: 'var(--series-1)', fmt: fmtInt, desc: '1 日あたりの表示回数' },
+      impressions: { label: '検索表示', kind: 'line', key: 'impressions', color: 'var(--series-3)', fmt: fmtInt, desc: '1 日あたり検索結果に出た回数' },
+      clicks: { label: '検索クリック', kind: 'bar', key: 'clicks', color: 'var(--series-1)', fmt: fmtInt, desc: '1 日あたり検索結果からクリックされた回数' },
+      position: { label: '平均順位', kind: 'line', key: 'position', color: 'var(--series-2)', fmt: posFmt, desc: '上が 1 位。点はその日の順位（大きいほど表示が多い）、線は表示回数で重みづけした 7 日平均。点がない日は検索結果に出なかった日', opts: { invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目' } } },
+    };
+    const smallH = () => 150;
+    let postCharts = [];
+    const buildPosts = (metric, days) => {
+      const def = metricDefs[metric];
+      postsBox.replaceChildren();
+      postCharts = [];
+      const rowsFor = (p) => (metric === 'pv' ? p.rows : p.rows.filter((r) => r.date <= gsR.end));
+      // 目盛りをそろえる: 選んだ期間の最大値（順位は最も下の順位）
+      let yMax = 0;
+      for (const p of posts) for (const r of rowsFor(p).slice(-days)) if (r[def.key] != null) yMax = Math.max(yMax, r[def.key]);
+      for (const p of posts) {
+        const rows = rowsFor(p);
+        const inRange = rows.slice(-days);
+        const pv = sum(inRange, 'pv'), imp = sum(inRange, 'impressions'), cl = sum(inRange, 'clicks');
+        const since = p.date > dates[0] ? `${p.date} 公開` : `${p.date} 公開（期間より前）`;
+        const c = chartCard(p.title, `${since}。期間内: 閲覧 ${fmtInt(pv)} 回・検索表示 ${fmtInt(imp)} 回・クリック ${fmtInt(cl)} 回`, rows,
+          [{ key: def.key, label: def.label, color: def.color, fmt: def.fmt }], def.kind, def.fmt,
+          [{ date: p.date, label: p.title }], { ...(def.opts || {}), height: smallH, yMax: metric === 'position' ? Math.min(100, yMax) : yMax });
+        c.card.classList.add('blog-post');
+        const link = el('a', 'p', p.path); link.href = p.path; link.target = '_blank'; link.rel = 'noopener'; link.style.cssText = 'font-size:11px;color:var(--muted);word-break:break-all';
+        c.card.insertBefore(link, c.card.querySelector('.desc'));
+        if (p.queries && p.queries.length) {
+          const det = el('details'); det.style.marginTop = '8px';
+          det.appendChild(el('summary', null, `この記事が出た検索キーワード（直近 90 日、上位 ${p.queries.length} 件）`));
+          det.appendChild(table(
+            [{ label: 'キーワード' }, { label: 'クリック', num: true, help: 'gscClicks' }, { label: '表示', num: true, help: 'gscImpressions' }, { label: '順位', num: true, help: 'position' }],
+            p.queries, (q) => { const tr = el('tr'); tr.append(td(q.query), td(fmtInt(q.clicks), true), td(fmtInt(q.impressions), true), td(posFmt(q.position), true)); return tr; }
+          ));
+          c.card.appendChild(det);
+        } else {
+          c.card.appendChild(el('p', 'dim', '直近 90 日に検索結果へ出たキーワードはまだありません。'));
+        }
+        postsBox.appendChild(c.card);
+        postCharts.push(c);
+      }
+      for (const c of postCharts) c.render(days);
+    };
+
+    const rangeButtons = [...document.querySelectorAll('.seg button[data-brange]')];
+    const metricButtons = [...document.querySelectorAll('.seg button[data-bmetric]')];
+    const currentDays = () => Number(rangeButtons.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.brange || 28);
+    const currentMetric = () => metricButtons.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.bmetric || 'pv';
+    const apply = () => {
+      const days = currentDays(), metric = currentMetric();
+      renderTiles(days);
+      for (const c of mainCharts) c.render(days);
+      buildPosts(metric, days);
+    };
+    rangeButtons.forEach((b) => b.addEventListener('click', () => { rangeButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); apply(); }));
+    metricButtons.forEach((b) => b.addEventListener('click', () => { metricButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); apply(); }));
+    apply();
   })();
 
   const adsBox = $('#ads-table');

@@ -624,6 +624,113 @@ async function fetchGsc() {
   };
 }
 
+// ---------------------------------------------------------------- ブログ分析（記事ごとの日別推移）
+
+const BLOG_DAYS = 180; // 記事ごとの日別は 180 日分持つ（公開直後からの伸びを追えるように）
+const BLOG_QUERY_DAYS = 90; // 記事ごとの検索キーワードは直近 90 日
+const BLOG_QUERIES_PER_POST = 8;
+
+/** GA4 / Search Console のページ値 → パス（ドメイン・クエリ・index.html を落とし、記事はスラッシュ終わりに統一） */
+function blogPathOf(raw) {
+  let s = String(raw || '').replace(/^https?:\/\/[^/]+/, '').replace(/[?#].*$/, '').replace(/\/index\.html$/, '/');
+  try { s = decodeURIComponent(s); } catch (e) { /* そのまま */ }
+  if (/^\/blog\/[^/]+$/.test(s)) s += '/';
+  return s || '/';
+}
+function blogIdOf(path) {
+  const m = path.match(/^\/blog\/([^/]+)\/$/);
+  return m ? m[1] : null;
+}
+function gaDate(d) { return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`; }
+
+/** 記事ごとに GA4 の閲覧数と Search Console の表示・クリック・順位を日別で取り、検索キーワードも付ける。
+ *  値があった日だけ持ち、0 の日はダッシュボード側で埋める。どれかが失敗しても他は残す */
+async function fetchBlogSeries(posts, siteUrl) {
+  const LAG = 2;
+  const gaStart = daysAgo(BLOG_DAYS), gaEnd = daysAgo(1);
+  const gsStart = daysAgo(LAG + BLOG_DAYS - 1), gsEnd = daysAgo(LAG);
+  const byId = new Map(posts.map((p) => ({ id: p.id, title: p.title, date: p.date, ga: [], gsc: [], queries: [] })).map((p) => [p.id, p]));
+  const list = { path: '/blog.html', title: 'ブログ一覧', ga: [], gsc: [] };
+  const out = { range: { ga: { start: gaStart, end: gaEnd }, gsc: { start: gsStart, end: gsEnd }, queries: { start: daysAgo(LAG + BLOG_QUERY_DAYS - 1), end: gsEnd } }, posts: [], list, warnings: [] };
+  const targetOf = (path) => { const id = blogIdOf(path); if (id && byId.has(id)) return byId.get(id); if (path === '/blog.html') return list; return null; };
+
+  // 1) GA4: 日 × ページ（/blog 配下）
+  try {
+    const rep = await ga4Report({
+      dateRanges: [{ startDate: gaStart, endDate: gaEnd }],
+      dimensions: [{ name: 'date' }, { name: 'pagePath' }],
+      metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'userEngagementDuration' }],
+      dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/blog' } } },
+      limit: 100000,
+    });
+    const acc = new Map(); // target → Map(date → row)
+    for (const r of rowsToObjects(rep)) {
+      const t = targetOf(blogPathOf(r.pagePath));
+      if (!t) continue;
+      if (!acc.has(t)) acc.set(t, new Map());
+      const m = acc.get(t), date = gaDate(r.date);
+      if (!m.has(date)) m.set(date, { date, pv: 0, users: 0, engSec: 0 });
+      const row = m.get(date); row.pv += r.screenPageViews; row.users += r.activeUsers; row.engSec += r.userEngagementDuration;
+    }
+    for (const [t, m] of acc) t.ga = [...m.values()].sort((a, b) => a.date.localeCompare(b.date)).map((r) => ({ ...r, engSec: Math.round(r.engSec) }));
+  } catch (e) {
+    out.warnings.push(`GA4 記事別: ${e.message.slice(0, 160)}`);
+  }
+
+  // 2) Search Console: 日 × ページ（/blog を含む）。順位は表示回数で重みづけして日ごとにまとめる
+  try {
+    const rep = await gscQuery(siteUrl, {
+      startDate: gsStart, endDate: gsEnd,
+      dimensions: ['date', 'page'],
+      dimensionFilterGroups: [{ filters: [{ dimension: 'page', operator: 'contains', expression: '/blog' }] }],
+      rowLimit: 25000,
+    });
+    const acc = new Map();
+    for (const r of gscRows(rep, ['date', 'page'])) {
+      const t = targetOf(blogPathOf(r.page));
+      if (!t) continue;
+      if (!acc.has(t)) acc.set(t, new Map());
+      const m = acc.get(t);
+      if (!m.has(r.date)) m.set(r.date, { date: r.date, clicks: 0, impressions: 0, _pos: 0 });
+      const row = m.get(r.date); row.clicks += r.clicks; row.impressions += r.impressions; row._pos += r.position * r.impressions;
+    }
+    for (const [t, m] of acc) {
+      t.gsc = [...m.values()].sort((a, b) => a.date.localeCompare(b.date))
+        .map((r) => ({ date: r.date, clicks: r.clicks, impressions: r.impressions, position: r.impressions ? Math.round((r._pos / r.impressions) * 10) / 10 : null }));
+    }
+  } catch (e) {
+    out.warnings.push(`Search Console 記事別: ${e.message.slice(0, 160)}`);
+  }
+
+  // 3) Search Console: ページ × キーワード（直近 90 日）。記事ごとに上位だけ
+  try {
+    const rep = await gscQuery(siteUrl, {
+      startDate: out.range.queries.start, endDate: gsEnd,
+      dimensions: ['page', 'query'],
+      dimensionFilterGroups: [{ filters: [{ dimension: 'page', operator: 'contains', expression: '/blog/' }] }],
+      rowLimit: 5000,
+    });
+    const acc = new Map();
+    for (const r of gscRows(rep, ['page', 'query'])) {
+      const t = targetOf(blogPathOf(r.page));
+      if (!t || t === list) continue;
+      if (!acc.has(t)) acc.set(t, new Map());
+      const m = acc.get(t);
+      if (!m.has(r.query)) m.set(r.query, { query: r.query, clicks: 0, impressions: 0, _pos: 0 });
+      const q = m.get(r.query); q.clicks += r.clicks; q.impressions += r.impressions; q._pos += r.position * r.impressions;
+    }
+    for (const [t, m] of acc) {
+      t.queries = [...m.values()].sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, BLOG_QUERIES_PER_POST)
+        .map((q) => ({ query: q.query, clicks: q.clicks, impressions: q.impressions, position: q.impressions ? Math.round((q._pos / q.impressions) * 10) / 10 : null }));
+    }
+  } catch (e) {
+    out.warnings.push(`Search Console 記事別キーワード: ${e.message.slice(0, 160)}`);
+  }
+
+  out.posts = [...byId.values()].sort((a, b) => b.date.localeCompare(a.date));
+  return out;
+}
+
 // ---------------------------------------------------------------- Google ビジネスプロフィール（Google マップ）
 
 const GBP_LOCATION_ID = process.env.GBP_LOCATION_ID || '';
@@ -1190,6 +1297,7 @@ async function main() {
     gsc: null,
     gbp: null,
     clarity: null,
+    blog: null,
     errors: {},
   };
 
@@ -1226,6 +1334,18 @@ async function main() {
   } catch (e) {
     console.error(`Search Console の取得に失敗: ${e.message}`);
     output.errors.gsc = e.message.slice(0, 500);
+  }
+
+  console.log('ブログ記事ごとの日別データを取得中...');
+  try {
+    const siteUrl = output.gsc ? output.gsc.siteUrl : await resolveGscSite();
+    output.blog = await fetchBlogSeries(blogPosts.posts, siteUrl);
+    const b = output.blog;
+    console.log(`  記事 ${b.posts.length} 本（GA4 ${b.posts.filter((p) => p.ga.length).length} 本・検索 ${b.posts.filter((p) => p.gsc.length).length} 本に日別データ、${b.range.ga.start}〜${b.range.ga.end}）`);
+    if (b.warnings.length) { console.warn(`  一部失敗: ${b.warnings.join(' / ')}`); output.errors.blog = b.warnings.join(' / ').slice(0, 500); }
+  } catch (e) {
+    console.error(`ブログ記事ごとのデータ取得に失敗: ${e.message}`);
+    output.errors.blog = e.message.slice(0, 500);
   }
 
   console.log('Google ビジネスプロフィールからデータを取得中...');
