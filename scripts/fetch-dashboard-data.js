@@ -1120,7 +1120,9 @@ async function fetchClarity() {
   // 同じ日の分をすでに取り込み済みなら API を呼ばない（1 日 10 回の上限を手動実行で使い切らないため）
   const needBase = !(prev.latest && prev.latest.date === date);
   const needDims = CLARITY_DIMENSIONS.filter((d) => !hasToday(prev[d.key]));
-  const needSessions = prev.sessionsFetchedOn !== daysAgo(0);
+  // 旧形式（時刻にゾーン表記なし＝滞在時間 0 秒のまま）が残っていれば、同じ日でも取り直して補正する
+  const hasLegacySessions = (prev.sessions || []).some((s) => !/Z$|[+-]\d{2}:\d{2}$/.test(String(s.ts || '')));
+  const needSessions = prev.sessionsFetchedOn !== daysAgo(0) || hasLegacySessions;
   if (!needBase && !needDims.length && !needSessions) {
     console.log(`  ${date} 分は取得済みのため API 呼び出しを省略しました`);
     return { ...prev, warnings: [] };
