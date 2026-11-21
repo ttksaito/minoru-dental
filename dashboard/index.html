@@ -458,6 +458,7 @@
         <button type="button" data-bmetric="position" aria-pressed="false">平均順位</button>
       </div>
     </div>
+    <p class="desc" id="blog-metric-desc" style="margin:-4px 0 12px"></p>
     <div class="grid two" id="blog-posts"></div>
   </div>
   </section>
@@ -923,7 +924,9 @@ window.HELP = {
       // 点＋移動平均モード（順位用）: opts.dotSize = 点の大きさにする列、opts.avg = { window: 日数, weight: 重みの列 }
       const dotMode = !!(opts.dotSize || opts.avg);
       const avgWin = opts.avg ? opts.avg.window || 7 : 0;
-      if (dotMode) {
+      if (opts.legend === false) {
+        // 小さなグラフを並べるときは、凡例は外側に 1 つだけ出す
+      } else if (dotMode) {
         const lg = el('div', 'legend');
         const a = el('span'); const ai = el('i', 'mk'); ai.style.background = series[0].color; ai.style.opacity = '0.5';
         a.append(ai, opts.dotSize ? `日ごとの値（点が大きいほど${opts.dotLabel || '件数'}が多い）` : '日ごとの値');
@@ -1090,7 +1093,7 @@ window.HELP = {
         svg.appendChild(g);
       }
       // 凡例に縦線の意味（表示範囲にある種別だけ）
-      if (markerAt.size) {
+      if (markerAt.size && opts.legend !== false) {
         const tags = new Map();
         for (const items of markerAt.values()) for (const it of items) if (!tags.has(it.tag)) tags.set(it.tag, it.color);
         let lg = box.querySelector('.legend');
@@ -2213,7 +2216,7 @@ window.HELP = {
     const palette = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)', 'var(--series-6)'];
     const ranked = [...posts].sort((a, b) => sum(b.rows, 'pv') - sum(a.rows, 'pv'));
     const colorOf = new Map(ranked.slice(0, 5).map((p, i) => [p.id, palette[i]]));
-    const shortTitle = (t) => (t.length > 18 ? t.slice(0, 17) + '…' : t);
+    const shortTitle = (t) => (t.length > 12 ? t.slice(0, 11) + '…' : t);
     const overlayRows = dates.map((date, i) => {
       const r = { date, other: 0 };
       for (const p of posts) { if (colorOf.has(p.id)) r[p.id] = p.rows[i].pv; else r.other += p.rows[i].pv; }
@@ -2234,15 +2237,16 @@ window.HELP = {
     // ---- 下段: 記事ごとの小さなグラフ（指標を切り替え、目盛りは全記事でそろえる）
     const posFmt = (v) => (v == null ? '–' : (Number.isInteger(v) ? v : v.toFixed(1)) + '位');
     const metricDefs = {
-      pv: { label: '閲覧数', kind: 'bar', key: 'pv', color: 'var(--series-1)', fmt: fmtInt, desc: '1 日あたりの表示回数' },
-      impressions: { label: '検索表示', kind: 'line', key: 'impressions', color: 'var(--series-3)', fmt: fmtInt, desc: '1 日あたり検索結果に出た回数' },
-      clicks: { label: '検索クリック', kind: 'bar', key: 'clicks', color: 'var(--series-1)', fmt: fmtInt, desc: '1 日あたり検索結果からクリックされた回数' },
-      position: { label: '平均順位', kind: 'line', key: 'position', color: 'var(--series-2)', fmt: posFmt, desc: '上が 1 位。点はその日の順位（大きいほど表示が多い）、線は表示回数で重みづけした 7 日平均。点がない日は検索結果に出なかった日', opts: { invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目' } } },
+      pv: { label: '閲覧数', kind: 'bar', key: 'pv', color: 'var(--series-1)', fmt: fmtInt, legend: '棒は 1 日あたりの閲覧数。目盛りは全記事で共通。紫の縦線は公開日' },
+      impressions: { label: '検索表示', kind: 'line', key: 'impressions', color: 'var(--series-3)', fmt: fmtInt, legend: '線は 1 日あたり Google 検索結果に出た回数。目盛りは全記事で共通。紫の縦線は公開日' },
+      clicks: { label: '検索クリック', kind: 'bar', key: 'clicks', color: 'var(--series-1)', fmt: fmtInt, legend: '棒は 1 日あたり検索結果からクリックされた回数。目盛りは全記事で共通。紫の縦線は公開日' },
+      position: { label: '平均順位', kind: 'line', key: 'position', color: 'var(--series-2)', fmt: posFmt, legend: '上が 1 位。点はその日の平均順位（大きいほど表示回数が多い）、線は表示回数で重みづけした 7 日平均、薄い帯は 1 ページ目（1〜10 位）。点がない日は検索結果に出なかった日。順位だけは記事ごとの目盛り', opts: { invert: true, dotSize: 'impressions', dotLabel: '表示回数', avg: { window: 7, weight: 'impressions' }, band: { from: 1, to: 10, label: '1 ページ目' } } },
     };
     const smallH = () => 150;
     let postCharts = [];
     const buildPosts = (metric, days) => {
       const def = metricDefs[metric];
+      $('#blog-metric-desc').textContent = def.legend;
       postsBox.replaceChildren();
       postCharts = [];
       const rowsFor = (p) => (metric === 'pv' ? p.rows : p.rows.filter((r) => r.date <= gsR.end));
@@ -2256,7 +2260,7 @@ window.HELP = {
         const since = p.date > dates[0] ? `${p.date} 公開` : `${p.date} 公開（期間より前）`;
         const c = chartCard(p.title, `${since}。期間内: 閲覧 ${fmtInt(pv)} 回・検索表示 ${fmtInt(imp)} 回・クリック ${fmtInt(cl)} 回`, rows,
           [{ key: def.key, label: def.label, color: def.color, fmt: def.fmt }], def.kind, def.fmt,
-          [{ date: p.date, label: p.title }], { ...(def.opts || {}), height: smallH, yMax: metric === 'position' ? Math.min(100, yMax) : yMax });
+          [{ date: p.date, label: p.title }], { ...(def.opts || {}), height: smallH, legend: false, yMax: metric === 'position' ? 0 : yMax }); // 順位だけは記事ごとの目盛り（共通にすると圏外の日に引っ張られて 1 ページ目がつぶれる）
         c.card.classList.add('blog-post');
         const link = el('a', 'p', p.path); link.href = p.path; link.target = '_blank'; link.rel = 'noopener'; link.style.cssText = 'font-size:11px;color:var(--muted);word-break:break-all';
         c.card.insertBefore(link, c.card.querySelector('.desc'));
