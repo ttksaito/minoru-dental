@@ -2212,9 +2212,12 @@ window.HELP = {
     const renderTimeline = (days) => {
       const def = tlMetrics[tlMetric];
       const lastDate = tlMetric === 'pv' ? gaR.end : gsR.end;
-      const subDates = dates.filter((d) => d <= lastDate).slice(-days);
-      const n = subDates.length;
+      let subDates = dates.filter((d) => d <= lastDate).slice(-days);
       const ordered = [...posts].sort((a, b) => a.date.localeCompare(b.date)); // 古い記事が上 → 下に行くほど新しい
+      // 計測が始まる前の空白（GA4 は 2026-08-23 から）は左端を詰める。ただし公開日より前は残し、最低 28 日は見せる
+      const hasAny = (d) => { const i = dates.indexOf(d); return ordered.some((p) => p.date === d || (p.rows[i] && p.rows[i][tlMetric])); };
+      while (subDates.length > 28 && !hasAny(subDates[0])) subDates = subDates.slice(1);
+      const n = subDates.length;
       const byDate = new Map(subDates.map((d, i) => [d, i]));
       const rowsData = ordered.map((p) => ({ p, vals: subDates.map((d) => { const r = p.rows[dates.indexOf(d)]; return r ? (r[tlMetric] || 0) : 0; }) }));
       const totals = subDates.map((_, i) => rowsData.reduce((a, r) => a + r.vals[i], 0));
