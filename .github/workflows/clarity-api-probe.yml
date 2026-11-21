@@ -38,10 +38,21 @@ jobs:
             if (!res.ok) { console.log('  本文（先頭 200 文字、値を含む可能性があるため機械的に数字を伏せる）:', text.slice(0, 200).replace(/[0-9]{3,}/g, '###')); return; }
             let data; try { data = JSON.parse(text); } catch (e) { console.log('  JSON でない応答'); return; }
             console.log('  構造:', JSON.stringify(shape(data), null, 1));
+            // 文字列項目の「形式」だけ表示（数字は # に置換。滞在時間や時刻の書式・タイムゾーンを確かめる用）
+            if (Array.isArray(data) && data[0] && typeof data[0] === 'object') {
+              const mask = (v) => String(v).replace(/[0-9]/g, '#');
+              const s0 = data[0];
+              for (const k of ['timestamp', 'totalDuration', 'activeDuration']) if (k in s0) console.log(`  形式 ${k}: "${mask(s0[k])}" (${typeof s0[k]})`);
+              const t0 = Array.isArray(s0.timeline) ? s0.timeline[0] : null;
+              if (t0) for (const k of ['start', 'duration', 'pageLoadTime', 'LCP', 'CLS']) if (k in t0) console.log(`  形式 timeline[0].${k}: "${mask(t0[k])}" (${typeof t0[k]})`);
+              // timestamp を UTC とみなしたときの「今からの経過時間」。一覧の先頭（最新）が未来になるなら UTC ではない
+              const newest = data.map((s) => Date.parse(String(s.timestamp).replace(' ', 'T') + 'Z')).filter((n) => !Number.isNaN(n)).sort((a, b) => b - a)[0];
+              if (newest) console.log(`  最新セッションの timestamp を UTC として解釈 → 今から ${((Date.now() - newest) / 3600000).toFixed(1)} 時間前`);
+            }
           };
           (async () => {
             const date = { start: start.toISOString(), end: end.toISOString() };
-            await call('/recordings/sample', { sortBy: 0, start: date.start, end: date.end, filters: { date }, count: 3 });
+            await call('/recordings/sample', { sortBy: 0, start: date.start, end: date.end, filters: { date }, count: 50 });
             // クリックが多いセッション（timelineEvents の形を見る）
             await call('/recordings/sample', { sortBy: 0, start: date.start, end: date.end, filters: { date, sessionClickEventCount: { min: 2, max: null } }, count: 2 });
             // 端末フィルタが効くか
