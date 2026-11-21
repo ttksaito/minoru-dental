@@ -250,6 +250,10 @@
   .bar .v { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
   td.ux-bad { color: var(--bad); font-weight: 600; }
   td.nowrap { white-space: nowrap; }
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover, th.sortable:focus-visible { color: var(--ink); outline: none; text-decoration: underline; }
+  th.sortable .sort-ind { display: inline-block; width: 1em; color: var(--muted); font-size: 10px; margin-left: 2px; }
+  th.sortable[aria-sort] .sort-ind { color: var(--ink); }
   td.flow { font-size: 12px; line-height: 1.5; min-width: 220px; }
   details.day { border-top: 1px solid var(--border); padding: 6px 0; }
   details.day summary { cursor: pointer; font-size: 13px; padding: 6px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
@@ -2181,6 +2185,7 @@ window.HELP = {
 
     // ---- 上段: 記事の一覧表（公開日・タイトル・期間内の数字・閲覧の推移）。行を押すと日別の推移
     const tableCard = $('#blog-table');
+    const blogSort = { key: 'date', dir: 'desc' }; // 表の並び順（期間を切り替えても保つ）
     const posFmt0 = (v) => (v == null ? '–' : (Number.isInteger(v) ? v : v.toFixed(1)) + '位');
     const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000);
     const openPostTrend = (p) => {
@@ -2202,12 +2207,34 @@ window.HELP = {
         const wpos = gs.reduce((a, r) => (r.position != null && r.impressions ? a + r.position * r.impressions : a), 0);
         return { pv, users: sum(rows, 'users'), engPer: pv ? eng / pv : null, imp, cl, ctr: imp ? cl / imp : null, pos: imp ? wpos / imp : null };
       };
-      const list = [...posts].sort((a, b) => b.date.localeCompare(a.date)).map((p) => ({ p, s: stat(p) }));
+      const sortVal = ({ p, s }) => {
+        switch (blogSort.key) {
+          case 'date': return p.date;
+          case 'title': return p.title;
+          case 'age': return p.date; // 経過日数は公開日の逆順と同じ
+          case 'pv': return s.pv;
+          case 'eng': return s.engPer;
+          case 'imp': return s.imp;
+          case 'cl': return s.cl;
+          case 'ctr': return s.ctr;
+          case 'pos': return s.pos;
+          default: return p.date;
+        }
+      };
+      const list = [...posts].map((p) => ({ p, s: stat(p) })).sort((a, b) => {
+        const va = sortVal(a), vb = sortVal(b);
+        const dir = blogSort.dir === 'asc' ? 1 : -1;
+        if (va == null && vb == null) return b.p.date.localeCompare(a.p.date);
+        if (va == null) return 1; // 「–」は昇順・降順どちらでも最後
+        if (vb == null) return -1;
+        const c = typeof va === 'string' ? va.localeCompare(vb, 'ja') : va - vb;
+        return (c || b.p.date.localeCompare(a.p.date)) * (c ? dir : 1);
+      });
       const total = list.reduce((a, { s }) => ({ pv: a.pv + s.pv, eng: a.eng + (s.engPer != null ? s.engPer * s.pv : 0), imp: a.imp + s.imp, cl: a.cl + s.cl, wpos: a.wpos + (s.pos != null ? s.pos * s.imp : 0) }), { pv: 0, eng: 0, imp: 0, cl: 0, wpos: 0 });
       const first = dates.slice(-days)[0];
       tableCard.replaceChildren(
         el('h3', null, '記事ごとの数字'),
-        el('p', 'desc', `${first}〜${gaR.end} の合計（検索の数字は ${gsR.end} まで）。新しい記事が上。行を押すと、その記事の日別の折れ線グラフが開きます`)
+        el('p', 'desc', `${first}〜${gaR.end} の合計（検索の数字は ${gsR.end} まで）。列の見出しを押すと並べ替え、行を押すと、その記事の日別の折れ線グラフが開きます`)
       );
       const t = table(
         [{ label: '公開日' }, { label: '記事' }, { label: '経過', num: true }, { label: '閲覧', num: true, help: 'pageViews' }, { label: '読んだ時間 / 回', num: true, help: 'engSec' }, { label: '検索表示', num: true, help: 'gscImpressions' }, { label: '検索クリック', num: true, help: 'gscClicks' }, { label: 'CTR', num: true, help: 'ctr' }, { label: '平均順位', num: true, help: 'position' }],
@@ -2231,6 +2258,25 @@ window.HELP = {
       const tf = el('tfoot'); const tr = el('tr');
       tr.append(td('合計'), td(`${list.length} 本`), td('', true), td(fmtInt(total.pv), true), td(total.pv ? fmtDur(total.eng / total.pv) : '–', true), td(fmtInt(total.imp), true), td(fmtInt(total.cl), true), td(total.imp ? fmtPct(total.cl / total.imp) : '–', true), td(total.imp ? posFmt0(total.wpos / total.imp) : '–', true));
       tf.appendChild(tr); t.appendChild(tf);
+      // 列見出しでソート（同じ列をもう一度押すと昇順・降順が入れ替わる）
+      const sortKeys = ['date', 'title', 'age', 'pv', 'eng', 'imp', 'cl', 'ctr', 'pos'];
+      const defaultDir = { date: 'desc', title: 'asc', age: 'asc', pv: 'desc', eng: 'desc', imp: 'desc', cl: 'desc', ctr: 'desc', pos: 'asc' }; // 順位は小さいほど良いので昇順から
+      t.querySelectorAll('thead th').forEach((th, i) => {
+        const key = sortKeys[i]; if (!key) return;
+        th.classList.add('sortable'); th.tabIndex = 0; th.setAttribute('role', 'button');
+        const active = blogSort.key === key || (blogSort.key === 'age' && key === 'date') || (blogSort.key === 'date' && key === 'age');
+        const ind = el('span', 'sort-ind', active ? (blogSort.dir === 'asc' ? '▲' : '▼') : '⇅');
+        th.appendChild(ind);
+        if (blogSort.key === key) th.setAttribute('aria-sort', blogSort.dir === 'asc' ? 'ascending' : 'descending');
+        th.title = 'クリックして並べ替え';
+        const go = () => {
+          if (blogSort.key === key) blogSort.dir = blogSort.dir === 'asc' ? 'desc' : 'asc';
+          else { blogSort.key = key; blogSort.dir = defaultDir[key]; }
+          renderTable(days);
+        };
+        th.addEventListener('click', go);
+        th.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } });
+      });
       tableCard.appendChild(t);
     };
 
