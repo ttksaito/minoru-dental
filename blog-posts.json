@@ -1,6 +1,17 @@
 {
   "posts": [
     {
+      "id": "toothbrush-selection-guide",
+      "title": "歯ブラシの選び方｜硬さ・ヘッド・電動の違いと交換の目安",
+      "date": "2026-11-23",
+      "tags": [
+        "歯磨き",
+        "予防歯科"
+      ],
+      "summary": "ドラッグストアの売り場で歯ブラシが選べない方へ。毛の硬さ、ヘッドの大きさ、毛先の形、電動にするかどうか、交換の目安を、自治体や厚生労働省の公開情報をもとに整理しました。迷ったときの出発点が分かります。",
+      "image": "blog/uploads/toothbrush-selection-guide.png"
+    },
+    {
       "id": "dental-medical-expense-deduction",
       "title": "歯の治療費は医療費控除になる？年内に確認したいこと",
       "date": "2026-11-20",

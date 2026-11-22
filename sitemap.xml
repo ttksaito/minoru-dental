@@ -4,23 +4,34 @@
 
   <url>
     <loc>https://www.minoru-dental.jp/</loc>
-    <lastmod>2026-11-19</lastmod>
+    <lastmod>2026-11-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://www.minoru-dental.jp/blog.html</loc>
-    <lastmod>2026-11-19</lastmod>
+    <lastmod>2026-11-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.minoru-dental.jp/hamigaki.html</loc>
-    <lastmod>2026-11-19</lastmod>
+    <lastmod>2026-11-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://www.minoru-dental.jp/blog/toothbrush-selection-guide/</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://www.minoru-dental.jp/blog/uploads/toothbrush-selection-guide.png</image:loc>
+      <image:title>歯ブラシの選び方｜硬さ・ヘッド・電動の違いと交換の目安</image:title>
+    </image:image>
   </url>
 
   <url>
