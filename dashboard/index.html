@@ -251,6 +251,13 @@
   td.ux-bad { color: var(--bad); font-weight: 600; }
   td.nowrap { white-space: nowrap; }
   th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .status.ok { background: rgba(0,131,0,0.12); color: var(--good); }
+  .status.ng { background: rgba(208,59,59,0.10); color: var(--bad); }
+  .status.na { background: var(--page); color: var(--muted); }
+  .steps { margin: 0; padding-left: 1.4em; }
+  .steps li { margin: 6px 0; line-height: 1.6; }
+  .steps .who { display: inline-block; font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 6px; margin-right: 6px; vertical-align: 1px; }
   th.sortable:hover, th.sortable:focus-visible { color: var(--ink); outline: none; text-decoration: underline; }
   th.sortable .sort-ind { display: inline-block; width: 1em; color: var(--muted); font-size: 10px; margin-left: 2px; }
   th.sortable[aria-sort] .sort-ind { color: var(--ink); }
@@ -345,6 +352,7 @@
     <a href="#search" data-page="search">Google 検索<small>検索・マップでの見つかり方</small></a>
     <a href="#pages" data-page="pages">ページ分析<small>よく見られたページ・記事の効果</small></a>
     <a href="#blog" data-page="blog">ブログ分析<small>記事ごとの時系列</small></a>
+    <a href="#checks" data-page="checks">確認予定<small>12/5 の目的・流れ・判定材料</small></a>
     <a href="#ux" data-page="ux">UX 改善<small>使いにくい場所を見つける</small></a>
     <a href="#ads" data-page="ads">Google 広告</a>
     <a href="#action" data-page="action">Action<small>成果につながる行動</small></a>
@@ -451,6 +459,10 @@
     </div>
     <div class="card" id="blog-table"></div>
   </div>
+  </section>
+
+  <section class="page" data-page="checks" hidden>
+  <div id="checks"></div>
   </section>
 
   <section class="page" data-page="ux" hidden>
@@ -2284,6 +2296,120 @@ window.HELP = {
     const currentDays = () => Number(rangeButtons.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.brange || 28);
     rangeButtons.forEach((b) => b.addEventListener('click', () => { rangeButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); renderTable(currentDays()); }));
     renderTable(currentDays());
+  })();
+
+  // ---------------------------------------------------------- 確認予定（dashboard/checks.json の目的・流れと、判定材料を今の数字で）
+  await (async function renderChecks() {
+    const box = $('#checks');
+    let plan = null;
+    try { const r = await fetch('checks.json', { cache: 'no-store' }); if (r.ok) plan = await r.json(); } catch (e) { /* 任意 */ }
+    const checks = plan && Array.isArray(plan.checks) ? plan.checks : [];
+    if (!checks.length) { box.appendChild(el('div', 'empty', '確認予定がありません（dashboard/checks.json）')); return; }
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }); // YYYY-MM-DD
+    const posFmt = (v) => (v == null ? '–' : (Number.isInteger(v) ? v : v.toFixed(1)) + '位');
+    const status = (kind, text) => el('span', `status ${kind}`, text);
+    const sumBy = (rows, k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
+    const daysUntil = (iso) => Math.round((new Date(iso + 'T00:00:00Z') - new Date(today + 'T00:00:00Z')) / 86400000);
+
+    // 判定材料の計算。戻り値: 行の配列 { item, value, basis, status: 'ok'|'ng'|'na', note, onClick }
+    const compute = {
+      gsc_query(m) {
+        const q = gsc && gsc.queries ? gsc.queries.find((x) => x.query === m.query) : null;
+        const base = m.baseline ? `${m.baseline.label} ${posFmt(m.baseline.position)}` : '';
+        if (!q || !q.daily || !q.daily.length) return [{ item: `「${m.query}」の順位`, value: '–', basis: `${base}→ 目標 ${m.targetPosition} 位以内`, status: 'na', note: '直近 28 日に上位 50 キーワードに入っていません（表示がほぼない）' }];
+        const last = gsc.daily[gsc.daily.length - 1].date;
+        const from = (() => { const t = new Date(last + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - 13); return t.toISOString().slice(0, 10); })();
+        const recent = q.daily.filter((d) => d.date >= from);
+        const imp = sumBy(recent, 'impressions'), cl = sumBy(recent, 'clicks');
+        const pos = imp ? recent.reduce((a, d) => a + d.position * d.impressions, 0) / imp : null;
+        const best = recent.length ? Math.min(...recent.map((d) => d.position)) : null;
+        const ok = pos != null && pos <= m.targetPosition;
+        const note = pos == null ? '直近 14 日は検索結果に出ていません' : `直近 14 日（${from.slice(5)}〜${last.slice(5)}）: 表示 ${fmtInt(imp)} 回・クリック ${fmtInt(cl)} 回・いちばん良い日 ${posFmt(best)}。28 日全体では ${posFmt(q.position)}（表示 ${fmtInt(q.impressions)}）`;
+        return [{ item: `「${m.query}」の順位`, value: posFmt(pos), basis: `${base}→ 目標 ${m.targetPosition} 位以内`, status: pos == null ? 'na' : ok ? 'ok' : 'ng', note, onClick: () => openQueryTrend(q) }];
+      },
+      ads_since(m) {
+        if (!ads || !ads.linked || !ads.daily) return [{ item: '広告経由の電話・LINE・地図タップ', value: '–', basis: `目標 ${m.targetKeyEvents} 件以上`, status: 'na', note: 'GA4 に広告のデータがありません' }];
+        const rows = ads.daily.filter((d) => d.date >= m.since);
+        const ke = sumBy(rows, 'keyEvents'), ses = sumBy(rows, 'sessions'), cl = sumBy(rows, 'clicks'), cost = sumBy(rows, 'cost');
+        const last = rows.length ? rows[rows.length - 1].date : m.since;
+        return [{ item: '広告経由の電話・LINE・地図タップ', value: `${fmtInt(ke)} 件`, basis: `${m.since.slice(5)} 以降、目標 ${m.targetKeyEvents} 件以上`, status: ke >= m.targetKeyEvents ? 'ok' : 'ng', note: `${m.since.slice(5)}〜${last.slice(5)}: 広告クリック ${fmtInt(cl)} 回・費用 ${fmtYen(cost)}・サイト到達 ${fmtInt(ses)} セッション${cl ? `・クリック単価 ${fmtYen(cost / cl)}` : ''}` }];
+      },
+      clarity_partner(m) {
+        const cl = data.clarity;
+        const sessions = cl && cl.sessions ? cl.sessions.filter((s) => s.date >= m.since) : [];
+        if (!sessions.length) return [{ item: '検索パートナー経由の割合（Clarity）', value: '–', basis: `${Math.round(m.maxShare * 100)}% 未満`, status: 'na', note: 'Clarity のセッション一覧がまだありません' }];
+        const partner = sessions.filter((s) => s.referrer === 'syndicatedsearch.goog');
+        const google = sessions.filter((s) => s.referrer === 'google.com');
+        const denom = partner.length + google.length;
+        const share = denom ? partner.length / denom : null;
+        const single = partner.length ? partner.filter((s) => s.pages <= 1).length / partner.length : null;
+        const first = sessions[sessions.length - 1].date, last = sessions[0].date;
+        return [{ item: '検索パートナー経由の割合（Clarity）', value: share == null ? '–' : fmtPct(share, 0), basis: `Google 検索＋パートナー経由のうち、${Math.round(m.maxShare * 100)}% 未満なら質は改善`, status: share == null ? 'na' : share < m.maxShare ? 'ok' : 'ng', note: `${first.slice(5)}〜${last.slice(5)} の録画 ${sessions.length} 件のうち、パートナー経由 ${partner.length} 件・Google 検索経由 ${google.length} 件（広告と自然検索の区別なし）。パートナー経由の 1 ページ離脱 ${single == null ? '–' : fmtPct(single, 0)}。録画は 14 日分しか残らないので、11/14 以降の全期間ではありません` }];
+      },
+      gbp_compare() {
+        const b = data.gbp;
+        if (!b || !b.current) return [{ item: 'マップから電話', value: '–', basis: '前の 28 日と比べる', status: 'na', note: 'ビジネスプロフィールのデータがありません' }];
+        const row = (item, cur, prev) => {
+          const diff = prev ? (cur - prev) / prev : null;
+          return { item, value: `${fmtInt(cur)} 件`, basis: `前の 28 日: ${fmtInt(prev)} 件`, status: diff == null ? 'na' : diff >= 0 ? 'ok' : 'ng', note: `${b.range.start.slice(5)}〜${b.range.end.slice(5)} vs ${b.previousRange.start.slice(5)}〜${b.previousRange.end.slice(5)}${diff == null ? '' : `（${diff >= 0 ? '+' : ''}${Math.round(diff * 100)}%）`}` };
+        };
+        return [row('マップから電話', b.current.calls, b.previous.calls), row('マップで経路検索', b.current.directions, b.previous.directions), row('マップからサイトへ', b.current.websiteClicks, b.previous.websiteClicks)];
+      },
+      clarity_ux(m) {
+        const h = data.clarity && data.clarity.history ? data.clarity.history.filter((d) => d.sessions > 0) : [];
+        const before = h.filter((d) => d.date < m.since), after = h.filter((d) => d.date >= m.since);
+        const wavg = (rows) => { const n = sumBy(rows, 'sessions'); return n ? rows.reduce((a, d) => a + d.scrollDepth * d.sessions, 0) / n : null; };
+        const sb = wavg(before), sa = wavg(after);
+        const out = [];
+        out.push({ item: 'スクロール深度（セッションで重みづけ）', value: sa == null ? '–' : Math.round(sa) + '%', basis: before.length ? `改修前 ${Math.round(sb)}%（${before.length} 日分）` : '改修前のデータなし', status: sa == null || sb == null ? 'na' : sa >= sb ? 'ok' : 'ng', note: `改修後 ${after.length} 日分（${after.length ? after[0].date.slice(5) + '〜' + after[after.length - 1].date.slice(5) : '–'}）。日ごとの訪問が少ないうちは数日で大きく動きます` });
+        const dead = sumBy(after, 'deadClicks'), rage = sumBy(after, 'rageClicks'), qb = sumBy(after, 'quickBacks'), ses = sumBy(after, 'sessions');
+        out.push({ item: '改修後のつまずき（反応しない・連打・すぐ戻る）', value: `${fmtInt(dead + rage + qb)} 件`, basis: `${fmtInt(ses)} セッション中`, status: ses ? ((dead + rage + qb) / ses <= 0.15 ? 'ok' : 'ng') : 'na', note: `反応しないクリック ${fmtInt(dead)}・怒りクリック ${fmtInt(rage)}・すぐ戻る ${fmtInt(qb)}。15% 以下なら問題なしの目安` });
+        return out;
+      },
+    };
+
+    for (const c of checks) {
+      const d = daysUntil(c.date);
+      const when = d > 0 ? `あと ${d} 日` : d === 0 ? '今日' : `${-d} 日前`;
+      const h2 = el('h2'); h2.append(`${fmtDateWd(c.date)} ${c.title} `, el('span', 'sub', `${when}。判定材料の数字は今朝の更新時点（確認日まで毎日更新）`));
+      box.appendChild(h2);
+      // 目的と当日の流れ
+      const top = el('div', 'grid two');
+      const g1 = el('div', 'card'); g1.appendChild(el('h3', null, '目的'));
+      if (c.summary) g1.appendChild(el('p', 'desc', c.summary));
+      const ol = el('ol', 'steps'); for (const g of c.goals || []) ol.appendChild(el('li', null, g)); g1.appendChild(ol);
+      const g2 = el('div', 'card'); g2.appendChild(el('h3', null, '当日の流れ'));
+      const ol2 = el('ol', 'steps');
+      for (const st of c.steps || []) { const li = el('li'); li.append(el('span', 'who', st.who), st.text); ol2.appendChild(li); }
+      g2.appendChild(ol2);
+      if (c.docs && c.docs.length) {
+        const p = el('p', 'desc'); p.style.marginTop = '10px'; p.append('手順書: ');
+        c.docs.forEach((dc, i) => { const a = el('a', null, dc.label); a.href = dc.url; a.target = '_blank'; a.rel = 'noopener'; if (i) p.append(' / '); p.appendChild(a); });
+        g2.appendChild(p);
+      }
+      top.append(g1, g2); box.appendChild(top);
+      // 判定材料
+      const h2b = el('h2'); h2b.append('判定材料 ', el('span', 'sub', '基準に照らした今の状態。緑 = 基準を満たしている、赤 = まだ、灰 = データ不足。順位の行は押すと推移が開きます'));
+      box.appendChild(h2b);
+      for (const sec of c.sections || []) {
+        const card = el('div', 'card'); card.style.marginBottom = '12px';
+        card.appendChild(el('h3', null, sec.title));
+        if (sec.rule) card.appendChild(el('p', 'desc', `判定ルール: ${sec.rule}`));
+        const rows = (sec.metrics || []).flatMap((m) => { try { return (compute[m.type] || (() => [{ item: m.type, value: '–', basis: '', status: 'na', note: '未対応の種類' }]))(m); } catch (e) { return [{ item: m.type, value: '–', basis: '', status: 'na', note: `計算に失敗: ${e.message}` }]; } });
+        card.appendChild(table(
+          [{ label: '項目' }, { label: '今の値', num: true }, { label: '基準' }, { label: '状態' }, { label: '補足' }],
+          rows, (r) => {
+            const tr = el('tr');
+            const c1 = td(r.item); if (r.onClick) { tr.classList.add('clickable'); tr.tabIndex = 0; tr.setAttribute('role', 'button'); tr.title = 'クリックすると日別の推移を表示します'; tr.addEventListener('click', r.onClick); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); r.onClick(); } }); }
+            const c4 = el('td'); c4.appendChild(status(r.status, r.status === 'ok' ? '達成' : r.status === 'ng' ? 'まだ' : 'データ不足'));
+            const c5 = el('td', 'dim', r.note || ''); c5.style.fontSize = '12px';
+            tr.append(c1, td(r.value, true), td(r.basis), c4, c5);
+            return tr;
+          }
+        ));
+        box.appendChild(card);
+      }
+    }
   })();
 
   const adsBox = $('#ads-table');

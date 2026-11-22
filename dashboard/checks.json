@@ -1,0 +1,62 @@
+{
+  "note": "ダッシュボードの「確認予定」ページの定義。date の確認日に向けて、目的・当日の流れ・判定材料（metrics）を表示する。metrics の type は dashboard/index.html の renderChecks が解釈する: gsc_query / ads_since / clarity_partner / gbp_compare / clarity_ux",
+  "checks": [
+    {
+      "id": "2026-12-05",
+      "date": "2026-12-05",
+      "title": "11 月に打った手の効果確認",
+      "summary": "トップページの見直し（11/14）、Google 広告の設定変更（11/14・11/21）、UX 改修（11/17）が効いたかを数字で確かめ、次の一手を決める日。",
+      "goals": [
+        "地名入りの検索（東松山 歯医者 など）が 1 ページ目（10 位以内）に届いたか",
+        "広告が電話・LINE につながったか。検索パートナー経由の質の低い訪問が減ったか → キャンペーンを続けるか、通常の検索キャンペーンへ移行するか",
+        "マップ経由の接点（電話・経路）と UX 改修の効果を見て、12 月の優先順位を決める"
+      ],
+      "steps": [
+        { "who": "運営者", "text": "git pull → 復号スクリプトを実行して「実行済み」と伝える。カレンダーの 2 つのプロンプトを順に貼る" },
+        { "who": "Claude", "text": "SEO の判定: 3 語の順位・表示・クリックを 11/14 前後と 11/21 の中間値と比べる。10 位以内に届いていなければ「診療内容の見出しに地名・症状語を足す」案を出す。その材料として claude-seo（/seo page・local・geo）を単発で回すかをここで決める" },
+        { "who": "Claude", "text": "広告の判定: 広告経由の電話・LINE 件数、検索パートナーの割合と 1 ページ離脱、検索語句の変化、管理画面の「ローカル アクション」。基準どおり「移行 / 継続 / 1 月再確認」を決め、移行なら画面を見ながら設定して changes.json に記録" },
+        { "who": "Claude と運営者", "text": "マップ: 電話・経路の 28 日比較とクチコミ件数。プロフィール充実・写真追加の進み具合を確認" },
+        { "who": "Claude", "text": "UX: Clarity の 2 週間分で、トップのスクロール到達・デッドクリック・録画から 11/17 改修の効果を見る" },
+        { "who": "Claude", "text": "1 枚の表で報告 → TODO.md と手順書を更新 → 次の確認日をカレンダーに登録" }
+      ],
+      "docs": [
+        { "label": "トップページ見直しの効果確認（手順書）", "url": "https://github.com/ttksaito/minoru-dental/blob/main/docs/ops/2026-12-05-top-page-seo-check.md" },
+        { "label": "広告の設定変更の効果確認（手順書）", "url": "https://github.com/ttksaito/minoru-dental/blob/main/docs/ops/2026-12-05-google-ads-check.md" },
+        { "label": "TODO.md（当日の流れ）", "url": "https://github.com/ttksaito/minoru-dental/blob/main/TODO.md" }
+      ],
+      "sections": [
+        {
+          "title": "SEO: 地名入りの検索が 1 ページ目に届いたか",
+          "rule": "直近 14 日の平均順位（表示回数で重みづけ）が 10 位以内なら達成。3 語とも届いていなければ、診療内容の見出しに地名・症状語を足す案を出す",
+          "metrics": [
+            { "type": "gsc_query", "query": "東松山 歯医者", "baseline": { "label": "11/14 時点", "position": 17.8 }, "targetPosition": 10 },
+            { "type": "gsc_query", "query": "東松山市 歯医者", "baseline": { "label": "11/14 時点", "position": 22.1 }, "targetPosition": 10 },
+            { "type": "gsc_query", "query": "東松山市 歯科", "baseline": { "label": "11/14 時点", "position": 22.6 }, "targetPosition": 10 }
+          ]
+        },
+        {
+          "title": "Google 広告: 電話・LINE につながったか",
+          "rule": "11/14 以降の広告経由のキーイベント（電話・LINE・地図）が 1 件以上なら継続して絞り込み。0 件かつ検索パートナー経由が過半なら通常の検索キャンペーンへ移行。パートナー経由が少数に減っていれば継続して 1 月に再確認",
+          "metrics": [
+            { "type": "ads_since", "since": "2026-11-14", "targetKeyEvents": 1 },
+            { "type": "clarity_partner", "since": "2026-11-14", "maxShare": 0.5 }
+          ]
+        },
+        {
+          "title": "Google マップ: 接点は増えているか",
+          "rule": "電話と経路検索の直近 28 日を前の 28 日と比べる。広告のリンク先をサイトに変えた分、マップ側の通話が減っていないかも見る",
+          "metrics": [
+            { "type": "gbp_compare" }
+          ]
+        },
+        {
+          "title": "UX: 11/17 の改修は効いたか",
+          "rule": "改修前後でスクロール深度が上がり、反応しないクリック・怒りクリックが増えていなければ良い。録画も見て判断",
+          "metrics": [
+            { "type": "clarity_ux", "since": "2026-11-17" }
+          ]
+        }
+      ]
+    }
+  ]
+}
