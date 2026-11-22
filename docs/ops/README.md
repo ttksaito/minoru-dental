@@ -32,4 +32,5 @@ Google カレンダーに登録した定期タスクには、Claude Code に貼�
   復号結果は `dashboard/data.json`（git 管理外）に出る。要点はコマンドの出力にも表示される
 - ダッシュボードのデータは毎朝 5〜6 時 JST に更新（Vercel Cron → GitHub Actions。GitHub の定期実行だけだと 8〜12 時にずれ込むため）。手動更新は GitHub Actions「集客ダッシュボードの更新」→ Run workflow（`gh workflow run update-dashboard.yml`）
 - 優先順位の全体像は `TODO.md` の先頭セクション
+- 確認日の目的・当日の流れ・判定材料はダッシュボードの「確認予定」ページに出る。定義は `dashboard/checks.json`（確認日を追加するときはここに 1 件足す。判定の計算は `dashboard/index.html` の renderChecks）
 - サイトに手を入れたら `dashboard/changes.json` に 1 行足す（日付・kind・内容）。ダッシュボードの平均掲載順位グラフの縦線になり、改修と順位の変化を見比べられる
