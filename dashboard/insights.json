@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-11-24T20:16:30.888Z",
+  "generatedAt": "2026-11-25T20:16:25.866Z",
   "note": "ブログ記事の自動作成が参照するデータ。検索キーワードと記事ごとの閲覧数のみ（費用・訪問者数の合計は dashboard/data.enc 側）",
   "gscRange": {
-    "start": "2026-10-27",
-    "end": "2026-11-23"
+    "start": "2026-10-28",
+    "end": "2026-11-24"
   },
   "searchQueries": [
     {
       "query": "みのる歯科",
-      "clicks": 3,
-      "impressions": 55,
-      "position": 5.4
+      "clicks": 2,
+      "impressions": 52,
+      "position": 5.7
     },
     {
       "query": "みのる歯科医院",
@@ -22,7 +22,7 @@
       "query": "東松山 歯医者",
       "clicks": 1,
       "impressions": 22,
-      "position": 18
+      "position": 18.8
     },
     {
       "query": "東松山市 歯科",
@@ -39,14 +39,14 @@
     {
       "query": "東松山市 歯医者",
       "clicks": 0,
-      "impressions": 18,
-      "position": 21.3
+      "impressions": 22,
+      "position": 19
     },
     {
       "query": "東松山 歯医者 ランキング 高 評価",
       "clicks": 0,
-      "impressions": 7,
-      "position": 7.7
+      "impressions": 9,
+      "position": 6.2
     },
     {
       "query": "東松山市 歯科医院",
@@ -79,6 +79,12 @@
       "position": 24.5
     },
     {
+      "query": "歯医者",
+      "clicks": 0,
+      "impressions": 4,
+      "position": 8.8
+    },
+    {
       "query": "歯医者 東松山",
       "clicks": 0,
       "impressions": 4,
@@ -97,16 +103,16 @@
       "position": 10
     },
     {
-      "query": "歯医者",
-      "clicks": 0,
-      "impressions": 3,
-      "position": 2
-    },
-    {
       "query": "歯医者近く",
       "clicks": 0,
       "impressions": 3,
       "position": 1
+    },
+    {
+      "query": "近くの歯医者",
+      "clicks": 0,
+      "impressions": 3,
+      "position": 2
     },
     {
       "query": "うさぎ歯科",
@@ -157,12 +163,6 @@
       "position": 6
     },
     {
-      "query": "近くの歯医者",
-      "clicks": 0,
-      "impressions": 2,
-      "position": 2.5
-    },
-    {
       "query": "うさぎ歯科 予約",
       "clicks": 0,
       "impressions": 1,
@@ -205,6 +205,12 @@
       "position": 8
     },
     {
+      "query": "歯並び",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 7
+    },
+    {
       "query": "歯医者 1.6 km 以内",
       "clicks": 0,
       "impressions": 1,
@@ -215,6 +221,12 @@
       "clicks": 0,
       "impressions": 1,
       "position": 85
+    },
+    {
+      "query": "歯医者 近く",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 1
     },
     {
       "query": "歯医者 高評価",
@@ -247,6 +259,12 @@
       "position": 1
     },
     {
+      "query": "近くの歯医者 高評価",
+      "clicks": 0,
+      "impressions": 1,
+      "position": 1
+    },
+    {
       "query": "遅くまでやってる歯医者 近く",
       "clicks": 0,
       "impressions": 1,
@@ -257,8 +275,8 @@
     {
       "page": "/",
       "title": null,
-      "clicks": 14,
-      "impressions": 265,
+      "clicks": 15,
+      "impressions": 279,
       "position": 9.6
     },
     {
@@ -295,13 +313,6 @@
       "clicks": 0,
       "impressions": 3,
       "position": 2.7
-    },
-    {
-      "page": "/blog/best-brushing-timing/",
-      "title": "歯を磨くベストなタイミングはいつ？",
-      "clicks": 0,
-      "impressions": 1,
-      "position": 2
     }
   ],
   "blogPageViews": [
