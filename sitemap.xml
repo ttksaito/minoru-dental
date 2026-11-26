@@ -4,23 +4,34 @@
 
   <url>
     <loc>https://www.minoru-dental.jp/</loc>
-    <lastmod>2026-11-22</lastmod>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://www.minoru-dental.jp/blog.html</loc>
-    <lastmod>2026-11-22</lastmod>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.minoru-dental.jp/hamigaki.html</loc>
-    <lastmod>2026-11-22</lastmod>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://www.minoru-dental.jp/blog/remaining-teeth-by-age/</loc>
+    <lastmod>2026-11-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://www.minoru-dental.jp/blog/uploads/remaining-teeth-by-age.png</image:loc>
+      <image:title>歯は何歳で何本残る？年齢別の平均本数【令和6年調査】</image:title>
+    </image:image>
   </url>
 
   <url>

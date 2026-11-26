@@ -710,6 +710,20 @@
         <div class="blog-container">
             <div class="blog-main">
                 <!-- ブログ記事一覧（ビルド時に静的生成） -->
+                <article class="blog-post" data-tags="予防歯科,歯の豆知識">
+                    <div class="blog-post-image">
+                        <a href="blog/remaining-teeth-by-age/"><img src="/blog/uploads/remaining-teeth-by-age.png" alt="歯は何歳で何本残る？年齢別の平均本数【令和6年調査】" loading="lazy" decoding="async"></a>
+                    </div>
+                    <div class="blog-post-content">
+                        <div class="blog-post-meta">
+                            <span>2026年11月26日</span>
+                        </div>
+                        <div class="blog-post-tags"><span class="blog-post-tag">予防歯科</span><span class="blog-post-tag">歯の豆知識</span></div>
+                        <h3><a href="blog/remaining-teeth-by-age/">歯は何歳で何本残る？年齢別の平均本数【令和6年調査】</a></h3>
+                        <p>厚生労働省の令和6年歯科疾患実態調査から、年齢別の平均の歯の本数と、20本以上残っている人の割合を一覧にしました。80歳で20本以上の人は約6割。自分の年代と見比べ、平均との差を気にしすぎず読むコツも紹介します。</p>
+                        <a href="blog/remaining-teeth-by-age/" class="read-more">続きを読む →</a>
+                    </div>
+                </article>
                 <article class="blog-post" data-tags="歯磨き,予防歯科">
                     <div class="blog-post-image">
                         <a href="blog/toothbrush-selection-guide/"><img src="/blog/uploads/toothbrush-selection-guide.png" alt="歯ブラシの選び方｜硬さ・ヘッド・電動の違いと交換の目安" loading="lazy" decoding="async"></a>
@@ -880,6 +894,10 @@
                     <h3>最新記事</h3>
                     <ul id="latest-posts-list">
                         <li>
+                            <a href="blog/remaining-teeth-by-age/">歯は何歳で何本残る？年齢別の平均本数【令和6年調査】</a>
+                            <span class="post-date">2026年11月26日</span>
+                        </li>
+                        <li>
                             <a href="blog/toothbrush-selection-guide/">歯ブラシの選び方｜硬さ・ヘッド・電動の違いと交換の目安</a>
                             <span class="post-date">2026年11月23日</span>
                         </li>
@@ -895,10 +913,6 @@
                             <a href="blog/sunday-dentist-higashimatsuyama/">東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先</a>
                             <span class="post-date">2026年11月15日</span>
                         </li>
-                        <li>
-                            <a href="blog/first-visit-questions/">初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト</a>
-                            <span class="post-date">2026年10月20日</span>
-                        </li>
                     </ul>
                 </div>
 
@@ -906,8 +920,8 @@
                 <div class="blog-sidebar-section">
                     <h3>カテゴリー</h3>
                     <ul id="categories-list">
-                        <li><a href="#" data-category="予防歯科">予防歯科 <span class="category-count">4</span></a></li>
-                        <li><a href="#" data-category="歯の豆知識">歯の豆知識 <span class="category-count">3</span></a></li>
+                        <li><a href="#" data-category="予防歯科">予防歯科 <span class="category-count">5</span></a></li>
+                        <li><a href="#" data-category="歯の豆知識">歯の豆知識 <span class="category-count">4</span></a></li>
                         <li><a href="#" data-category="歯磨き">歯磨き <span class="category-count">3</span></a></li>
                         <li><a href="#" data-category="虫歯予防">虫歯予防 <span class="category-count">3</span></a></li>
                         <li><a href="#" data-category="定期検診">定期検診 <span class="category-count">2</span></a></li>
@@ -1152,7 +1166,7 @@
 
             // ===== 人気記事ランキング（popular-posts.json はGitHub ActionsがGA4から自動集計） =====
             // 記事ID→タイトルの対応表（ビルド時に埋め込み）
-            const POSTS_META = [{"id":"toothbrush-selection-guide","title":"歯ブラシの選び方｜硬さ・ヘッド・電動の違いと交換の目安"},{"id":"dental-medical-expense-deduction","title":"歯の治療費は医療費控除になる？年内に確認したいこと"},{"id":"higashimatsuyama-dental-checkup","title":"東松山市の無料歯科健診まとめ｜歯周疾患検診・ファミリー歯科健診"},{"id":"sunday-dentist-higashimatsuyama","title":"東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先"},{"id":"first-visit-questions","title":"初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト"},{"id":"best-brushing-timing","title":"歯を磨くベストなタイミングはいつ？"},{"id":"denture-chewing-power","title":"入れ歯になると、どのくらい噛めなくなる？"},{"id":"regular-checkup","title":"定期検診の重要性について"},{"id":"proper-brushing","title":"正しい歯磨きの方法と注意点"},{"id":"child-dental-care","title":"お子様の歯を守るために知っておきたいこと"}];
+            const POSTS_META = [{"id":"remaining-teeth-by-age","title":"歯は何歳で何本残る？年齢別の平均本数【令和6年調査】"},{"id":"toothbrush-selection-guide","title":"歯ブラシの選び方｜硬さ・ヘッド・電動の違いと交換の目安"},{"id":"dental-medical-expense-deduction","title":"歯の治療費は医療費控除になる？年内に確認したいこと"},{"id":"higashimatsuyama-dental-checkup","title":"東松山市の無料歯科健診まとめ｜歯周疾患検診・ファミリー歯科健診"},{"id":"sunday-dentist-higashimatsuyama","title":"東松山で日曜に歯が痛くなったら？休日歯科センターと連絡先"},{"id":"first-visit-questions","title":"初めて（久しぶりに）歯医者に行く前に、聞いておくと楽になる質問リスト"},{"id":"best-brushing-timing","title":"歯を磨くベストなタイミングはいつ？"},{"id":"denture-chewing-power","title":"入れ歯になると、どのくらい噛めなくなる？"},{"id":"regular-checkup","title":"定期検診の重要性について"},{"id":"proper-brushing","title":"正しい歯磨きの方法と注意点"},{"id":"child-dental-care","title":"お子様の歯を守るために知っておきたいこと"}];
             fetch('popular-posts.json')
                 .then(response => {
                     if (!response.ok) throw new Error('popular-posts.json の読み込みに失敗');
