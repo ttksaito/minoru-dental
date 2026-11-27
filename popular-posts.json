@@ -1,25 +1,25 @@
 {
-  "updated": "2026-11-26",
+  "updated": "2026-11-27",
   "rangeDays": 90,
   "posts": [
     {
-      "id": "regular-checkup",
-      "views": 10
-    },
-    {
       "id": "denture-chewing-power",
       "views": 8
+    },
+    {
+      "id": "regular-checkup",
+      "views": 7
     },
     {
       "id": "best-brushing-timing",
       "views": 6
     },
     {
-      "id": "child-dental-care",
-      "views": 2
+      "id": "first-visit-questions",
+      "views": 1
     },
     {
-      "id": "first-visit-questions",
+      "id": "higashimatsuyama-dental-checkup",
       "views": 1
     }
   ]
